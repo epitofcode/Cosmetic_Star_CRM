@@ -72,9 +72,10 @@ export default function Patients() {
       setPatients([newPatient, ...patients]);
       setIsModalOpen(false);
       setFormData({ firstName: '', lastName: '', dob: '', gender: 'Other', phone: '+44 ', email: '' });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Create patient error:', error);
-      alert('Failed to create patient. Please check your connection or data.');
+      const message = error.response?.data?.error || error.message || 'Unknown error';
+      alert(`Failed to create patient: ${message}`);
     }
   };
 

@@ -20,6 +20,15 @@ const upload = multer({ storage: multer.memoryStorage() });
 app.use(cors());
 app.use(express.json());
 
+// --- Health Check ---
+app.get('/api/health', (req, res) => {
+    res.json({ 
+        status: 'ok', 
+        supabaseConnected: !!supabaseUrl && !!supabaseKey,
+        time: new Date().toISOString() 
+    });
+});
+
 // --- API Endpoints ---
 
 // 1. Get Patients (Searchable)
