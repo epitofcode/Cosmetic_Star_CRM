@@ -39,13 +39,18 @@ app.get('/api/patients', async (req, res) => {
 
 // 2. Create New Patient
 app.post('/api/patients', async (req, res) => {
+    console.log('Received patient creation request:', req.body);
     const { first_name, last_name, phone, email, dob, gender } = req.body;
     const { data, error } = await supabase
         .from('patients')
         .insert([{ first_name, last_name, phone, email, dob, gender }])
         .select();
 
-    if (error) return res.status(400).json({ error: error.message });
+    if (error) {
+        console.error('Supabase error creating patient:', error);
+        return res.status(400).json({ error: error.message });
+    }
+    console.log('Patient created successfully:', data[0]);
     res.status(201).json(data[0]);
 });
 
