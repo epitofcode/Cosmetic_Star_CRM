@@ -76,16 +76,6 @@ export default function Patients() {
       alert('Failed to create patient. Please check your connection or data.');
     }
   };
-      email: formData.email,
-      lastVisit: new Date().toISOString().split('T')[0],
-      status: 'Treatment Pending',
-      dob: formData.dob,
-      gender: formData.gender,
-    };
-    setPatients([newPatient, ...patients]);
-    setIsModalOpen(false);
-    setFormData({ firstName: '', lastName: '', dob: '', gender: 'Other', phone: '+44 ', email: '' });
-  };
 
   return (
     <div className="space-y-6">
@@ -112,7 +102,7 @@ export default function Patients() {
             placeholder="Search patients..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-slate-50 border border-slate-200 focus:bg-white focus:border-teal-500 focus:ring-1 focus:ring-teal-500 rounded-lg py-2 pl-10 pr-4 text-sm outline-none transition-all"
+            className="w-full bg-slate-50 border border-slate-200 focus:bg-white focus:border-teal-500 focus:ring-teal-500 rounded-lg py-2 pl-10 pr-4 text-sm outline-none transition-all"
           />
         </div>
       </div>
@@ -186,7 +176,7 @@ export default function Patients() {
                   </td>
                 </tr>
               ))}
-              {filteredPatients.length === 0 && (
+              {filteredPatients.length === 0 && !loading && (
                 <tr>
                   <td colSpan={5} className="px-6 py-12 text-center text-slate-500">
                     No patients found matching your search.
