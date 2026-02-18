@@ -21,6 +21,16 @@ export const saveAssessment = async (patientId: string, assessmentData: any) => 
     return response.data;
 };
 
+export const getAssessment = async (patientId: string) => {
+    const response = await api.get(`/assessment/${patientId}`);
+    return response.data;
+};
+
+export const getTreatmentPlan = async (patientId: string) => {
+    const response = await api.get(`/treatment-plan/${patientId}`);
+    return response.data;
+};
+
 export const uploadSignature = async (patientId: string, signatureBlob: Blob) => {
     const formData = new FormData();
     formData.append('patient_id', patientId);

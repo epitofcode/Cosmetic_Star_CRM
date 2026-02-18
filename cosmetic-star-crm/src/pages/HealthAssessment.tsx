@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
-import { Save, ChevronRight, ClipboardList, UserCircle2, Stethoscope, Heart, Activity, AlertCircle, Cigarette, Wine, UserCheck } from 'lucide-react';
-import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { usePatient } from '../context/PatientContext';
-import { saveAssessment } from '../services/api';
+import { saveAssessment, getAssessment } from '../services/api';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -45,7 +43,7 @@ const YesNoQuestion: React.FC<QuestionProps> = ({
             className={cn(
               "px-4 py-1.5 text-xs font-bold rounded-md transition-all",
               value === false 
-                ? "bg-white text-slate-600 shadow-sm" 
+                ? "bg-white text-teal-600 shadow-sm" 
                 : "text-slate-500 hover:text-slate-700"
             )}
           >
@@ -73,6 +71,7 @@ const YesNoQuestion: React.FC<QuestionProps> = ({
 
 export default function HealthAssessment() {
   const { selectedPatient } = usePatient();
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     gpName: '',
     occupation: '',
@@ -95,6 +94,26 @@ export default function HealthAssessment() {
     }
   });
 
+  useEffect(() => {
+    if (selectedPatient) {
+      loadAssessment();
+    }
+  }, [selectedPatient]);
+
+  const loadAssessment = async () => {
+    try {
+      setLoading(true);
+      const data = await getAssessment(selectedPatient!.id);
+      if (data && data.data) {
+        setFormData(data.data);
+      }
+    } catch (error) {
+      console.error('Error loading assessment:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleQuestionChange = (id: keyof typeof formData.questions, value: boolean, details: string) => {
     setFormData(prev => ({
       ...prev,
@@ -110,11 +129,14 @@ export default function HealthAssessment() {
     if (!selectedPatient) return;
 
     try {
+      setLoading(true);
       await saveAssessment(selectedPatient.id, formData);
       alert('Assessment saved successfully!');
     } catch (error) {
       console.error('Save assessment error:', error);
       alert('Failed to save assessment.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -132,23 +154,14 @@ export default function HealthAssessment() {
     );
   }
 
-  return (
-    <div className="max-w-4xl mx-auto space-y-8">
-      <div className="flex items-center justify-between">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2 text-teal-600 bg-teal-50 w-fit px-2 py-1 rounded text-xs font-bold uppercase tracking-wider">
-            <UserCheck size={14} />
-            Patient: {selectedPatient.first_name} {selectedPatient.last_name}
-          </div>
-          <h1 className="text-2xl font-bold text-slate-900">Health Assessment</h1>
-          <p className="text-slate-500">Comprehensive medical consultation form.</p>
-        </div>
-        <div className="flex items-center gap-2 text-sm text-slate-400">
-          <span>Patients</span>
-          <ChevronRight size={14} />
-          <span className="text-slate-900 font-medium">New Assessment</span>
-        </div>
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20">
+        <Loader2 className="animate-spin text-teal-600 mb-4" size={40} />
+        <p className="text-slate-500 font-medium font-black uppercase tracking-widest text-xs">Accessing Medical Records...</p>
       </div>
+    );
+  }
 
       <form onSubmit={handleSave} className="space-y-8 pb-24">
         {/* Section 1: General Info */}

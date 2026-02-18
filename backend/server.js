@@ -74,11 +74,24 @@ app.post('/api/assessment', async (req, res) => {
     const { patient_id, data: assessmentData } = req.body;
     const { data, error } = await supabase
         .from('medical_intakes')
-        .insert([{ patient_id, data: assessmentData }])
+        .upsert([{ patient_id, data: assessmentData }], { onConflict: 'patient_id' })
         .select();
 
     if (error) return res.status(400).json({ error: error.message });
     res.status(201).json(data[0]);
+});
+
+// 3b. Get Medical Assessment
+app.get('/api/assessment/:patientId', async (req, res) => {
+    const { patientId } = req.params;
+    const { data, error } = await supabase
+        .from('medical_intakes')
+        .select('*')
+        .eq('patient_id', patientId)
+        .maybeSingle();
+
+    if (error) return res.status(400).json({ error: error.message });
+    res.json(data || null);
 });
 
 // 4. Upload Signature & Create Contract
@@ -175,6 +188,18 @@ app.post('/api/treatment-plan', async (req, res) => {
 
     if (error) return res.status(400).json({ error: error.message });
     res.status(201).json(data[0]);
+});
+
+app.get('/api/treatment-plan/:patientId', async (req, res) => {
+    const { patientId } = req.params;
+    const { data, error } = await supabase
+        .from('treatment_plans')
+        .select('*')
+        .eq('patient_id', patientId)
+        .maybeSingle();
+
+    if (error) return res.status(400).json({ error: error.message });
+    res.json(data || null);
 });
 
 // 9. Get Financials for a Patient
