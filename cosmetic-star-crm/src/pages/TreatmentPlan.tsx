@@ -86,9 +86,10 @@ export default function TreatmentPlan() {
         total_to_pay: totalToPay
       });
       alert('Treatment plan saved! Proceed to contract signature.');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving treatment plan:', error);
-      alert('Failed to save treatment plan.');
+      const message = error.response?.data?.error || error.message || 'Unknown error';
+      alert(`Failed to save treatment plan: ${message}`);
     } finally {
       setIsSaving(false);
     }
