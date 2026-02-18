@@ -40,6 +40,7 @@ export default function DigitalContract({ onSign }: DigitalContractProps) {
 
   const confirm = async () => {
     if (!selectedPatient || !sigCanvas.current) return;
+    
     if (sigCanvas.current.isEmpty()) {
       alert('Please provide a signature before confirming.');
       return;
@@ -58,9 +59,10 @@ export default function DigitalContract({ onSign }: DigitalContractProps) {
       setTimeout(() => {
         setShowToast(false);
       }, 2000);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Signature upload error:', error);
-      alert('Failed to save signature.');
+      const message = error.response?.data?.error || error.message || 'Unknown error';
+      alert(`Failed to save signature: ${message}`);
     } finally {
       setIsUploading(false);
     }

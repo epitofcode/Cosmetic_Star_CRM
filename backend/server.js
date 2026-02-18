@@ -20,6 +20,12 @@ const upload = multer({ storage: multer.memoryStorage() });
 app.use(cors());
 app.use(express.json());
 
+// Request Logger
+app.use((req, res, next) => {
+    console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
+    next();
+});
+
 // --- Health Check ---
 app.get('/api/health', (req, res) => {
     res.json({ 
@@ -239,6 +245,12 @@ app.post('/api/transactions', upload.single('proof'), async (req, res) => {
 
     if (error) return res.status(400).json({ error: error.message });
     res.status(201).json(data[0]);
+});
+
+// 404 Handler
+app.use((req, res) => {
+    console.warn(`404 - Not Found: ${req.method} ${req.url}`);
+    res.status(404).json({ error: `Path ${req.url} with method ${req.method} not found on this server.` });
 });
 
 app.listen(port, () => {

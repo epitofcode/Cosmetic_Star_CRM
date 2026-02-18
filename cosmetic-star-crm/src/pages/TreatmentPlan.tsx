@@ -63,7 +63,6 @@ export default function TreatmentPlan() {
 
   const selectedService = SERVICES.find(s => s.id === selectedServiceId);
   const totalToPay = Math.max(0, cost - discount);
-  const needsApproval = totalToPay < 1500 && selectedServiceId !== '';
 
   useEffect(() => {
     if (selectedService) {
@@ -223,22 +222,12 @@ export default function TreatmentPlan() {
               </div>
             </div>
 
-            {needsApproval && (
-              <div className="mt-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex items-start gap-3 animate-pulse">
-                <AlertCircle className="text-red-400 shrink-0" size={18} />
-                <div>
-                  <p className="text-sm font-bold text-red-400">Manager Approval Required</p>
-                  <p className="text-xs text-red-400/80 mt-0.5">Total price is below the £1,500 threshold for this clinic.</p>
-                </div>
-              </div>
-            )}
-
             <button 
               onClick={handleGenerateContract}
-              disabled={needsApproval || !selectedService || isSaving}
+              disabled={!selectedService || isSaving}
               className={cn(
                 "w-full mt-8 py-3 rounded-xl font-bold transition-all active:scale-95",
-                (needsApproval || !selectedService || isSaving)
+                (!selectedService || isSaving)
                   ? "bg-slate-800 text-slate-500 cursor-not-allowed" 
                   : "bg-teal-500 hover:bg-teal-400 text-slate-900 shadow-lg shadow-teal-500/20"
               )}
