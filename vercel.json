@@ -1,5 +1,4 @@
 {
-  "buildCommand": "npm run build",
   "outputDirectory": "cosmetic-star-crm/dist",
   "framework": "vite",
   "rewrites": [

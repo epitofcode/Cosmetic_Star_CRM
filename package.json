@@ -8,5 +8,8 @@
   "scripts": {
     "build": "npm run build --workspace=cosmetic-star-crm",
     "install-all": "npm install"
+  },
+  "devDependencies": {
+    "lightningcss": "^1.31.1"
   }
 }
