@@ -1,0 +1,12 @@
+{
+  "name": "cosmetic-star-root",
+  "private": true,
+  "workspaces": [
+    "cosmetic-star-crm",
+    "backend"
+  ],
+  "scripts": {
+    "build": "npm run build --workspace=cosmetic-star-crm",
+    "install-all": "npm install"
+  }
+}
