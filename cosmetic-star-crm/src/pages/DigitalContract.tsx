@@ -39,8 +39,8 @@ export default function DigitalContract({ onSign }: DigitalContractProps) {
   };
 
   const confirm = async () => {
-    if (!selectedPatient) return;
-    if (sigCanvas.current?.isEmpty()) {
+    if (!selectedPatient || !sigCanvas.current) return;
+    if (sigCanvas.current.isEmpty()) {
       alert('Please provide a signature before confirming.');
       return;
     }
