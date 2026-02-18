@@ -6,7 +6,11 @@
     "backend"
   ],
   "scripts": {
-    "build": "npm run build --workspace=cosmetic-star-crm",
+    "build": "cd cosmetic-star-crm && npm install && npm run build",
     "install-all": "npm install"
+  },
+  "devDependencies": {
+    "vite": "^7.3.1",
+    "typescript": "~5.9.3"
   }
 }

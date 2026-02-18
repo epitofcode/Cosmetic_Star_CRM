@@ -1,5 +1,5 @@
 {
-  "buildCommand": "cd cosmetic-star-crm && npm install && npm run build",
+  "buildCommand": "npm run build",
   "outputDirectory": "cosmetic-star-crm/dist",
   "framework": "vite",
   "rewrites": [
