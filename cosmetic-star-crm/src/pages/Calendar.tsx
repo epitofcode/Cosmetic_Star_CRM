@@ -21,10 +21,15 @@ import {
   Calendar as CalendarIcon,
   Mail,
   User,
-  ShieldCheck
+  ShieldCheck,
+  UserCheck,
+  UserCircle2,
+  Loader2
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { usePatient } from '../context/PatientContext';
+import api from '../services/api';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -35,10 +40,12 @@ const TIME_SLOTS = [
 ];
 
 export default function CalendarPage() {
+  const { selectedPatient } = usePatient();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
   const [isBookingConfirmed, setIsBookingConfirmed] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(monthStart);
@@ -54,30 +61,57 @@ export default function CalendarPage() {
   const handleNextMonth = () => setCurrentDate(addWeeks(currentDate, 4));
 
   const handleConfirmBooking = async () => {
-    if (selectedDate && selectedSlot) {
-      try {
-        await sendBookingConfirmation({
-          to_name: 'Jane Doe',
-          to_email: 'jane.doe@example.com',
-          date: format(selectedDate, 'PPP'),
-          time: selectedSlot,
-          practitioner: 'Dr. Kavya Sangameswara',
-          service: 'FUE Hair Transplant'
-        });
-        
-        setIsBookingConfirmed(true);
-        console.log(`Booking confirmed for ${format(selectedDate, 'PPP')} at ${selectedSlot}`);
-      } catch (error) {
-        alert('Failed to send confirmation email. Please try again.');
-        console.error(error);
-      }
+    if (!selectedPatient || !selectedDate || !selectedSlot) return;
+
+    try {
+      setIsSaving(true);
+      await api.post('/bookings', {
+        patient_id: selectedPatient.id,
+        service_type: 'Surgery',
+        date: format(selectedDate, 'yyyy-MM-dd'),
+        time_slot: selectedSlot
+      });
+
+      await sendBookingConfirmation({
+        to_name: `${selectedPatient.first_name} ${selectedPatient.last_name}`,
+        to_email: selectedPatient.email,
+        date: format(selectedDate, 'PPP'),
+        time: selectedSlot,
+        practitioner: 'Dr. Kavya Sangameswara',
+        service: 'FUE Hair Transplant'
+      });
+      
+      setIsBookingConfirmed(true);
+    } catch (error) {
+      console.error('Booking error:', error);
+      alert('Failed to schedule booking. Ensure contract is signed.');
+    } finally {
+      setIsSaving(false);
     }
   };
+
+  if (!selectedPatient) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
+        <div className="bg-slate-100 p-6 rounded-full text-slate-400">
+          <UserCircle2 size={48} />
+        </div>
+        <div>
+          <h2 className="text-xl font-bold text-slate-900">No Patient Selected</h2>
+          <p className="text-slate-500 max-w-xs mx-auto">Please select a patient first to book a surgery slot.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 pb-12">
       <div className="flex items-center justify-between">
-        <div>
+        <div className="space-y-1">
+          <div className="flex items-center gap-2 text-teal-600 bg-teal-50 w-fit px-2 py-1 rounded text-xs font-bold uppercase tracking-wider">
+            <UserCheck size={14} />
+            Patient: {selectedPatient.first_name} {selectedPatient.last_name}
+          </div>
           <h1 className="text-2xl font-bold text-slate-900">Surgery Booking</h1>
           <p className="text-slate-500">Select a date and time for the procedure.</p>
         </div>

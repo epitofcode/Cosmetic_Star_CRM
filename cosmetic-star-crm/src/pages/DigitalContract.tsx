@@ -7,10 +7,15 @@ import {
   CheckCircle, 
   ChevronRight, 
   ShieldCheck,
-  AlertCircle
+  AlertCircle,
+  UserCheck,
+  UserCircle2,
+  Loader2
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { usePatient } from '../context/PatientContext';
+import { uploadSignature } from '../services/api';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -21,8 +26,10 @@ interface DigitalContractProps {
 }
 
 export default function DigitalContract({ onSign }: DigitalContractProps) {
+  const { selectedPatient } = usePatient();
   const sigCanvas = useRef<SignatureCanvas>(null);
   const [isSigned, setIsSigned] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [showReceipt, setShowReceipt] = useState(false);
 
@@ -31,37 +38,57 @@ export default function DigitalContract({ onSign }: DigitalContractProps) {
     setIsSigned(false);
   };
 
-  const confirm = () => {
+  const confirm = async () => {
+    if (!selectedPatient) return;
     if (sigCanvas.current?.isEmpty()) {
       alert('Please provide a signature before confirming.');
       return;
     }
-    setIsSigned(true);
-    setShowToast(true);
-    onSign();
-    setTimeout(() => {
-      setShowToast(false);
-      setShowReceipt(true);
-    }, 2000);
+
+    try {
+      setIsUploading(true);
+      const canvas = sigCanvas.current.getTrimmedCanvas();
+      const blob = await new Promise<Blob>((resolve) => canvas.toBlob((b) => resolve(b!), 'image/png'));
+      
+      await uploadSignature(selectedPatient.id, blob);
+
+      setIsSigned(true);
+      setShowToast(true);
+      onSign();
+      setTimeout(() => {
+        setShowToast(false);
+      }, 2000);
+    } catch (error) {
+      console.error('Signature upload error:', error);
+      alert('Failed to save signature.');
+    } finally {
+      setIsUploading(false);
+    }
   };
+
+  if (!selectedPatient) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
+        <div className="bg-slate-100 p-6 rounded-full text-slate-400">
+          <UserCircle2 size={48} />
+        </div>
+        <div>
+          <h2 className="text-xl font-bold text-slate-900">No Patient Selected</h2>
+          <p className="text-slate-500 max-w-xs mx-auto">Please select a patient first to sign the treatment contract.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto space-y-8 pb-12">
-      <ReceiptGenerator 
-        isOpen={showReceipt}
-        onClose={() => setShowReceipt(false)}
-        data={{
-          patientName: "Jane Doe",
-          serviceName: "FUE Hair Transplant",
-          totalAmount: 2500,
-          amountPaid: 500,
-          date: new Date().toLocaleDateString('en-GB'),
-          receiptNumber: "CS-2026-001"
-        }}
-      />
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
+        <div className="space-y-1">
+          <div className="flex items-center gap-2 text-teal-600 bg-teal-50 w-fit px-2 py-1 rounded text-xs font-bold uppercase tracking-wider">
+            <UserCheck size={14} />
+            Patient: {selectedPatient.first_name} {selectedPatient.last_name}
+          </div>
           <h1 className="text-2xl font-bold text-slate-900">Digital Contract</h1>
           <p className="text-slate-500">Please review and sign the treatment agreement below.</p>
         </div>
@@ -138,7 +165,8 @@ export default function DigitalContract({ onSign }: DigitalContractProps) {
               <div className="flex items-center gap-3">
                 <button
                   onClick={clear}
-                  className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                  disabled={isSigned || isUploading}
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors disabled:opacity-50"
                 >
                   <Trash2 size={18} />
                   Clear Signature
@@ -146,16 +174,31 @@ export default function DigitalContract({ onSign }: DigitalContractProps) {
               </div>
               <button
                 onClick={confirm}
-                disabled={isSigned}
+                disabled={isSigned || isUploading}
                 className={cn(
                   "flex items-center gap-2 px-8 py-3 rounded-xl font-bold transition-all shadow-lg active:scale-95 w-full sm:w-auto",
                   isSigned 
                     ? "bg-green-100 text-green-700 shadow-none cursor-default" 
-                    : "bg-teal-600 hover:bg-teal-700 text-white shadow-teal-500/20"
+                    : "bg-teal-600 hover:bg-teal-700 text-white shadow-teal-500/20",
+                  isUploading && "opacity-70 cursor-wait"
                 )}
               >
-                {isSigned ? <CheckCircle size={20} /> : <FileCheck size={20} />}
-                {isSigned ? 'Contract Signed' : 'Confirm & Sign'}
+                {isUploading ? (
+                  <>
+                    <Loader2 size={20} className="animate-spin" />
+                    Saving...
+                  </>
+                ) : isSigned ? (
+                  <>
+                    <CheckCircle size={20} />
+                    Contract Signed
+                  </>
+                ) : (
+                  <>
+                    <FileCheck size={20} />
+                    Confirm & Sign
+                  </>
+                )}
               </button>
             </div>
           </div>

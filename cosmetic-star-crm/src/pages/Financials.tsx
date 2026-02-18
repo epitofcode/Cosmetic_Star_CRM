@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   DollarSign, 
   Plus, 
@@ -10,11 +10,16 @@ import {
   ChevronRight,
   Search,
   AlertCircle,
-  Download
+  Download,
+  UserCheck,
+  UserCircle2,
+  Loader2
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import ReceiptGenerator from '../components/ReceiptGenerator';
+import { usePatient } from '../context/PatientContext';
+import api from '../services/api';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -24,265 +29,307 @@ interface Transaction {
   id: string;
   amount: number;
   date: string;
-  proofName: string;
-  receiptNumber: string;
+  proof_name: string;
+  receipt_number: string;
 }
 
 interface BillingRecord {
   id: string;
-  patientName: string;
-  serviceName: string;
-  totalAmount: number;
-  amountPaid: number;
+  patient_id: string;
+  patient_name: string;
+  service_name: string;
+  total_amount: number;
+  amount_paid: number;
   status: 'Payment Pending' | 'Payment Done';
-  paymentType: 'One-time' | 'Installments';
   transactions: Transaction[];
 }
 
-const MOCK_BILLING: BillingRecord[] = [
-  {
-    id: 'INV-001',
-    patientName: 'Jane Doe',
-    serviceName: 'FUE Hair Transplant',
-    totalAmount: 2500,
-    amountPaid: 1500,
-    status: 'Payment Pending',
-    paymentType: 'Installments',
-    transactions: [
-      { id: 'T1', amount: 500, date: '2024-02-01', proofName: 'receipt_jan.jpg', receiptNumber: 'CS-RC-001' },
-      { id: 'T2', amount: 1000, date: '2024-02-15', proofName: 'bank_transfer_feb.pdf', receiptNumber: 'CS-RC-002' },
-    ]
-  },
-  {
-    id: 'INV-002',
-    patientName: 'James Wilson',
-    serviceName: 'PRP Therapy',
-    totalAmount: 800,
-    amountPaid: 800,
-    status: 'Payment Done',
-    paymentType: 'One-time',
-    transactions: [
-      { id: 'T3', amount: 800, date: '2024-02-10', proofName: 'full_payment.png', receiptNumber: 'CS-RC-003' },
-    ]
-  }
-];
-
 export default function Financials() {
-  const [records, setRecords] = useState<BillingRecord[]>(MOCK_BILLING);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedRecord, setSelectedRecord] = useState<BillingRecord | null>(null);
-  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const { selectedPatient } = usePatient();
+  const [billingRecord, setBillingRecord] = useState<BillingRecord | null>(null);
+  const [loading, setLoading] = useState(false);
   
   // Payment Form State
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState('');
   const [proofFile, setProofFile] = useState<File | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   
   // Receipt State
   const [activeReceipt, setActiveReceipt] = useState<{ isOpen: boolean; data: any } | null>(null);
 
-  const filteredRecords = records.filter(r => 
-    r.patientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    r.id.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  useEffect(() => {
+    if (selectedPatient) {
+      fetchBillingData();
+    }
+  }, [selectedPatient]);
 
-  const handleRecordPayment = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedRecord || !proofFile) return;
-
-    const amount = Number(paymentAmount);
-    const newTransaction: Transaction = {
-      id: Math.random().toString(36).substr(2, 9),
-      amount: amount,
-      date: new Date().toISOString().split('T')[0],
-      proofName: proofFile.name,
-      receiptNumber: `CS-RC-${Math.floor(1000 + Math.random() * 9000)}`
-    };
-
-    const updatedRecords = records.map(r => {
-      if (r.id === selectedRecord.id) {
-        const newAmountPaid = r.amountPaid + amount;
-        return {
-          ...r,
-          amountPaid: newAmountPaid,
-          status: newAmountPaid >= r.totalAmount ? 'Payment Done' : 'Payment Pending',
-          transactions: [...r.transactions, newTransaction]
-        } as BillingRecord;
-      }
-      return r;
-    });
-
-    setRecords(updatedRecords);
-    setIsPaymentModalOpen(false);
-    setPaymentAmount('');
-    setProofFile(null);
-    
-    // Auto-open receipt for the new transaction
-    setActiveReceipt({
-      isOpen: true,
-      data: {
-        patientName: selectedRecord.patientName,
-        serviceName: selectedRecord.serviceName,
-        totalAmount: selectedRecord.totalAmount,
-        amountPaid: amount,
-        date: new Date().toLocaleDateString('en-GB'),
-        receiptNumber: newTransaction.receiptNumber
-      }
-    });
+  const fetchBillingData = async () => {
+    if (!selectedPatient) return;
+    try {
+      setLoading(true);
+      const response = await api.get(`/financials/${selectedPatient.id}`);
+      setBillingRecord(response.data);
+    } catch (error) {
+      console.error('Error fetching billing data:', error);
+      setBillingRecord(null);
+    } finally {
+      setLoading(false);
+    }
   };
+
+  const handleRecordPayment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedPatient || !billingRecord || !proofFile) return;
+
+    try {
+      setIsSaving(true);
+      const formData = new FormData();
+      formData.append('patient_id', selectedPatient.id);
+      formData.append('amount', paymentAmount);
+      formData.append('proof', proofFile);
+
+      const response = await api.post('/transactions', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+
+      const newTransaction = response.data;
+      
+      // Update local state
+      const newAmountPaid = billingRecord.amount_paid + Number(paymentAmount);
+      setBillingRecord({
+        ...billingRecord,
+        amount_paid: newAmountPaid,
+        status: newAmountPaid >= billingRecord.total_amount ? 'Payment Done' : 'Payment Pending',
+        transactions: [newTransaction, ...billingRecord.transactions]
+      });
+
+      setIsPaymentModalOpen(false);
+      setPaymentAmount('');
+      setProofFile(null);
+      
+      // Open receipt for the new transaction
+      setActiveReceipt({
+        isOpen: true,
+        data: {
+          patientName: `${selectedPatient.first_name} ${selectedPatient.last_name}`,
+          serviceName: billingRecord.service_name,
+          totalAmount: billingRecord.total_amount,
+          amountPaid: Number(paymentAmount),
+          date: new Date().toLocaleDateString('en-GB'),
+          receiptNumber: newTransaction.receipt_number
+        }
+      });
+    } catch (error) {
+      console.error('Error recording payment:', error);
+      alert('Failed to record payment.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  if (!selectedPatient) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
+        <div className="bg-slate-100 p-6 rounded-full text-slate-400">
+          <UserCircle2 size={48} />
+        </div>
+        <div>
+          <h2 className="text-xl font-bold text-slate-900">No Patient Selected</h2>
+          <p className="text-slate-500 max-w-xs mx-auto">Please select a patient to view their financial records and payments.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
+      <div className="flex items-center justify-between">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2 text-teal-600 bg-teal-50 w-fit px-2 py-1 rounded text-xs font-bold uppercase tracking-wider">
+            <UserCheck size={14} />
+            Patient: {selectedPatient.first_name} {selectedPatient.last_name}
+          </div>
           <h1 className="text-2xl font-bold text-slate-900">Financials</h1>
           <p className="text-slate-500">Track payments, installments, and generate receipts.</p>
         </div>
       </div>
 
-      <div className="flex items-center gap-4 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-          <input
-            type="text"
-            placeholder="Search invoice or patient..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-slate-50 border border-slate-200 focus:bg-white focus:border-teal-500 rounded-lg py-2 pl-10 pr-4 text-sm outline-none transition-all"
-          />
+      {loading ? (
+        <div className="flex flex-col items-center justify-center py-20">
+          <Loader2 className="animate-spin text-teal-600 mb-4" size={40} />
+          <p className="text-slate-500 font-medium">Loading financial records...</p>
         </div>
-      </div>
+      ) : billingRecord ? (
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+          {/* Main Financial Card */}
+          <div className="xl:col-span-2 space-y-6">
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+              <div className="p-8 bg-slate-900 text-white">
+                <div className="flex justify-between items-start mb-8">
+                  <div>
+                    <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1">Treatment Plan</p>
+                    <h2 className="text-2xl font-bold">{billingRecord.service_name}</h2>
+                  </div>
+                  <span className={cn(
+                    "px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border",
+                    billingRecord.status === 'Payment Done' 
+                      ? "bg-green-500/10 border-green-500/20 text-green-400" 
+                      : "bg-amber-500/10 border-amber-500/20 text-amber-400"
+                  )}>
+                    {billingRecord.status}
+                  </span>
+                </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-        {/* Invoice List */}
-        <div className="xl:col-span-2 space-y-4">
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-            <table className="w-full text-left">
-              <thead>
-                <tr className="bg-slate-50 border-b border-slate-200">
-                  <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Patient & Invoice</th>
-                  <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Amount</th>
-                  <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-200">
-                {filteredRecords.map(record => (
-                  <tr 
-                    key={record.id} 
-                    className={cn(
-                      "hover:bg-slate-50 cursor-pointer transition-colors",
-                      selectedRecord?.id === record.id && "bg-teal-50/50"
-                    )}
-                    onClick={() => setSelectedRecord(record)}
-                  >
-                    <td className="px-6 py-4">
-                      <p className="font-bold text-slate-900">{record.patientName}</p>
-                      <p className="text-xs text-slate-500">{record.id} • {record.serviceName}</p>
-                    </td>
-                    <td className="px-6 py-4">
-                      <p className="font-bold text-slate-900">£{record.amountPaid.toLocaleString()} / £{record.totalAmount.toLocaleString()}</p>
-                      <p className="text-xs text-slate-500">Remaining: £{(record.totalAmount - record.amountPaid).toLocaleString()}</p>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={cn(
-                        "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold",
-                        record.status === 'Payment Done' 
-                          ? "bg-green-100 text-green-700" 
-                          : "bg-amber-100 text-amber-700"
-                      )}>
-                        {record.status === 'Payment Done' ? <CheckCircle2 size={12} /> : <Clock size={12} />}
-                        {record.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedRecord(record);
-                          setIsPaymentModalOpen(true);
-                        }}
-                        disabled={record.status === 'Payment Done'}
-                        className="text-teal-600 hover:text-teal-700 font-bold text-sm disabled:text-slate-300 disabled:cursor-not-allowed"
-                      >
-                        Add Payment
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
+                  <div>
+                    <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">Total Contract Value</p>
+                    <p className="text-2xl font-black">£{billingRecord.total_amount.toLocaleString()}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">Amount Paid</p>
+                    <p className="text-2xl font-black text-teal-400">£{billingRecord.amount_paid.toLocaleString()}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">Remaining Balance</p>
+                    <p className="text-2xl font-black text-red-400">£{(billingRecord.total_amount - billingRecord.amount_paid).toLocaleString()}</p>
+                  </div>
+                </div>
 
-        {/* Payment History Side Panel */}
-        <div className="space-y-6">
-          {selectedRecord ? (
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sticky top-24">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="font-bold text-slate-900">Payment History</h3>
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">{selectedRecord.id}</span>
+                <div className="mt-8 h-2 bg-slate-800 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-teal-500 transition-all duration-1000" 
+                    style={{ width: `${(billingRecord.amount_paid / billingRecord.total_amount) * 100}%` }}
+                  />
+                </div>
               </div>
 
-              <div className="space-y-4">
-                {selectedRecord.transactions.length > 0 ? (
-                  selectedRecord.transactions.map(t => (
-                    <div key={t.id} className="p-4 bg-slate-50 rounded-xl border border-slate-100 space-y-3">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <p className="text-sm font-bold text-slate-900">£{t.amount.toLocaleString()}</p>
-                          <p className="text-[10px] text-slate-500">{t.date}</p>
-                        </div>
-                        <button 
-                          onClick={() => setActiveReceipt({
-                            isOpen: true,
-                            data: {
-                              patientName: selectedRecord.patientName,
-                              serviceName: selectedRecord.serviceName,
-                              totalAmount: selectedRecord.totalAmount,
-                              amountPaid: t.amount,
-                              date: t.date,
-                              receiptNumber: t.receiptNumber
-                            }
-                          })}
-                          className="p-2 text-teal-600 hover:bg-teal-50 rounded-lg transition-colors"
-                        >
-                          <FileText size={18} />
-                        </button>
-                      </div>
-                      <div className="flex items-center gap-2 px-2 py-1 bg-white rounded border border-slate-200 w-fit">
-                        <ImageIcon size={12} className="text-slate-400" />
-                        <span className="text-[10px] font-medium text-slate-600 truncate max-w-[120px]">{t.proofName}</span>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="text-center py-12 text-slate-400">
-                    <p className="text-sm italic">No payments recorded yet.</p>
-                  </div>
+              <div className="p-6 flex justify-between items-center border-t border-slate-100">
+                <p className="text-sm text-slate-500 italic">Last transaction: {billingRecord.transactions[0]?.date || 'No payments yet'}</p>
+                {billingRecord.status === 'Payment Pending' && (
+                  <button 
+                    onClick={() => setIsPaymentModalOpen(true)}
+                    className="bg-teal-600 hover:bg-teal-700 text-white px-6 py-2.5 rounded-xl font-bold text-sm transition-all shadow-lg shadow-teal-500/20 flex items-center gap-2"
+                  >
+                    <Plus size={18} />
+                    Record New Payment
+                  </button>
                 )}
               </div>
+            </div>
 
-              {selectedRecord.status === 'Payment Pending' && (
-                <button 
-                  onClick={() => setIsPaymentModalOpen(true)}
-                  className="w-full mt-8 bg-slate-900 text-white py-3 rounded-xl font-bold text-sm hover:bg-slate-800 transition-all flex items-center justify-center gap-2"
-                >
-                  <Plus size={18} />
-                  Add Installment
-                </button>
-              )}
+            {/* Payment History Table */}
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+              <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50">
+                <h3 className="font-bold text-slate-900">Transaction History</h3>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="border-b border-slate-100">
+                      <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase">Receipt #</th>
+                      <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase">Date</th>
+                      <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase">Amount</th>
+                      <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50">
+                    {billingRecord.transactions.map(t => (
+                      <tr key={t.id} className="hover:bg-slate-50/50 transition-colors">
+                        <td className="px-6 py-4">
+                          <span className="font-mono text-xs font-bold text-slate-600">{t.receipt_number}</span>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-slate-600">{t.date}</td>
+                        <td className="px-6 py-4 font-bold text-slate-900">£{t.amount.toLocaleString()}</td>
+                        <td className="px-6 py-4 text-right">
+                          <div className="flex justify-end gap-2">
+                            <button 
+                              onClick={() => setActiveReceipt({
+                                isOpen: true,
+                                data: {
+                                  patientName: `${selectedPatient.first_name} ${selectedPatient.last_name}`,
+                                  serviceName: billingRecord.service_name,
+                                  totalAmount: billingRecord.total_amount,
+                                  amountPaid: t.amount,
+                                  date: t.date,
+                                  receiptNumber: t.receipt_number
+                                }
+                              })}
+                              className="p-2 text-teal-600 hover:bg-teal-50 rounded-lg transition-colors"
+                              title="View Receipt"
+                            >
+                              <FileText size={18} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                    {billingRecord.transactions.length === 0 && (
+                      <tr>
+                        <td colSpan={4} className="px-6 py-12 text-center text-slate-400 italic">
+                          No transactions recorded for this treatment plan.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          ) : (
-            <div className="bg-slate-50 rounded-2xl border border-dashed border-slate-300 p-12 text-center text-slate-400">
-              <DollarSign className="mx-auto mb-4 opacity-20" size={48} />
-              <p className="text-sm font-medium">Select a patient invoice to view payment details.</p>
+          </div>
+
+          {/* Right Column: Documentation */}
+          <div className="space-y-6">
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+              <h3 className="font-bold text-slate-900 mb-4 flex items-center gap-2">
+                <ImageIcon className="text-teal-600" size={18} />
+                Payment Proofs
+              </h3>
+              <div className="space-y-3">
+                {billingRecord.transactions.map(t => (
+                  <div key={t.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-8 h-8 bg-white rounded border border-slate-200 flex items-center justify-center shrink-0">
+                        <FileText size={14} className="text-slate-400" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs font-bold text-slate-900 truncate">{t.proof_name}</p>
+                        <p className="text-[10px] text-slate-500">Ref: {t.receipt_number}</p>
+                      </div>
+                    </div>
+                    <button className="text-slate-400 hover:text-teal-600 transition-colors">
+                      <Download size={16} />
+                    </button>
+                  </div>
+                ))}
+                {billingRecord.transactions.length === 0 && (
+                  <p className="text-center py-8 text-xs text-slate-400 italic">No proof of payment uploaded yet.</p>
+                )}
+              </div>
             </div>
-          )}
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center space-y-4 shadow-sm">
+          <div className="bg-slate-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto text-slate-300">
+            <AlertCircle size={32} />
+          </div>
+          <div>
+            <h3 className="text-lg font-bold text-slate-900">No Treatment Plan Found</h3>
+            <p className="text-slate-500 max-w-sm mx-auto mt-1">
+              Patient {selectedPatient.first_name} {selectedPatient.last_name} does not have an active treatment plan or billing record.
+            </p>
+          </div>
+          <button 
+            onClick={() => window.location.href = '/treatment'}
+            className="text-teal-600 font-bold text-sm hover:underline"
+          >
+            Create a treatment plan now
+          </button>
+        </div>
+      )}
 
       {/* Record Payment Modal */}
-      {isPaymentModalOpen && selectedRecord && (
+      {isPaymentModalOpen && billingRecord && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setIsPaymentModalOpen(false)} />
           <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
@@ -295,7 +342,7 @@ export default function Financials() {
             <form onSubmit={handleRecordPayment} className="p-6 space-y-6">
               <div className="p-4 bg-teal-50 rounded-xl border border-teal-100">
                 <p className="text-xs font-bold text-teal-700 uppercase tracking-widest mb-1">Outstanding Balance</p>
-                <p className="text-2xl font-black text-teal-900">£{(selectedRecord.totalAmount - selectedRecord.amountPaid).toLocaleString()}</p>
+                <p className="text-2xl font-black text-teal-900">£{(billingRecord.total_amount - billingRecord.amount_paid).toLocaleString()}</p>
               </div>
 
               <div className="space-y-4">
@@ -304,7 +351,7 @@ export default function Financials() {
                   <input
                     required
                     type="number"
-                    max={selectedRecord.totalAmount - selectedRecord.amountPaid}
+                    max={billingRecord.total_amount - billingRecord.amount_paid}
                     value={paymentAmount}
                     onChange={(e) => setPaymentAmount(e.target.value)}
                     className="w-full bg-slate-50 border border-slate-200 focus:bg-white focus:border-teal-500 rounded-lg py-2.5 px-4 text-sm outline-none"
@@ -352,10 +399,10 @@ export default function Financials() {
                 </button>
                 <button
                   type="submit"
-                  disabled={!proofFile || !paymentAmount}
+                  disabled={!proofFile || !paymentAmount || isSaving}
                   className="flex-1 py-3 bg-teal-600 text-white rounded-xl font-bold text-sm hover:bg-teal-700 transition-all shadow-lg shadow-teal-500/20 disabled:bg-slate-300 disabled:shadow-none disabled:cursor-not-allowed"
                 >
-                  Verify & Record
+                  {isSaving ? 'Verifying...' : 'Verify & Record'}
                 </button>
               </div>
             </form>

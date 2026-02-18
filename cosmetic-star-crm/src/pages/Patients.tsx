@@ -3,6 +3,7 @@ import { Search, Plus, X, MoreVertical, Phone, Mail, Calendar as CalendarIcon, L
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { getPatients, createPatient } from '../services/api';
+import { usePatient } from '../context/PatientContext';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -21,6 +22,7 @@ interface Patient {
 }
 
 export default function Patients() {
+  const { selectedPatient, setSelectedPatient } = usePatient();
   const [patients, setPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -131,7 +133,19 @@ export default function Patients() {
                   </td>
                 </tr>
               ) : filteredPatients.map((patient) => (
-                <tr key={patient.id} className="hover:bg-slate-50 transition-colors">
+                <tr 
+                  key={patient.id} 
+                  onClick={() => setSelectedPatient({
+                    id: patient.id,
+                    first_name: patient.first_name,
+                    last_name: patient.last_name,
+                    email: patient.email
+                  })}
+                  className={cn(
+                    "hover:bg-slate-50 transition-colors cursor-pointer",
+                    selectedPatient?.id === patient.id && "bg-teal-50 border-l-4 border-l-teal-500"
+                  )}
+                >
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-teal-100 text-teal-700 rounded-full flex items-center justify-center font-bold text-sm">

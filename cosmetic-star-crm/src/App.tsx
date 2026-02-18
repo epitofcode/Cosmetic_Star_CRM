@@ -64,6 +64,8 @@ const Dashboard = () => (
   </div>
 );
 
+import { PatientProvider } from './context/PatientContext';
+
 function App() {
   const [isContractSigned, setIsContractSigned] = useState(false);
 
@@ -78,27 +80,29 @@ function App() {
   };
 
   return (
-    <Router>
-      <DashboardLayout isContractSigned={isContractSigned}>
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/patients" element={<Patients />} />
-          <Route path="/assessment" element={<HealthAssessment />} />
-          <Route path="/treatment" element={<TreatmentPlan />} />
-          <Route path="/contract" element={<DigitalContract onSign={handleSignContract} />} />
-          <Route 
-            path="/calendar" 
-            element={
-              isContractSigned 
-                ? <CalendarPage /> 
-                : <Navigate to="/contract" replace />
-            } 
-          />
-          <Route path="/financials" element={<Financials />} />
-          <Route path="/settings" element={<div className="p-8">Settings Page Placeholder</div>} />
-        </Routes>
-      </DashboardLayout>
-    </Router>
+    <PatientProvider>
+      <Router>
+        <DashboardLayout isContractSigned={isContractSigned}>
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/patients" element={<Patients />} />
+            <Route path="/assessment" element={<HealthAssessment />} />
+            <Route path="/treatment" element={<TreatmentPlan />} />
+            <Route path="/contract" element={<DigitalContract onSign={handleSignContract} />} />
+            <Route 
+              path="/calendar" 
+              element={
+                isContractSigned 
+                  ? <CalendarPage /> 
+                  : <Navigate to="/contract" replace />
+              } 
+            />
+            <Route path="/financials" element={<Financials />} />
+            <Route path="/settings" element={<div className="p-8">Settings Page Placeholder</div>} />
+          </Routes>
+        </DashboardLayout>
+      </Router>
+    </PatientProvider>
   );
 }
 

@@ -41,13 +41,30 @@ CREATE TABLE bookings (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Treatment Plans Table
+CREATE TABLE treatment_plans (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    patient_id UUID REFERENCES patients(id) ON DELETE CASCADE,
+    service_id TEXT NOT NULL,
+    service_name TEXT NOT NULL,
+    base_cost DECIMAL(10, 2) NOT NULL,
+    discount DECIMAL(10, 2) DEFAULT 0,
+    total_to_pay DECIMAL(10, 2) NOT NULL,
+    status TEXT DEFAULT 'Active',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(patient_id)
+);
+
 -- Transactions Table
 CREATE TABLE transactions (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    booking_id UUID REFERENCES bookings(id) ON DELETE CASCADE,
+    patient_id UUID REFERENCES patients(id) ON DELETE CASCADE,
     amount DECIMAL(10, 2) NOT NULL,
-    type TEXT NOT NULL, -- e.g., 'Deposit', 'Full Payment', 'Installment'
+    type TEXT NOT NULL,
     proof_url TEXT,
+    proof_name TEXT,
+    receipt_number TEXT UNIQUE,
+    date DATE DEFAULT CURRENT_DATE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 

@@ -15,10 +15,12 @@ import {
   ChevronDown,
   Menu,
   X,
-  Lock
+  Lock,
+  UserCheck
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { usePatient } from '../context/PatientContext';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -27,34 +29,59 @@ function cn(...inputs: ClassValue[]) {
 const navItems = [
   { name: 'Dashboard', icon: LayoutDashboard, href: '/' },
   { name: 'Patients', icon: Users, href: '/patients' },
-  { name: 'Assessment', icon: ClipboardList, href: '/assessment' },
-  { name: 'Treatments', icon: FileText, href: '/treatment' },
-  { name: 'Contract', icon: PenTool, href: '/contract' },
-  { name: 'Calendar', icon: Calendar, href: '/calendar', requiresContract: true },
-  { name: 'Financials', icon: DollarSign, href: '/financials' },
+  { name: 'Assessment', icon: ClipboardList, href: '/assessment', requiresPatient: true },
+  { name: 'Treatments', icon: FileText, href: '/treatment', requiresPatient: true },
+  { name: 'Contract', icon: PenTool, href: '/contract', requiresPatient: true },
+  { name: 'Calendar', icon: Calendar, href: '/calendar', requiresContract: true, requiresPatient: true },
+  { name: 'Financials', icon: DollarSign, href: '/financials', requiresPatient: true },
   { name: 'Settings', icon: Settings, href: '/settings' },
 ];
 
 export default function DashboardLayout({ children, isContractSigned }: { children: React.ReactNode, isContractSigned: boolean }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const location = useLocation();
+  const { selectedPatient, clearPatient } = usePatient();
 
   return (
     <div className="min-h-screen bg-slate-50 flex">
       {/* Sidebar */}
       <aside 
         className={cn(
-          "fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 text-white transition-transform duration-300 lg:static lg:translate-x-0",
+          "fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 text-white transition-transform duration-300 lg:static lg:translate-x-0 flex flex-col",
           !isSidebarOpen && "-translate-x-full"
         )}
       >
-        <div className="flex h-16 items-center px-6 border-b border-slate-800">
+        <div className="flex h-16 items-center px-6 border-b border-slate-800 shrink-0">
           <span className="text-xl font-bold text-teal-400">Cosmetic Star</span>
         </div>
-        <nav className="p-4 space-y-2">
+
+        {/* Selected Patient Banner */}
+        {selectedPatient && (
+          <div className="mx-4 mt-6 p-4 bg-teal-900/30 border border-teal-500/20 rounded-xl space-y-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-teal-500 rounded-full flex items-center justify-center font-bold text-slate-900">
+                {selectedPatient.first_name[0]}{selectedPatient.last_name[0]}
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs font-bold text-teal-400 uppercase tracking-wider">Active Patient</p>
+                <p className="text-sm font-bold truncate">{selectedPatient.first_name} {selectedPatient.last_name}</p>
+              </div>
+            </div>
+            <button 
+              onClick={clearPatient}
+              className="w-full py-1.5 text-[10px] font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors uppercase tracking-widest"
+            >
+              Change Patient
+            </button>
+          </div>
+        )}
+
+        <nav className="p-4 space-y-2 flex-1 overflow-y-auto">
           {navItems.map((item) => {
             const isActive = location.pathname === item.href;
-            const isLocked = item.requiresContract && !isContractSigned;
+            const isPatientLocked = item.requiresPatient && !selectedPatient;
+            const isContractLocked = item.requiresContract && !isContractSigned;
+            const isLocked = isPatientLocked || isContractLocked;
 
             return (
               <Link
@@ -71,7 +98,11 @@ export default function DashboardLayout({ children, isContractSigned }: { childr
                 onClick={(e) => {
                   if (isLocked) {
                     e.preventDefault();
-                    alert('Please sign the contract to unlock the calendar.');
+                    if (isPatientLocked) {
+                      alert('Please select a patient first.');
+                    } else if (isContractLocked) {
+                      alert('Please sign the contract to unlock this section.');
+                    }
                   }
                 }}
               >

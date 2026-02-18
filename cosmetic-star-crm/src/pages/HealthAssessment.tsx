@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import { Save, ChevronRight, ClipboardList, UserCircle2, Stethoscope, Heart, Activity, AlertCircle, Cigarette, Wine } from 'lucide-react';
+import { Save, ChevronRight, ClipboardList, UserCircle2, Stethoscope, Heart, Activity, AlertCircle, Cigarette, Wine, UserCheck } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { usePatient } from '../context/PatientContext';
+import { saveAssessment } from '../services/api';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -70,6 +72,7 @@ const YesNoQuestion: React.FC<QuestionProps> = ({
 };
 
 export default function HealthAssessment() {
+  const { selectedPatient } = usePatient();
   const [formData, setFormData] = useState({
     gpName: '',
     occupation: '',
@@ -102,16 +105,41 @@ export default function HealthAssessment() {
     }));
   };
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Saving Assessment:', formData);
-    alert('Assessment saved successfully!');
+    if (!selectedPatient) return;
+
+    try {
+      await saveAssessment(selectedPatient.id, formData);
+      alert('Assessment saved successfully!');
+    } catch (error) {
+      console.error('Save assessment error:', error);
+      alert('Failed to save assessment.');
+    }
   };
+
+  if (!selectedPatient) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
+        <div className="bg-slate-100 p-6 rounded-full text-slate-400">
+          <UserCircle2 size={48} />
+        </div>
+        <div>
+          <h2 className="text-xl font-bold text-slate-900">No Patient Selected</h2>
+          <p className="text-slate-500 max-w-xs mx-auto">Please go to the Patients page and select a patient to start an assessment.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
       <div className="flex items-center justify-between">
-        <div>
+        <div className="space-y-1">
+          <div className="flex items-center gap-2 text-teal-600 bg-teal-50 w-fit px-2 py-1 rounded text-xs font-bold uppercase tracking-wider">
+            <UserCheck size={14} />
+            Patient: {selectedPatient.first_name} {selectedPatient.last_name}
+          </div>
           <h1 className="text-2xl font-bold text-slate-900">Health Assessment</h1>
           <p className="text-slate-500">Comprehensive medical consultation form.</p>
         </div>

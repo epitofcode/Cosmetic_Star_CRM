@@ -150,6 +150,97 @@ app.post('/api/bookings', async (req, res) => {
     res.status(201).json(data[0]);
 });
 
+// 8. Create or Update Treatment Plan
+app.post('/api/treatment-plan', async (req, res) => {
+    const { patient_id, service_id, service_name, base_cost, discount, total_to_pay } = req.body;
+    
+    const { data, error } = await supabase
+        .from('treatment_plans')
+        .upsert([{ 
+            patient_id, 
+            service_id, 
+            service_name, 
+            base_cost, 
+            discount, 
+            total_to_pay,
+            status: 'Active'
+        }], { onConflict: 'patient_id' })
+        .select();
+
+    if (error) return res.status(400).json({ error: error.message });
+    res.status(201).json(data[0]);
+});
+
+// 9. Get Financials for a Patient
+app.get('/api/financials/:patientId', async (req, res) => {
+    const { patientId } = req.params;
+
+    // Get Plan
+    const { data: plan, error: planError } = await supabase
+        .from('treatment_plans')
+        .select('*')
+        .eq('patient_id', patientId)
+        .maybeSingle();
+
+    if (!plan) return res.status(404).json({ error: 'No treatment plan found' });
+
+    // Get Transactions
+    const { data: transactions, error: transError } = await supabase
+        .from('transactions')
+        .select('*')
+        .eq('patient_id', patientId)
+        .order('created_at', { ascending: false });
+
+    const amountPaid = transactions?.reduce((sum, t) => sum + Number(t.amount), 0) || 0;
+
+    res.json({
+        id: plan.id,
+        patient_id: plan.patient_id,
+        service_name: plan.service_name,
+        total_amount: Number(plan.total_to_pay),
+        amount_paid: amountPaid,
+        status: amountPaid >= Number(plan.total_to_pay) ? 'Payment Done' : 'Payment Pending',
+        transactions: transactions || []
+    });
+});
+
+// 10. Record Transaction with Proof
+app.post('/api/transactions', upload.single('proof'), async (req, res) => {
+    const { patient_id, amount } = req.body;
+    const file = req.file;
+
+    if (!file) return res.status(400).json({ error: 'Proof of payment is required' });
+
+    const fileName = `proofs/${patient_id}_${Date.now()}_${file.originalname}`;
+
+    // Upload to Supabase Storage
+    const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('proofs')
+        .upload(fileName, file.buffer, { contentType: file.mimetype });
+
+    if (uploadError) return res.status(400).json({ error: uploadError.message });
+
+    const { data: { publicUrl } } = supabase.storage.from('proofs').getPublicUrl(fileName);
+    const receiptNumber = `CS-RC-${Math.floor(100000 + Math.random() * 900000)}`;
+
+    // Save Transaction
+    const { data, error } = await supabase
+        .from('transactions')
+        .insert([{ 
+            patient_id, 
+            amount: Number(amount), 
+            type: 'Installment', 
+            proof_url: publicUrl,
+            proof_name: file.originalname,
+            receipt_number: receiptNumber,
+            date: new Date().toISOString().split('T')[0]
+        }])
+        .select();
+
+    if (error) return res.status(400).json({ error: error.message });
+    res.status(201).json(data[0]);
+});
+
 app.listen(port, () => {
     console.log(`Server running on port ${port}`);
 });
