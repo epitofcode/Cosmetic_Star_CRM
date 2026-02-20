@@ -29,7 +29,7 @@ import {
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { usePatient } from '../context/PatientContext';
-import api from '../services/api';
+import { getBookedSlots, createBooking } from '../services/api';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -44,8 +44,10 @@ export default function CalendarPage() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
+  const [bookedSlots, setBookedSlots] = useState<string[]>([]);
   const [isBookingConfirmed, setIsBookingConfirmed] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isLoadingSlots, setIsLoadingSlots] = useState(false);
 
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(monthStart);
@@ -60,12 +62,31 @@ export default function CalendarPage() {
   const handlePrevMonth = () => setCurrentDate(addWeeks(currentDate, -4));
   const handleNextMonth = () => setCurrentDate(addWeeks(currentDate, 4));
 
+  useEffect(() => {
+    if (selectedDate) {
+      fetchSlots();
+    }
+  }, [selectedDate]);
+
+  const fetchSlots = async () => {
+    if (!selectedDate) return;
+    try {
+      setIsLoadingSlots(true);
+      const slots = await getBookedSlots(format(selectedDate, 'yyyy-MM-dd'));
+      setBookedSlots(slots);
+    } catch (error) {
+      console.error('Error fetching slots:', error);
+    } finally {
+      setIsLoadingSlots(false);
+    }
+  };
+
   const handleConfirmBooking = async () => {
     if (!selectedPatient || !selectedDate || !selectedSlot) return;
 
     try {
       setIsSaving(true);
-      await api.post('/bookings', {
+      await createBooking({
         patient_id: selectedPatient.id,
         service_type: 'Surgery',
         date: format(selectedDate, 'yyyy-MM-dd'),
@@ -192,21 +213,34 @@ export default function CalendarPage() {
               </h3>
               
               {selectedDate ? (
-                <div className="grid grid-cols-2 gap-3">
-                  {TIME_SLOTS.map(slot => (
-                    <button
-                      key={slot}
-                      onClick={() => setSelectedSlot(slot)}
-                      className={cn(
-                        "py-3 px-4 rounded-xl text-sm font-bold transition-all border",
-                        selectedSlot === slot
-                          ? "bg-teal-50 border-teal-500 text-teal-700 shadow-sm ring-1 ring-teal-500"
-                          : "bg-slate-50 border-slate-100 text-slate-600 hover:border-slate-300"
-                      )}
-                    >
-                      {slot}
-                    </button>
-                  ))}
+                <div className="relative">
+                  {isLoadingSlots && (
+                    <div className="absolute inset-0 bg-white/50 backdrop-blur-[1px] z-10 flex items-center justify-center">
+                      <Loader2 className="animate-spin text-teal-600" size={24} />
+                    </div>
+                  )}
+                  <div className="grid grid-cols-2 gap-3">
+                    {TIME_SLOTS.map(slot => {
+                      const isBooked = bookedSlots.includes(slot);
+                      return (
+                        <button
+                          key={slot}
+                          disabled={isBooked}
+                          onClick={() => setSelectedSlot(slot)}
+                          className={cn(
+                            "py-3 px-4 rounded-xl text-sm font-bold transition-all border",
+                            selectedSlot === slot
+                              ? "bg-teal-50 border-teal-500 text-teal-700 shadow-sm ring-1 ring-teal-500"
+                              : isBooked
+                                ? "bg-slate-100 border-slate-100 text-slate-300 cursor-not-allowed line-through"
+                                : "bg-slate-50 border-slate-100 text-slate-600 hover:border-slate-300"
+                          )}
+                        >
+                          {slot}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               ) : (
                 <div className="text-center py-8 space-y-3">
@@ -240,9 +274,10 @@ export default function CalendarPage() {
                 </div>
                 <button
                   onClick={handleConfirmBooking}
-                  className="w-full mt-8 bg-teal-500 hover:bg-teal-400 text-slate-900 py-3 rounded-xl font-bold transition-all active:scale-95 shadow-lg shadow-teal-500/20"
+                  disabled={isSaving}
+                  className="w-full mt-8 bg-teal-500 hover:bg-teal-400 text-slate-900 py-3 rounded-xl font-bold transition-all active:scale-95 shadow-lg shadow-teal-500/20 disabled:opacity-70 disabled:cursor-wait"
                 >
-                  Confirm Booking
+                  {isSaving ? 'Scheduling...' : 'Confirm Booking'}
                 </button>
                 <p className="text-[10px] text-slate-500 text-center mt-4">
                   A confirmation email will be sent automatically.

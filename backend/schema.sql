@@ -69,5 +69,13 @@ CREATE TABLE transactions (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Disable RLS for all tables (for development/prototype)
+ALTER TABLE patients DISABLE ROW LEVEL SECURITY;
+ALTER TABLE medical_intakes DISABLE ROW LEVEL SECURITY;
+ALTER TABLE contracts DISABLE ROW LEVEL SECURITY;
+ALTER TABLE bookings DISABLE ROW LEVEL SECURITY;
+ALTER TABLE treatment_plans DISABLE ROW LEVEL SECURITY;
+ALTER TABLE transactions DISABLE ROW LEVEL SECURITY;
+
 -- Storage bucket setup (Optional but good to note)
 -- Ensure a bucket named 'signatures' is created in Supabase Storage.

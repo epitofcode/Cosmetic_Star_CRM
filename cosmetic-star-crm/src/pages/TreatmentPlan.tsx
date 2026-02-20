@@ -14,7 +14,7 @@ import {
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { usePatient } from '../context/PatientContext';
-import api from '../services/api';
+import { getTreatmentPlan, saveTreatmentPlan } from '../services/api';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -60,12 +60,35 @@ export default function TreatmentPlan() {
   const [cost, setCost] = useState<number>(0);
   const [discount, setDiscount] = useState<number>(0);
   const [isSaving, setIsSaving] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (selectedPatient) {
+      fetchExistingPlan();
+    }
+  }, [selectedPatient]);
+
+  const fetchExistingPlan = async () => {
+    try {
+      setLoading(true);
+      const plan = await getTreatmentPlan(selectedPatient!.id);
+      if (plan) {
+        setSelectedServiceId(plan.service_id);
+        setCost(Number(plan.base_cost));
+        setDiscount(Number(plan.discount));
+      }
+    } catch (error) {
+      console.error('Error fetching plan:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const selectedService = SERVICES.find(s => s.id === selectedServiceId);
   const totalToPay = Math.max(0, cost - discount);
 
   useEffect(() => {
-    if (selectedService) {
+    if (selectedService && !loading) {
       setCost(selectedService.defaultPrice);
       setDiscount(0);
     }
@@ -76,7 +99,7 @@ export default function TreatmentPlan() {
 
     try {
       setIsSaving(true);
-      await api.post('/treatment-plan', {
+      await saveTreatmentPlan({
         patient_id: selectedPatient.id,
         service_id: selectedService.id,
         service_name: selectedService.name,
@@ -104,6 +127,15 @@ export default function TreatmentPlan() {
           <h2 className="text-xl font-bold text-slate-900">No Patient Selected</h2>
           <p className="text-slate-500 max-w-xs mx-auto">Please select a patient first to create a treatment plan.</p>
         </div>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20">
+        <Loader2 className="animate-spin text-teal-600 mb-4" size={40} />
+        <p className="text-slate-500 font-medium font-black uppercase tracking-widest text-xs">Loading Plan...</p>
       </div>
     );
   }

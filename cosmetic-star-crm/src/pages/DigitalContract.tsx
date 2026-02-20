@@ -29,31 +29,59 @@ export default function DigitalContract({ onSign }: DigitalContractProps) {
   const { selectedPatient } = usePatient();
   const sigCanvas = useRef<SignatureCanvas>(null);
   const [isSigned, setIsSigned] = useState(false);
+  const [existingSignature, setExistingSignature] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [showReceipt, setShowReceipt] = useState(false);
+
+  useEffect(() => {
+    if (selectedPatient) {
+      loadContract();
+    }
+  }, [selectedPatient]);
+
+  const loadContract = async () => {
+    try {
+      setLoading(true);
+      const res = await checkContractStatus(selectedPatient!.id);
+      if (res.signed) {
+        setIsSigned(true);
+        setExistingSignature(res.contract.signature_url);
+      } else {
+        setIsSigned(false);
+        setExistingSignature(null);
+      }
+    } catch (error) {
+      console.error('Error loading contract:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const clear = () => {
     sigCanvas.current?.clear();
     setIsSigned(false);
+    setExistingSignature(null);
   };
 
   const confirm = async () => {
-    if (!selectedPatient || !sigCanvas.current) return;
+    if (!selectedPatient || (!sigCanvas.current && !existingSignature)) return;
     
-    if (sigCanvas.current.isEmpty()) {
+    if (!existingSignature && sigCanvas.current?.isEmpty()) {
       alert('Please provide a signature before confirming.');
       return;
     }
 
     try {
       setIsUploading(true);
-      const canvas = sigCanvas.current.getTrimmedCanvas();
+      const canvas = sigCanvas.current!.getTrimmedCanvas();
       const blob = await new Promise<Blob>((resolve) => canvas.toBlob((b) => resolve(b!), 'image/png'));
       
-      await uploadSignature(selectedPatient.id, blob);
+      const res = await uploadSignature(selectedPatient.id, blob);
 
       setIsSigned(true);
+      setExistingSignature(res.signature_url);
       setShowToast(true);
       onSign();
       setTimeout(() => {
@@ -78,6 +106,15 @@ export default function DigitalContract({ onSign }: DigitalContractProps) {
           <h2 className="text-xl font-bold text-slate-900">No Patient Selected</h2>
           <p className="text-slate-500 max-w-xs mx-auto">Please select a patient first to sign the treatment contract.</p>
         </div>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20">
+        <Loader2 className="animate-spin text-teal-600 mb-4" size={40} />
+        <p className="text-slate-500 font-medium font-black uppercase tracking-widest text-xs">Authenticating Agreement...</p>
       </div>
     );
   }
@@ -153,55 +190,67 @@ export default function DigitalContract({ onSign }: DigitalContractProps) {
             </div>
           </div>
           <div className="p-6">
-            <div className="border-2 border-dashed border-slate-200 rounded-xl bg-slate-50 overflow-hidden">
-              <SignatureCanvas 
-                ref={sigCanvas}
-                penColor="#0f172a"
-                canvasProps={{
-                  className: "w-full h-64 cursor-crosshair"
-                }}
-              />
+            <div className="border-2 border-dashed border-slate-200 rounded-xl bg-slate-50 overflow-hidden min-h-[16rem] flex items-center justify-center">
+              {existingSignature ? (
+                <img src={existingSignature} alt="Electronic Signature" className="max-h-64 object-contain" />
+              ) : (
+                <SignatureCanvas 
+                  ref={sigCanvas}
+                  penColor="#0f172a"
+                  canvasProps={{
+                    className: "w-full h-64 cursor-crosshair"
+                  }}
+                />
+              )}
             </div>
             
             <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
               <div className="flex items-center gap-3">
                 <button
                   onClick={clear}
-                  disabled={isSigned || isUploading}
+                  disabled={isUploading}
                   className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors disabled:opacity-50"
                 >
                   <Trash2 size={18} />
-                  Clear Signature
+                  Clear & Resign
                 </button>
               </div>
-              <button
-                onClick={confirm}
-                disabled={isSigned || isUploading}
-                className={cn(
-                  "flex items-center gap-2 px-8 py-3 rounded-xl font-bold transition-all shadow-lg active:scale-95 w-full sm:w-auto",
-                  isSigned 
-                    ? "bg-green-100 text-green-700 shadow-none cursor-default" 
-                    : "bg-teal-600 hover:bg-teal-700 text-white shadow-teal-500/20",
-                  isUploading && "opacity-70 cursor-wait"
-                )}
-              >
-                {isUploading ? (
-                  <>
-                    <Loader2 size={20} className="animate-spin" />
-                    Saving...
-                  </>
-                ) : isSigned ? (
-                  <>
-                    <CheckCircle size={20} />
-                    Contract Signed
-                  </>
-                ) : (
-                  <>
-                    <FileCheck size={20} />
-                    Confirm & Sign
-                  </>
-                )}
-              </button>
+              {!existingSignature && (
+                <button
+                  onClick={confirm}
+                  disabled={isSigned || isUploading}
+                  className={cn(
+                    "flex items-center gap-2 px-8 py-3 rounded-xl font-bold transition-all shadow-lg active:scale-95 w-full sm:w-auto",
+                    isSigned 
+                      ? "bg-green-100 text-green-700 shadow-none cursor-default" 
+                      : "bg-teal-600 hover:bg-teal-700 text-white shadow-teal-500/20",
+                    isUploading && "opacity-70 cursor-wait"
+                  )}
+                >
+                  {isUploading ? (
+                    <>
+                      <Loader2 size={20} className="animate-spin" />
+                      Saving...
+                    </>
+                  ) : isSigned ? (
+                    <>
+                      <CheckCircle size={20} />
+                      Contract Signed
+                    </>
+                  ) : (
+                    <>
+                      <FileCheck size={20} />
+                      Confirm & Sign
+                    </>
+                  )}
+                </button>
+              )}
+              {existingSignature && (
+                <div className="flex items-center gap-2 text-green-600 font-bold bg-green-50 px-6 py-3 rounded-xl border border-green-100">
+                  <CheckCircle size={20} />
+                  Signed & Verified
+                </div>
+              )}
             </div>
           </div>
         </section>

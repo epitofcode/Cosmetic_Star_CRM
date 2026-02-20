@@ -90,4 +90,15 @@ export const recordTransaction = async (formData: FormData) => {
     return response.data;
 };
 
+// Dashboard
+export const getDashboardStats = async () => {
+    const response = await api.get('/dashboard/stats');
+    return response.data;
+};
+
+export const getRecentAppointments = async () => {
+    const response = await api.get('/dashboard/recent-appointments');
+    return response.data;
+};
+
 export default api;

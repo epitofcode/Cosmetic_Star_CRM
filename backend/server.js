@@ -67,7 +67,7 @@ app.get('/api/diagnostic', async (req, res) => {
 // 1. Get Patients (Searchable)
 app.get('/api/patients', async (req, res) => {
     const { search } = req.query;
-    let query = supabase.from('patients').select('*');
+    let query = supabase.from('patients').select('*, treatment_plans(status), contracts(id)');
 
     if (search) {
         query = query.or(`first_name.ilike.%${search}%,last_name.ilike.%${search}%,email.ilike.%${search}%`);
@@ -76,7 +76,23 @@ app.get('/api/patients', async (req, res) => {
     const { data, error } = await query.order('created_at', { ascending: false });
     
     if (error) return res.status(400).json({ error: error.message });
-    res.json(data);
+
+    // Map data to include a computed status
+    const formattedData = data.map(p => {
+        let status = 'New Patient';
+        if (p.contracts && p.contracts.length > 0) {
+            status = 'Contract Signed';
+        } else if (p.treatment_plans && p.treatment_plans.length > 0) {
+            status = 'Plan Created';
+        }
+        
+        return {
+            ...p,
+            status: p.treatment_plans?.[0]?.status || status
+        };
+    });
+
+    res.json(formattedData);
 });
 
 // 2. Create New Patient
@@ -87,7 +103,15 @@ app.post('/api/patients', async (req, res) => {
         .insert([{ first_name, last_name, phone, email, dob, gender }])
         .select();
 
-    if (error) return res.status(400).json({ error: error.message });
+    if (error) {
+        if (error.code === '23505') {
+            return res.status(409).json({ 
+                error: 'A patient with this email address is already registered in the system.',
+                code: 'DUPLICATE_EMAIL'
+            });
+        }
+        return res.status(400).json({ error: error.message });
+    }
     res.status(201).json(data[0]);
 });
 
@@ -312,6 +336,66 @@ app.post('/api/transactions', upload.single('proof'), async (req, res) => {
 
     if (error) return res.status(400).json({ error: error.message });
     res.status(201).json(data[0]);
+});
+
+// --- Dashboard Endpoints ---
+
+// 11. Get Dashboard Stats
+app.get('/api/dashboard/stats', async (req, res) => {
+    try {
+        const { count: patientCount } = await supabase.from('patients').select('*', { count: 'exact', head: true });
+        const { count: bookingCount } = await supabase.from('bookings').select('*', { count: 'exact', head: true });
+        
+        // Sum revenue from transactions
+        const { data: transactions } = await supabase.from('transactions').select('amount');
+        const totalRevenue = transactions?.reduce((sum, t) => sum + Number(t.amount), 0) || 0;
+
+        // Count pending reports (patients without treatment plans or with pending payments)
+        const { count: pendingPayments } = await supabase.from('treatment_plans').select('*', { count: 'exact', head: true }).neq('status', 'Completed');
+
+        res.json({
+            totalPatients: patientCount || 0,
+            surgeryBookings: bookingCount || 0,
+            totalRevenue: totalRevenue,
+            pendingReports: pendingPayments || 0
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// 12. Get Recent Appointments
+app.get('/api/dashboard/recent-appointments', async (req, res) => {
+    try {
+        const { data, error } = await supabase
+            .from('bookings')
+            .select(`
+                id,
+                service_type,
+                date,
+                time_slot,
+                status,
+                patients (
+                    first_name,
+                    last_name
+                )
+            `)
+            .order('date', { ascending: false })
+            .limit(5);
+
+        if (error) throw error;
+
+        const formatted = data.map(b => ({
+            name: `${b.patients.first_name} ${b.patients.last_name}`,
+            service: b.service_type,
+            time: `${b.date} ${b.time_slot}`,
+            status: b.status
+        }));
+
+        res.json(formatted);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
 });
 
 // 404 Handler
