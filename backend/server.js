@@ -35,6 +35,33 @@ app.get('/api/health', (req, res) => {
     });
 });
 
+// --- System Diagnostic ---
+app.get('/api/diagnostic', async (req, res) => {
+    const results = {
+        database: {},
+        storage: {},
+        env: {
+            url: !!supabaseUrl,
+            key: !!supabaseKey
+        }
+    };
+
+    const tables = ['patients', 'medical_intakes', 'contracts', 'bookings', 'treatment_plans', 'transactions'];
+    
+    for (const table of tables) {
+        const { error } = await supabase.from(table).select('count', { count: 'exact', head: true });
+        results.database[table] = error ? `Error: ${error.message}` : 'Healthy';
+    }
+
+    const buckets = ['signatures', 'proofs'];
+    for (const bucket of buckets) {
+        const { error } = await supabase.storage.getBucket(bucket);
+        results.storage[bucket] = error ? `Error: ${error.message}` : 'Healthy';
+    }
+
+    res.json(results);
+});
+
 // --- API Endpoints ---
 
 // 1. Get Patients (Searchable)
