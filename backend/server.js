@@ -14,7 +14,7 @@ const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// Multer Configuration for Signature Uploads
+// Multer Configuration for Uploads
 const upload = multer({ storage: multer.memoryStorage() });
 
 app.use(cors());
@@ -54,18 +54,13 @@ app.get('/api/patients', async (req, res) => {
 
 // 2. Create New Patient
 app.post('/api/patients', async (req, res) => {
-    console.log('Received patient creation request:', req.body);
     const { first_name, last_name, phone, email, dob, gender } = req.body;
     const { data, error } = await supabase
         .from('patients')
         .insert([{ first_name, last_name, phone, email, dob, gender }])
         .select();
 
-    if (error) {
-        console.error('Supabase error creating patient:', error);
-        return res.status(400).json({ error: error.message });
-    }
-    console.log('Patient created successfully:', data[0]);
+    if (error) return res.status(400).json({ error: error.message });
     res.status(201).json(data[0]);
 });
 
@@ -129,7 +124,6 @@ app.post('/api/contract', upload.single('signature'), async (req, res) => {
 
     const fileName = `signatures/${patient_id}_${Date.now()}.png`;
 
-    // Upload to Supabase Storage
     const { data: uploadData, error: uploadError } = await supabase.storage
         .from('signatures')
         .upload(fileName, file.buffer, { contentType: 'image/png' });
@@ -138,10 +132,9 @@ app.post('/api/contract', upload.single('signature'), async (req, res) => {
 
     const { data: { publicUrl } } = supabase.storage.from('signatures').getPublicUrl(fileName);
 
-    // Save Record to Contracts Table
     const { data: contractData, error: contractError } = await supabase
         .from('contracts')
-        .insert([{ patient_id, signature_url: publicUrl }])
+        .upsert([{ patient_id, signature_url: publicUrl }], { onConflict: 'patient_id' })
         .select();
 
     if (contractError) return res.status(400).json({ error: contractError.message });
@@ -155,9 +148,9 @@ app.get('/api/contract/:patientId', async (req, res) => {
         .from('contracts')
         .select('*')
         .eq('patient_id', patientId)
-        .single();
+        .maybeSingle();
 
-    if (error && error.code !== 'PGRST116') return res.status(400).json({ error: error.message });
+    if (error) return res.status(400).json({ error: error.message });
     res.json({ signed: !!data, contract: data || null });
 });
 
@@ -177,12 +170,11 @@ app.get('/api/slots', async (req, res) => {
 app.post('/api/bookings', async (req, res) => {
     const { patient_id, service_type, date, time_slot } = req.body;
 
-    // Verify Contract
     const { data: contract } = await supabase
         .from('contracts')
         .select('id')
         .eq('patient_id', patient_id)
-        .single();
+        .maybeSingle();
 
     if (!contract) return res.status(403).json({ error: 'Patient must sign a contract before booking.' });
 
@@ -216,6 +208,7 @@ app.post('/api/treatment-plan', async (req, res) => {
     res.status(201).json(data[0]);
 });
 
+// 8b. Get Treatment Plan
 app.get('/api/treatment-plan/:patientId', async (req, res) => {
     const { patientId } = req.params;
     const { data, error } = await supabase
@@ -232,7 +225,6 @@ app.get('/api/treatment-plan/:patientId', async (req, res) => {
 app.get('/api/financials/:patientId', async (req, res) => {
     const { patientId } = req.params;
 
-    // Get Plan
     const { data: plan, error: planError } = await supabase
         .from('treatment_plans')
         .select('*')
@@ -241,7 +233,6 @@ app.get('/api/financials/:patientId', async (req, res) => {
 
     if (!plan) return res.status(404).json({ error: 'No treatment plan found' });
 
-    // Get Transactions
     const { data: transactions, error: transError } = await supabase
         .from('transactions')
         .select('*')
@@ -270,7 +261,6 @@ app.post('/api/transactions', upload.single('proof'), async (req, res) => {
 
     const fileName = `proofs/${patient_id}_${Date.now()}_${file.originalname}`;
 
-    // Upload to Supabase Storage
     const { data: uploadData, error: uploadError } = await supabase.storage
         .from('proofs')
         .upload(fileName, file.buffer, { contentType: file.mimetype });
@@ -280,7 +270,6 @@ app.post('/api/transactions', upload.single('proof'), async (req, res) => {
     const { data: { publicUrl } } = supabase.storage.from('proofs').getPublicUrl(fileName);
     const receiptNumber = `CS-RC-${Math.floor(100000 + Math.random() * 900000)}`;
 
-    // Save Transaction
     const { data, error } = await supabase
         .from('transactions')
         .insert([{ 
