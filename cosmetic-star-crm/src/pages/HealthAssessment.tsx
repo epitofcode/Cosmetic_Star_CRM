@@ -91,19 +91,15 @@ export default function HealthAssessment() {
     gpName: '',
     occupation: '',
     questions: {
-      // Dermatological
       psoriasis: { value: null as boolean | null, details: '' },
       keloid: { value: null as boolean | null, details: '' },
       infection: { value: null as boolean | null, details: '' },
-      // Cardiovascular
       hypertension: { value: null as boolean | null, details: '' },
       bloodThinners: { value: null as boolean | null, details: '' },
       pacemaker: { value: null as boolean | null, details: '' },
-      // General Health
       diabetes: { value: null as boolean | null, details: '' },
       hivHepatitis: { value: null as boolean | null, details: '' },
       anesthesiaAllergy: { value: null as boolean | null, details: '' },
-      // Lifestyle
       smoking: { value: null as boolean | null, details: '' },
       alcohol: { value: null as boolean | null, details: '' },
     }
