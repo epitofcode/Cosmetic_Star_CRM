@@ -143,9 +143,10 @@ export default function HealthAssessment() {
       setLoading(true);
       await saveAssessment(selectedPatient.id, formData);
       alert('Assessment saved successfully!');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Save assessment error:', error);
-      alert('Failed to save assessment.');
+      const message = error.response?.data?.error || error.message || 'Unknown error';
+      alert(`Failed to save assessment: ${message}`);
     } finally {
       setLoading(false);
     }
