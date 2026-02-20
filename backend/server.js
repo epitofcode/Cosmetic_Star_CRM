@@ -69,6 +69,32 @@ app.post('/api/patients', async (req, res) => {
     res.status(201).json(data[0]);
 });
 
+// 2b. Update Patient
+app.put('/api/patients/:id', async (req, res) => {
+    const { id } = req.params;
+    const { first_name, last_name, phone, email, dob, gender } = req.body;
+    const { data, error } = await supabase
+        .from('patients')
+        .update({ first_name, last_name, phone, email, dob, gender })
+        .eq('id', id)
+        .select();
+
+    if (error) return res.status(400).json({ error: error.message });
+    res.json(data[0]);
+});
+
+// 2c. Delete Patient
+app.delete('/api/patients/:id', async (req, res) => {
+    const { id } = req.params;
+    const { error } = await supabase
+        .from('patients')
+        .delete()
+        .eq('id', id);
+
+    if (error) return res.status(400).json({ error: error.message });
+    res.json({ message: 'Patient deleted successfully' });
+});
+
 // 3. Save Medical Assessment
 app.post('/api/assessment', async (req, res) => {
     const { patient_id, data: assessmentData } = req.body;

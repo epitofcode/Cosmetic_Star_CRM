@@ -13,12 +13,14 @@ import {
   ChevronRight,
   UserCheck,
   MoreHorizontal,
-  MailQuestion
+  MailQuestion,
+  Trash2,
+  Edit
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { getPatients, createPatient } from '../services/api';
+import { getPatients, createPatient, updatePatient, deletePatient } from '../services/api';
 import { usePatient } from '../context/PatientContext';
 
 function cn(...inputs: ClassValue[]) {
@@ -38,11 +40,12 @@ interface Patient {
 }
 
 export default function Patients() {
-  const { selectedPatient, setSelectedPatient } = usePatient();
+  const { selectedPatient, setSelectedPatient, clearPatient } = usePatient();
   const [patients, setPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingPatientId, setEditingPatientId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -76,26 +79,78 @@ export default function Patients() {
     );
   }, [patients, searchTerm]);
 
+  const handleEditClick = (e: React.MouseEvent, patient: Patient) => {
+    e.stopPropagation();
+    setEditingPatientId(patient.id);
+    setFormData({
+      firstName: patient.first_name,
+      lastName: patient.last_name,
+      dob: patient.dob || '',
+      gender: patient.gender || 'Other',
+      phone: patient.phone,
+      email: patient.email,
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleDeleteClick = async (e: React.MouseEvent, patientId: string) => {
+    e.stopPropagation();
+    if (!window.confirm('Are you sure you want to delete this patient record? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      await deletePatient(patientId);
+      setPatients(patients.filter(p => p.id !== patientId));
+      if (selectedPatient?.id === patientId) {
+        clearPatient();
+      }
+      alert('Patient deleted successfully.');
+    } catch (error) {
+      console.error('Delete patient error:', error);
+      alert('Failed to delete patient.');
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const newPatient = await createPatient({
+      const patientPayload = {
         first_name: formData.firstName,
         last_name: formData.lastName,
         phone: formData.phone,
         email: formData.email,
         dob: formData.dob,
         gender: formData.gender,
-      });
-      setPatients([newPatient, ...patients]);
+      };
+
+      if (editingPatientId) {
+        const updated = await updatePatient(editingPatientId, patientPayload);
+        setPatients(patients.map(p => p.id === editingPatientId ? updated : p));
+        if (selectedPatient?.id === editingPatientId) {
+          setSelectedPatient(updated);
+        }
+        alert('Patient record updated successfully!');
+      } else {
+        const newPatient = await createPatient(patientPayload);
+        setPatients([newPatient, ...patients]);
+        setSelectedPatient(newPatient);
+      }
+      
       setIsModalOpen(false);
+      setEditingPatientId(null);
       setFormData({ firstName: '', lastName: '', dob: '', gender: 'Other', phone: '+44 ', email: '' });
-      setSelectedPatient(newPatient);
     } catch (error: any) {
-      console.error('Create patient error:', error);
+      console.error('Save patient error:', error);
       const message = error.response?.data?.error || error.message || 'Unknown error';
-      alert(`Failed to create patient: ${message}`);
+      alert(`Failed to save patient: ${message}`);
     }
+  };
+
+  const openNewPatientModal = () => {
+    setEditingPatientId(null);
+    setFormData({ firstName: '', lastName: '', dob: '', gender: 'Other', phone: '+44 ', email: '' });
+    setIsModalOpen(true);
   };
 
   return (
@@ -106,7 +161,7 @@ export default function Patients() {
           <p className="text-slate-500 font-medium mt-1">Access and manage comprehensive clinical records.</p>
         </div>
         <button 
-          onClick={() => setIsModalOpen(true)}
+          onClick={openNewPatientModal}
           className="inline-flex items-center justify-center gap-2 bg-teal-600 hover:bg-teal-700 text-white px-6 py-3 rounded-2xl font-bold transition-all shadow-lg shadow-teal-600/20 active:scale-95"
         >
           <Plus size={20} />
@@ -227,9 +282,22 @@ export default function Patients() {
                     </span>
                   </td>
                   <td className="px-8 py-6 text-right">
-                    <button className="p-2 text-slate-300 hover:text-slate-900 hover:bg-white hover:shadow-sm rounded-xl transition-all">
-                      <MoreHorizontal size={20} />
-                    </button>
+                    <div className="flex justify-end gap-2">
+                      <button 
+                        onClick={(e) => handleEditClick(e, patient)}
+                        className="p-2 text-slate-300 hover:text-teal-600 hover:bg-teal-50 rounded-xl transition-all"
+                        title="Edit Patient"
+                      >
+                        <Edit size={18} />
+                      </button>
+                      <button 
+                        onClick={(e) => handleDeleteClick(e, patient.id)}
+                        className="p-2 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
+                        title="Delete Patient"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </div>
                   </td>
                   {selectedPatient?.id === patient.id && (
                     <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-teal-500 rounded-r-full" />
@@ -245,7 +313,7 @@ export default function Patients() {
                     <h3 className="text-xl font-bold text-slate-900">No records found</h3>
                     <p className="text-slate-500 mt-2 max-w-sm mx-auto font-medium">We couldn't find any patient matching your search. Double check the spelling or add a new record.</p>
                     <button 
-                      onClick={() => setIsModalOpen(true)}
+                      onClick={openNewPatientModal}
                       className="mt-8 text-teal-600 font-black text-xs uppercase tracking-[0.2em] hover:bg-teal-50 px-6 py-3 rounded-2xl transition-all"
                     >
                       Initialize New Record
@@ -258,7 +326,7 @@ export default function Patients() {
         </div>
       </div>
 
-      {/* New Patient Modal */}
+      {/* New/Edit Patient Modal */}
       <AnimatePresence>
         {isModalOpen && (
           <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
@@ -277,8 +345,12 @@ export default function Patients() {
             >
               <div className="flex items-center justify-between p-10 border-b border-slate-100 bg-white">
                 <div>
-                  <h2 className="text-3xl font-black text-slate-900 tracking-tight">Patient Onboarding</h2>
-                  <p className="text-slate-500 font-medium mt-1">Register a new clinical profile.</p>
+                  <h2 className="text-3xl font-black text-slate-900 tracking-tight">
+                    {editingPatientId ? 'Update Record' : 'Patient Onboarding'}
+                  </h2>
+                  <p className="text-slate-500 font-medium mt-1">
+                    {editingPatientId ? 'Modify existing clinical data.' : 'Register a new clinical profile.'}
+                  </p>
                 </div>
                 <button onClick={() => setIsModalOpen(false)} className="bg-slate-100 text-slate-400 hover:text-slate-900 p-3 rounded-2xl transition-all">
                   <X size={24} />
@@ -366,7 +438,7 @@ export default function Patients() {
                     type="submit"
                     className="px-10 py-4 text-xs font-black uppercase tracking-widest text-white bg-teal-600 hover:bg-teal-700 rounded-2xl transition-all shadow-xl shadow-teal-600/20 active:scale-95"
                   >
-                    Confirm Registration
+                    {editingPatientId ? 'Update Record' : 'Confirm Registration'}
                   </button>
                 </div>
               </form>
