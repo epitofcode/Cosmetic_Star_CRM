@@ -9,7 +9,8 @@ import {
   ChevronRight,
   ShieldCheck,
   UserCheck,
-  UserCircle2
+  UserCircle2,
+  Loader2
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';

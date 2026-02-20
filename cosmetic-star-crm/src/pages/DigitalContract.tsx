@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import SignatureCanvas from 'react-signature-canvas';
 import ReceiptGenerator from '../components/ReceiptGenerator';
 import { 
@@ -15,7 +15,7 @@ import {
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { usePatient } from '../context/PatientContext';
-import { uploadSignature } from '../services/api';
+import { uploadSignature, checkContractStatus } from '../services/api';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
