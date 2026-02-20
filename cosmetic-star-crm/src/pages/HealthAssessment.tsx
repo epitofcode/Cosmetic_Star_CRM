@@ -1,4 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { 
+  Save, 
+  ChevronRight, 
+  ClipboardList, 
+  UserCircle2, 
+  Stethoscope, 
+  Heart, 
+  Activity, 
+  AlertCircle, 
+  Cigarette, 
+  Wine, 
+  UserCheck,
+  Loader2
+} from 'lucide-react';
+import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { usePatient } from '../context/PatientContext';
 import { saveAssessment, getAssessment } from '../services/api';
@@ -43,7 +58,7 @@ const YesNoQuestion: React.FC<QuestionProps> = ({
             className={cn(
               "px-4 py-1.5 text-xs font-bold rounded-md transition-all",
               value === false 
-                ? "bg-white text-teal-600 shadow-sm" 
+                ? "bg-white text-slate-600 shadow-sm" 
                 : "text-slate-500 hover:text-slate-700"
             )}
           >
@@ -162,6 +177,24 @@ export default function HealthAssessment() {
       </div>
     );
   }
+
+  return (
+    <div className="max-w-4xl mx-auto space-y-8">
+      <div className="flex items-center justify-between">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2 text-teal-600 bg-teal-50 w-fit px-2 py-1 rounded text-xs font-bold uppercase tracking-wider">
+            <UserCheck size={14} />
+            Patient: {selectedPatient.first_name} {selectedPatient.last_name}
+          </div>
+          <h1 className="text-2xl font-bold text-slate-900">Health Assessment</h1>
+          <p className="text-slate-500">Comprehensive medical consultation form.</p>
+        </div>
+        <div className="flex items-center gap-2 text-sm text-slate-400">
+          <span>Patients</span>
+          <ChevronRight size={14} />
+          <span className="text-slate-900 font-medium">New Assessment</span>
+        </div>
+      </div>
 
       <form onSubmit={handleSave} className="space-y-8 pb-24">
         {/* Section 1: General Info */}
