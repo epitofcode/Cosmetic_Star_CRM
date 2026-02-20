@@ -7,8 +7,45 @@ import TreatmentPlan from './pages/TreatmentPlan';
 import DigitalContract from './pages/DigitalContract';
 import CalendarPage from './pages/Calendar';
 import Financials from './pages/Financials';
+import { PatientProvider } from './context/PatientContext';
 
-import { Plus, ArrowUpRight, ArrowDownRight, Calendar as CalendarIcon, ClipboardCheck, Wallet, UserPlus } from 'lucide-react';
+import { 
+  Plus, 
+  ArrowUpRight, 
+  ArrowDownRight, 
+  Calendar as CalendarIcon, 
+  ClipboardCheck, 
+  Wallet, 
+  UserPlus, 
+  Users, 
+  FileText, 
+  PenTool, 
+  DollarSign 
+} from 'lucide-react';
+import { clsx, type ClassValue } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+
+function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
+
+function StarIcon({ className, size }: { className?: string, size?: number }) {
+  return (
+    <svg 
+      width={size || 24} 
+      height={size || 24} 
+      viewBox="0 0 24 24" 
+      fill="none" 
+      stroke="currentColor" 
+      strokeWidth="3" 
+      strokeLinecap="round" 
+      strokeLinejoin="round" 
+      className={className}
+    >
+      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+    </svg>
+  );
+}
 
 const Dashboard = () => (
   <div className="space-y-10">
@@ -145,8 +182,6 @@ const Dashboard = () => (
     </div>
   </div>
 );
-
-import { PatientProvider } from './context/PatientContext';
 
 function App() {
   const [isContractSigned, setIsContractSigned] = useState(false);
