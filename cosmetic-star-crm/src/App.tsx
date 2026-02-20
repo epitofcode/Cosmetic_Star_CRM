@@ -7,7 +7,8 @@ import TreatmentPlan from './pages/TreatmentPlan';
 import DigitalContract from './pages/DigitalContract';
 import CalendarPage from './pages/Calendar';
 import Financials from './pages/Financials';
-import { PatientProvider } from './context/PatientContext';
+import { PatientProvider, usePatient } from './context/PatientContext';
+import { checkContractStatus } from './services/api';
 
 import { 
   Plus, 
@@ -31,17 +32,7 @@ function cn(...inputs: ClassValue[]) {
 
 function StarIcon({ className, size }: { className?: string, size?: number }) {
   return (
-    <svg 
-      width={size || 24} 
-      height={size || 24} 
-      viewBox="0 0 24 24" 
-      fill="none" 
-      stroke="currentColor" 
-      strokeWidth="3" 
-      strokeLinecap="round" 
-      strokeLinejoin="round" 
-      className={className}
-    >
+    <svg width={size || 24} height={size || 24} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className={className}>
       <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
     </svg>
   );
@@ -59,10 +50,7 @@ const Dashboard = () => (
           <CalendarIcon size={18} className="text-slate-400" />
           Today
         </button>
-        <button 
-          onClick={() => window.location.href = '/patients'}
-          className="bg-teal-600 text-white px-6 py-2.5 rounded-2xl font-bold text-sm hover:bg-teal-700 transition-all shadow-lg shadow-teal-600/20 flex items-center gap-2"
-        >
+        <button onClick={() => window.location.href = '/patients'} className="bg-teal-600 text-white px-6 py-2.5 rounded-2xl font-bold text-sm hover:bg-teal-700 transition-all shadow-lg shadow-teal-600/20 flex items-center gap-2">
           <Plus size={18} />
           Add Patient
         </button>
@@ -78,18 +66,10 @@ const Dashboard = () => (
       ].map((stat) => (
         <div key={stat.label} className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-xl hover:shadow-slate-200/50 transition-all group cursor-default">
           <div className="flex items-center justify-between mb-6">
-            <div className={cn(
-              "w-12 h-12 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110 duration-300",
-              stat.color === 'teal' ? "bg-teal-50 text-teal-600" :
-              stat.color === 'indigo' ? "bg-indigo-50 text-indigo-600" :
-              stat.color === 'emerald' ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-600"
-            )}>
+            <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110 duration-300", stat.color === 'teal' ? "bg-teal-50 text-teal-600" : stat.color === 'indigo' ? "bg-indigo-50 text-indigo-600" : stat.color === 'emerald' ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-600")}>
               <stat.icon size={24} />
             </div>
-            <div className={cn(
-              "flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider",
-              stat.up ? "bg-green-50 text-green-600" : "bg-red-50 text-red-600"
-            )}>
+            <div className={cn("flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider", stat.up ? "bg-green-50 text-green-600" : "bg-red-50 text-red-600")}>
               {stat.up ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
               {stat.change}
             </div>
@@ -126,12 +106,7 @@ const Dashboard = () => (
                   <p className="text-xs font-medium text-slate-500 mt-0.5">{app.service} • {app.time}</p>
                 </div>
               </div>
-              <span className={cn(
-                "px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest border",
-                app.status === 'Confirmed' ? "bg-green-50 text-green-600 border-green-100" :
-                app.status === 'In Review' ? "bg-blue-50 text-blue-600 border-blue-100" :
-                "bg-amber-50 text-amber-600 border-amber-100"
-              )}>
+              <span className={cn("px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest border", app.status === 'Confirmed' ? "bg-green-50 text-green-600 border-green-100" : app.status === 'In Review' ? "bg-blue-50 text-blue-600 border-blue-100" : "bg-amber-50 text-amber-600 border-amber-100")}>
                 {app.status}
               </span>
             </div>
@@ -145,7 +120,6 @@ const Dashboard = () => (
           <div className="relative z-10">
             <h3 className="text-xl font-bold mb-2">Quick Actions</h3>
             <p className="text-slate-400 text-sm mb-8 font-medium">Commonly used clinic tools.</p>
-            
             <div className="grid grid-cols-2 gap-4">
               {[
                 { label: 'Register', icon: UserPlus, href: '/patients' },
@@ -153,11 +127,7 @@ const Dashboard = () => (
                 { label: 'Sign', icon: PenTool, href: '/contract' },
                 { label: 'Payments', icon: DollarSign, href: '/financials' },
               ].map((action) => (
-                <button 
-                  key={action.label}
-                  onClick={() => window.location.href = action.href}
-                  className="bg-white/5 hover:bg-white/10 border border-white/10 p-4 rounded-[1.5rem] flex flex-col items-center gap-3 transition-all active:scale-95 group/btn"
-                >
+                <button key={action.label} onClick={() => window.location.href = action.href} className="bg-white/5 hover:bg-white/10 border border-white/10 p-4 rounded-[1.5rem] flex flex-col items-center gap-3 transition-all active:scale-95 group/btn">
                   <action.icon size={20} className="text-teal-400 group-hover/btn:scale-110 transition-transform" />
                   <span className="text-[10px] font-black uppercase tracking-widest">{action.label}</span>
                 </button>
@@ -165,60 +135,47 @@ const Dashboard = () => (
             </div>
           </div>
         </div>
-
-        <div className="bg-teal-600 rounded-[2.5rem] p-8 text-white shadow-xl shadow-teal-600/20 relative overflow-hidden group">
-          <div className="absolute top-0 right-0 p-4 opacity-20">
-            <StarIcon size={80} />
-          </div>
-          <div className="relative z-10">
-            <h3 className="text-lg font-bold">Clinical Support</h3>
-            <p className="text-teal-50 text-sm mt-2 opacity-80 leading-relaxed font-medium">Need help with surgical protocols or patient records? Our clinical success team is a click away.</p>
-            <button className="mt-6 bg-white text-teal-600 px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-teal-50 transition-colors">
-              Chat with Expert
-            </button>
-          </div>
-        </div>
       </div>
     </div>
   </div>
 );
 
-function App() {
+function AppContent() {
+  const { selectedPatient } = usePatient();
   const [isContractSigned, setIsContractSigned] = useState(false);
 
   useEffect(() => {
-    const signed = localStorage.getItem('isContractSigned') === 'true';
-    setIsContractSigned(signed);
-  }, []);
-
-  const handleSignContract = () => {
-    localStorage.setItem('isContractSigned', 'true');
-    setIsContractSigned(true);
-  };
+    if (selectedPatient) {
+      checkContractStatus(selectedPatient.id).then(res => {
+        setIsContractSigned(res.signed);
+      }).catch(() => setIsContractSigned(false));
+    } else {
+      setIsContractSigned(false);
+    }
+  }, [selectedPatient]);
 
   return (
+    <Router>
+      <DashboardLayout isContractSigned={isContractSigned}>
+        <Routes>
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/patients" element={<Patients />} />
+          <Route path="/assessment" element={<HealthAssessment />} />
+          <Route path="/treatment" element={<TreatmentPlan />} />
+          <Route path="/contract" element={<DigitalContract onSign={() => setIsContractSigned(true)} />} />
+          <Route path="/calendar" element={isContractSigned ? <CalendarPage /> : <Navigate to="/contract" replace />} />
+          <Route path="/financials" element={<Financials />} />
+          <Route path="/settings" element={<div className="p-8">Settings Page Placeholder</div>} />
+        </Routes>
+      </DashboardLayout>
+    </Router>
+  );
+}
+
+function App() {
+  return (
     <PatientProvider>
-      <Router>
-        <DashboardLayout isContractSigned={isContractSigned}>
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/patients" element={<Patients />} />
-            <Route path="/assessment" element={<HealthAssessment />} />
-            <Route path="/treatment" element={<TreatmentPlan />} />
-            <Route path="/contract" element={<DigitalContract onSign={handleSignContract} />} />
-            <Route 
-              path="/calendar" 
-              element={
-                isContractSigned 
-                  ? <CalendarPage /> 
-                  : <Navigate to="/contract" replace />
-              } 
-            />
-            <Route path="/financials" element={<Financials />} />
-            <Route path="/settings" element={<div className="p-8">Settings Page Placeholder</div>} />
-          </Routes>
-        </DashboardLayout>
-      </Router>
+      <AppContent />
     </PatientProvider>
   );
 }
