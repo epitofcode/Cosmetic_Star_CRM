@@ -37,7 +37,11 @@ import {
   PieChart, 
   Pie, 
   Cell,
-  Legend
+  Legend,
+  LineChart,
+  Line,
+  AreaChart,
+  Area
 } from 'recharts';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -60,31 +64,43 @@ const Dashboard = () => {
   const [stats, setStats] = useState<any>(null);
   const [recentAppointments, setRecentAppointments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const fetchDashboardData = async (isInitial = false) => {
+    try {
+      if (isInitial) setLoading(true);
+      else setIsRefreshing(true);
+
+      const [statsData, recentData] = await Promise.all([
+        getDashboardStats(),
+        getRecentAppointments()
+      ]);
+      setStats(statsData);
+      setRecentAppointments(recentData);
+    } catch (error) {
+      console.error('Failed to fetch dashboard data:', error);
+    } finally {
+      setLoading(false);
+      setIsRefreshing(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
-        setLoading(true);
-        const [statsData, recentData] = await Promise.all([
-          getDashboardStats(),
-          getRecentAppointments()
-        ]);
-        setStats(statsData);
-        setRecentAppointments(recentData);
-      } catch (error) {
-        console.error('Failed to fetch dashboard data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchDashboardData();
+    fetchDashboardData(true);
+    
+    // Auto-poll every 30 seconds for real-time feel
+    const interval = setInterval(() => {
+      fetchDashboardData(false);
+    }, 30000);
+
+    return () => clearInterval(interval);
   }, []);
 
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-20">
         <Loader2 className="animate-spin text-teal-600 mb-4" size={40} />
-        <p className="text-slate-500 font-medium">Analyzing Clinic Performance...</p>
+        <p className="text-slate-500 font-medium font-black uppercase tracking-widest text-xs">Synchronizing Clinic Data...</p>
       </div>
     );
   }
@@ -99,15 +115,18 @@ const Dashboard = () => {
   return (
     <div className="space-y-10 pb-12">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-        <div>
-          <h1 className="text-3xl font-black text-slate-900 tracking-tight">Executive Overview</h1>
-          <p className="text-slate-500 font-medium mt-1">Welcome back, Dr. Kavya Sangameswara. Here's your clinic's pulse today.</p>
+        <div className="relative">
+          <div className="flex items-center gap-3 mb-1">
+            <h1 className="text-3xl font-black text-slate-900 tracking-tight">Executive Overview</h1>
+            {isRefreshing && <Loader2 size={16} className="animate-spin text-teal-500" />}
+          </div>
+          <p className="text-slate-500 font-medium">Welcome back, Dr. Kavya Sangameswara. Analytics synced in real-time.</p>
         </div>
         <div className="flex items-center gap-3">
-          <button className="bg-white border border-slate-200 text-slate-700 px-5 py-2.5 rounded-2xl font-bold text-sm hover:bg-slate-50 transition-all shadow-sm flex items-center gap-2">
-            <CalendarIcon size={18} className="text-slate-400" />
-            Today
-          </button>
+          <div className="bg-white border border-slate-200 text-slate-400 px-4 py-2.5 rounded-2xl font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 shadow-sm">
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+            Live Cloud Data
+          </div>
           <button onClick={() => window.location.href = '/patients'} className="bg-teal-600 text-white px-6 py-2.5 rounded-2xl font-bold text-sm hover:bg-teal-700 transition-all shadow-lg shadow-teal-600/20 flex items-center gap-2">
             <Plus size={18} />
             Add Patient
@@ -134,12 +153,13 @@ const Dashboard = () => {
       </div>
 
       {/* Analytics Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Revenue Performance Area Chart */}
+        <div className="lg:col-span-2 bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h3 className="text-lg font-black text-slate-900 tracking-tight">Revenue Analytics</h3>
-              <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">Last 7 days performance</p>
+              <h3 className="text-lg font-black text-slate-900 tracking-tight">Financial Stream</h3>
+              <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">7-Day Revenue Trend</p>
             </div>
             <div className="bg-teal-50 p-2.5 rounded-xl text-teal-600">
               <TrendingUp size={20} />
@@ -147,41 +167,50 @@ const Dashboard = () => {
           </div>
           <div className="h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={stats?.revenueAnalytics}>
+              <AreaChart data={stats?.revenueAnalytics}>
+                <defs>
+                  <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#0d9488" stopOpacity={0.1}/>
+                    <stop offset="95%" stopColor="#0d9488" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                 <XAxis 
                   dataKey="date" 
                   axisLine={false} 
                   tickLine={false} 
-                  tick={{ fill: '#94a3b8', fontSize: 12, fontWeight: 600 }}
+                  tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 800 }}
                   dy={10}
                 />
                 <YAxis 
                   axisLine={false} 
                   tickLine={false} 
-                  tick={{ fill: '#94a3b8', fontSize: 12, fontWeight: 600 }}
+                  tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 800 }}
                   tickFormatter={(value: number) => `£${value}`}
                 />
                 <Tooltip 
-                  cursor={{ fill: '#f8fafc' }}
+                  cursor={{ stroke: '#0d9488', strokeWidth: 2 }}
                   contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
                 />
-                <Bar 
+                <Area 
+                  type="monotone" 
                   dataKey="amount" 
-                  fill="#0d9488" 
-                  radius={[6, 6, 0, 0]} 
-                  barSize={32}
+                  stroke="#0d9488" 
+                  strokeWidth={4}
+                  fillOpacity={1} 
+                  fill="url(#colorRev)" 
                 />
-              </BarChart>
+              </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
 
+        {/* Clinical Distribution Pie Chart */}
         <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h3 className="text-lg font-black text-slate-900 tracking-tight">Clinical Distribution</h3>
-              <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">Patient lifecycle status</p>
+              <h3 className="text-lg font-black text-slate-900 tracking-tight">Patient Pipeline</h3>
+              <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">Lifecycle breakdown</p>
             </div>
             <div className="bg-indigo-50 p-2.5 rounded-xl text-indigo-600">
               <Activity size={20} />
@@ -195,8 +224,8 @@ const Dashboard = () => {
                   cx="50%"
                   cy="50%"
                   innerRadius={60}
-                  outerRadius={100}
-                  paddingAngle={5}
+                  outerRadius={90}
+                  paddingAngle={8}
                   dataKey="value"
                 >
                   {stats?.clinicalDistribution?.map((entry: any, index: number) => (
@@ -210,7 +239,7 @@ const Dashboard = () => {
                   verticalAlign="bottom" 
                   height={36} 
                   iconType="circle"
-                  formatter={(value: string) => <span className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-2">{value}</span>}
+                  formatter={(value: string) => <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-2">{value}</span>}
                 />
               </PieChart>
             </ResponsiveContainer>
@@ -253,25 +282,43 @@ const Dashboard = () => {
           </div>
         </div>
 
-        <div className="space-y-8">
-          <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-[2.5rem] p-8 text-white shadow-2xl relative overflow-hidden group">
-            <div className="absolute -top-10 -right-10 w-40 h-40 bg-teal-500/10 rounded-full blur-3xl group-hover:bg-teal-500/20 transition-all duration-700" />
-            <div className="relative z-10">
-              <h3 className="text-xl font-bold mb-2">Quick Actions</h3>
-              <p className="text-slate-400 text-sm mb-8 font-medium">Commonly used clinic tools.</p>
-              <div className="grid grid-cols-2 gap-4">
-                {[
-                  { label: 'Register', icon: UserPlus, href: '/patients' },
-                  { label: 'Plan', icon: FileText, href: '/treatment' },
-                  { label: 'Sign', icon: PenTool, href: '/contract' },
-                  { label: 'Payments', icon: DollarSign, href: '/financials' },
-                ].map((action) => (
-                  <button key={action.label} onClick={() => window.location.href = action.href} className="bg-white/5 hover:bg-white/10 border border-white/10 p-4 rounded-[1.5rem] flex flex-col items-center gap-3 transition-all active:scale-95 group/btn">
-                    <action.icon size={20} className="text-teal-400 group-hover/btn:scale-110 transition-transform" />
-                    <span className="text-[10px] font-black uppercase tracking-widest">{action.label}</span>
-                  </button>
-                ))}
-              </div>
+        {/* Live Clinic Activity Mini-Chart */}
+        <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm flex flex-col">
+          <div className="mb-6">
+            <h3 className="text-lg font-black text-slate-900 tracking-tight">Clinic Pulse</h3>
+            <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">Live activity volume</p>
+          </div>
+          <div className="flex-1 min-h-[200px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={stats?.activityAnalytics}>
+                <Tooltip 
+                  contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                />
+                <Line 
+                  type="stepAfter" 
+                  dataKey="patients" 
+                  stroke="#0d9488" 
+                  strokeWidth={3} 
+                  dot={false} 
+                />
+                <Line 
+                  type="stepAfter" 
+                  dataKey="bookings" 
+                  stroke="#6366f1" 
+                  strokeWidth={3} 
+                  dot={false} 
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="mt-6 grid grid-cols-2 gap-4">
+            <div className="p-3 bg-teal-50 rounded-2xl">
+              <p className="text-[10px] font-black text-teal-600 uppercase tracking-wider mb-1">Reg Rate</p>
+              <p className="text-xl font-black text-teal-900">High</p>
+            </div>
+            <div className="p-3 bg-indigo-50 rounded-2xl">
+              <p className="text-[10px] font-black text-indigo-600 uppercase tracking-wider mb-1">Bookings</p>
+              <p className="text-xl font-black text-indigo-900">Steady</p>
             </div>
           </div>
         </div>
