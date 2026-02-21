@@ -347,17 +347,49 @@ app.get('/api/dashboard/stats', async (req, res) => {
         const { count: bookingCount } = await supabase.from('bookings').select('*', { count: 'exact', head: true });
         
         // Sum revenue from transactions
-        const { data: transactions } = await supabase.from('transactions').select('amount');
+        const { data: transactions } = await supabase.from('transactions').select('amount, date').order('date', { ascending: true });
         const totalRevenue = transactions?.reduce((sum, t) => sum + Number(t.amount), 0) || 0;
 
-        // Count pending reports (patients without treatment plans or with pending payments)
+        // Count pending reports (patients with treatment plans but not completed)
         const { count: pendingPayments } = await supabase.from('treatment_plans').select('*', { count: 'exact', head: true }).neq('status', 'Completed');
+
+        // Revenue Analytics (Last 7 days)
+        const last7Days = [...Array(7)].map((_, i) => {
+            const d = new Date();
+            d.setDate(d.getDate() - i);
+            return d.toISOString().split('T')[0];
+        }).reverse();
+
+        const revenueAnalytics = last7Days.map(date => ({
+            date: new Date(date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }),
+            amount: transactions?.filter(t => t.date === date).reduce((sum, t) => sum + Number(t.amount), 0) || 0
+        }));
+
+        // Clinical Distribution
+        const { data: patients } = await supabase.from('patients').select('id, treatment_plans(status), contracts(id)');
+        const distribution = {
+            'New Patients': 0,
+            'Treatment Plans': 0,
+            'Contracts Signed': 0,
+            'Completed': 0
+        };
+
+        patients?.forEach(p => {
+            if (p.treatment_plans?.[0]?.status === 'Completed') distribution['Completed']++;
+            else if (p.contracts?.length > 0) distribution['Contracts Signed']++;
+            else if (p.treatment_plans?.length > 0) distribution['Treatment Plans']++;
+            else distribution['New Patients']++;
+        });
+
+        const clinicalDistribution = Object.entries(distribution).map(([name, value]) => ({ name, value }));
 
         res.json({
             totalPatients: patientCount || 0,
             surgeryBookings: bookingCount || 0,
             totalRevenue: totalRevenue,
-            pendingReports: pendingPayments || 0
+            pendingReports: pendingPayments || 0,
+            revenueAnalytics,
+            clinicalDistribution
         });
     } catch (error) {
         res.status(500).json({ error: error.message });

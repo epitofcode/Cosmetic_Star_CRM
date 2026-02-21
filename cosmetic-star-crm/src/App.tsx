@@ -22,8 +22,23 @@ import {
   FileText, 
   PenTool, 
   DollarSign,
-  Loader2
+  Loader2,
+  TrendingUp,
+  Activity
 } from 'lucide-react';
+import { 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  ResponsiveContainer, 
+  PieChart, 
+  Pie, 
+  Cell,
+  Legend
+} from 'recharts';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -38,6 +53,8 @@ function StarIcon({ className, size }: { className?: string, size?: number }) {
     </svg>
   );
 }
+
+const COLORS = ['#0d9488', '#6366f1', '#10b981', '#f59e0b'];
 
 const Dashboard = () => {
   const [stats, setStats] = useState<any>(null);
@@ -80,7 +97,7 @@ const Dashboard = () => {
   ];
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-10 pb-12">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
           <h1 className="text-3xl font-black text-slate-900 tracking-tight">Executive Overview</h1>
@@ -114,6 +131,91 @@ const Dashboard = () => {
             <h2 className="text-3xl font-black text-slate-900 mt-1">{stat.value}</h2>
           </div>
         ))}
+      </div>
+
+      {/* Analytics Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h3 className="text-lg font-black text-slate-900 tracking-tight">Revenue Analytics</h3>
+              <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">Last 7 days performance</p>
+            </div>
+            <div className="bg-teal-50 p-2.5 rounded-xl text-teal-600">
+              <TrendingUp size={20} />
+            </div>
+          </div>
+          <div className="h-[300px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={stats?.revenueAnalytics}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <XAxis 
+                  dataKey="date" 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{ fill: '#94a3b8', fontSize: 12, fontWeight: 600 }}
+                  dy={10}
+                />
+                <YAxis 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{ fill: '#94a3b8', fontSize: 12, fontWeight: 600 }}
+                  tickFormatter={(value: number) => `£${value}`}
+                />
+                <Tooltip 
+                  cursor={{ fill: '#f8fafc' }}
+                  contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                />
+                <Bar 
+                  dataKey="amount" 
+                  fill="#0d9488" 
+                  radius={[6, 6, 0, 0]} 
+                  barSize={32}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h3 className="text-lg font-black text-slate-900 tracking-tight">Clinical Distribution</h3>
+              <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">Patient lifecycle status</p>
+            </div>
+            <div className="bg-indigo-50 p-2.5 rounded-xl text-indigo-600">
+              <Activity size={20} />
+            </div>
+          </div>
+          <div className="h-[300px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={stats?.clinicalDistribution}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={100}
+                  paddingAngle={5}
+                  dataKey="value"
+                >
+                  {stats?.clinicalDistribution?.map((entry: any, index: number) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip 
+                  contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                />
+                <Legend 
+                  verticalAlign="bottom" 
+                  height={36} 
+                  iconType="circle"
+                  formatter={(value: string) => <span className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-2">{value}</span>}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
