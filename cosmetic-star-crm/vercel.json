@@ -1,6 +1,6 @@
 {
-  "outputDirectory": "cosmetic-star-crm/dist",
-  "framework": "vite",
+  "version": 2,
+  "outputDirectory": "dist",
   "rewrites": [
     {
       "source": "/(.*)",
