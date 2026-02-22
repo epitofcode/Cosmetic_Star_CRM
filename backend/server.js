@@ -305,20 +305,25 @@ app.get('/api/financials/:patientId', async (req, res) => {
 
 // 10. Record Transaction with Proof
 app.post('/api/transactions', upload.single('proof'), async (req, res) => {
-    const { patient_id, amount } = req.body;
+    const { patient_id, amount, type = 'Installment' } = req.body;
     const file = req.file;
 
-    if (!file) return res.status(400).json({ error: 'Proof of payment is required' });
+    let publicUrl = null;
+    let fileNameOriginal = 'Cash Payment';
 
-    const fileName = `proofs/${patient_id}_${Date.now()}_${file.originalname}`;
+    if (file) {
+        const fileName = `proofs/${patient_id}_${Date.now()}_${file.originalname}`;
+        const { data: uploadData, error: uploadError } = await supabase.storage
+            .from('proofs')
+            .upload(fileName, file.buffer, { contentType: file.mimetype });
 
-    const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('proofs')
-        .upload(fileName, file.buffer, { contentType: file.mimetype });
+        if (uploadError) return res.status(400).json({ error: uploadError.message });
 
-    if (uploadError) return res.status(400).json({ error: uploadError.message });
+        const { data: { publicUrl: url } } = supabase.storage.from('proofs').getPublicUrl(fileName);
+        publicUrl = url;
+        fileNameOriginal = file.originalname;
+    }
 
-    const { data: { publicUrl } } = supabase.storage.from('proofs').getPublicUrl(fileName);
     const receiptNumber = `CS-RC-${Math.floor(100000 + Math.random() * 900000)}`;
 
     const { data, error } = await supabase
@@ -326,9 +331,9 @@ app.post('/api/transactions', upload.single('proof'), async (req, res) => {
         .insert([{ 
             patient_id, 
             amount: Number(amount), 
-            type: 'Installment', 
+            type: type, 
             proof_url: publicUrl,
-            proof_name: file.originalname,
+            proof_name: fileNameOriginal,
             receipt_number: receiptNumber,
             date: new Date().toISOString().split('T')[0]
         }])

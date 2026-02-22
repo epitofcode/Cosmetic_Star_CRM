@@ -52,6 +52,7 @@ export default function Financials() {
   // Payment Form State
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState('');
+  const [isCashPayment, setIsCashPayment] = useState(false);
   const [proofFile, setProofFile] = useState<File | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   
@@ -80,14 +81,21 @@ export default function Financials() {
 
   const handleRecordPayment = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedPatient || !billingRecord || !proofFile) return;
+    if (!selectedPatient || !billingRecord) return;
+    if (!isCashPayment && !proofFile) {
+      alert('Please upload a proof of payment or select "Paid with Cash".');
+      return;
+    }
 
     try {
       setIsSaving(true);
       const formData = new FormData();
       formData.append('patient_id', selectedPatient.id);
       formData.append('amount', paymentAmount);
-      formData.append('proof', proofFile);
+      formData.append('type', isCashPayment ? 'Cash' : 'Installment');
+      if (proofFile) {
+        formData.append('proof', proofFile);
+      }
 
       const response = await api.post('/transactions', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
@@ -107,6 +115,7 @@ export default function Financials() {
       setIsPaymentModalOpen(false);
       setPaymentAmount('');
       setProofFile(null);
+      setIsCashPayment(false);
       
       // Open receipt for the new transaction
       setActiveReceipt({
@@ -120,9 +129,10 @@ export default function Financials() {
           receiptNumber: newTransaction.receipt_number
         }
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error recording payment:', error);
-      alert('Failed to record payment.');
+      const message = error.response?.data?.error || error.message || 'Unknown error';
+      alert(`Failed to record payment: ${message}`);
     } finally {
       setIsSaving(false);
     }
@@ -359,47 +369,69 @@ export default function Financials() {
                   />
                 </div>
 
-                <div className="space-y-1.5">
-                  <label className="text-sm font-bold text-slate-700">Proof of Payment</label>
-                  <div className="relative">
-                    <input
-                      required
-                      type="file"
-                      onChange={(e) => setProofFile(e.target.files?.[0] || null)}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                    />
-                    <div className={cn(
-                      "w-full border-2 border-dashed rounded-lg py-8 px-4 flex flex-col items-center justify-center gap-2 transition-colors",
-                      proofFile ? "border-teal-500 bg-teal-50" : "border-slate-200 bg-slate-50 hover:bg-slate-100"
-                    )}>
-                      {proofFile ? (
-                        <>
-                          <ImageIcon className="text-teal-600" size={24} />
-                          <p className="text-xs font-bold text-teal-700">{proofFile.name}</p>
-                        </>
-                      ) : (
-                        <>
-                          <Upload className="text-slate-400" size={24} />
-                          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest text-center">Upload Receipt or Transfer Confirmation</p>
-                          <p className="text-[10px] text-slate-400">JPG, PNG, PDF up to 5MB</p>
-                        </>
-                      )}
+                <div className="flex items-center gap-2 p-3 bg-slate-50 rounded-xl border border-slate-100">
+                  <input
+                    type="checkbox"
+                    id="cashPayment"
+                    checked={isCashPayment}
+                    onChange={(e) => {
+                      setIsCashPayment(e.target.checked);
+                      if (e.target.checked) setProofFile(null);
+                    }}
+                    className="w-4 h-4 text-teal-600 border-slate-300 rounded focus:ring-teal-500 cursor-pointer"
+                  />
+                  <label htmlFor="cashPayment" className="text-sm font-bold text-slate-700 cursor-pointer select-none">
+                    Paid with Cash (Skip Proof Upload)
+                  </label>
+                </div>
+
+                {!isCashPayment && (
+                  <div className="space-y-1.5 animate-in fade-in duration-200">
+                    <label className="text-sm font-bold text-slate-700">Proof of Payment</label>
+                    <div className="relative">
+                      <input
+                        required={!isCashPayment}
+                        type="file"
+                        onChange={(e) => setProofFile(e.target.files?.[0] || null)}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                      />
+                      <div className={cn(
+                        "w-full border-2 border-dashed rounded-lg py-8 px-4 flex flex-col items-center justify-center gap-2 transition-colors",
+                        proofFile ? "border-teal-500 bg-teal-50" : "border-slate-200 bg-slate-50 hover:bg-slate-100"
+                      )}>
+                        {proofFile ? (
+                          <>
+                            <ImageIcon className="text-teal-600" size={24} />
+                            <p className="text-xs font-bold text-teal-700">{proofFile.name}</p>
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="text-slate-400" size={24} />
+                            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest text-center">Upload Receipt or Transfer Confirmation</p>
+                            <p className="text-[10px] text-slate-400">JPG, PNG, PDF up to 5MB</p>
+                          </>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
               </div>
 
               <div className="flex gap-3 pt-4 border-t border-slate-100">
                 <button
                   type="button"
-                  onClick={() => setIsPaymentModalOpen(false)}
+                  onClick={() => {
+                    setIsPaymentModalOpen(false);
+                    setIsCashPayment(false);
+                    setProofFile(null);
+                  }}
                   className="flex-1 py-3 text-sm font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  disabled={!proofFile || !paymentAmount || isSaving}
+                  disabled={(!isCashPayment && !proofFile) || !paymentAmount || isSaving}
                   className="flex-1 py-3 bg-teal-600 text-white rounded-xl font-bold text-sm hover:bg-teal-700 transition-all shadow-lg shadow-teal-500/20 disabled:bg-slate-300 disabled:shadow-none disabled:cursor-not-allowed"
                 >
                   {isSaving ? 'Verifying...' : 'Verify & Record'}
