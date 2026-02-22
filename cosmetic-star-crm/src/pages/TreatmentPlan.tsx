@@ -160,8 +160,48 @@ export default function TreatmentPlan() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Right Column (Mobile: Top): Summary Card */}
+        <div className="lg:order-2 space-y-6">
+          <div className="bg-slate-900 rounded-2xl p-6 text-white shadow-xl shadow-slate-200 sticky top-24">
+            <h3 className="text-lg font-bold mb-6 flex items-center gap-2">
+              <ShieldCheck className="text-teal-400" size={20} />
+              Summary
+            </h3>
+            
+            <div className="space-y-4">
+              <div className="flex justify-between text-slate-400 text-sm">
+                <span>Base Cost</span>
+                <span>£{cost.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between text-slate-400 text-sm">
+                <span>Total Discount</span>
+                <span className="text-teal-400">- £{discount.toLocaleString()}</span>
+              </div>
+              <div className="pt-4 border-t border-slate-800">
+                <div className="flex justify-between items-baseline">
+                  <span className="font-medium">Total to Pay</span>
+                  <span className="text-2xl sm:text-3xl font-bold text-teal-400">£{totalToPay.toLocaleString()}</span>
+                </div>
+              </div>
+            </div>
+
+            <button 
+              onClick={handleGenerateContract}
+              disabled={!selectedService || isSaving}
+              className={cn(
+                "w-full mt-8 py-3 rounded-xl font-bold transition-all active:scale-95",
+                (!selectedService || isSaving)
+                  ? "bg-slate-800 text-slate-500 cursor-not-allowed" 
+                  : "bg-teal-500 hover:bg-teal-400 text-slate-900 shadow-lg shadow-teal-500/20"
+              )}
+            >
+              {isSaving ? 'Saving...' : 'Generate Contract'}
+            </button>
+          </div>
+        </div>
+
         {/* Left Column: Selection & Pricing */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 lg:order-1 space-y-6">
           <section className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
             <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex items-center gap-3">
               <Stethoscope className="text-teal-600" size={20} />
@@ -228,46 +268,6 @@ export default function TreatmentPlan() {
               </div>
             </section>
           )}
-        </div>
-
-        {/* Right Column: Summary Card */}
-        <div className="space-y-6">
-          <div className="bg-slate-900 rounded-2xl p-6 text-white shadow-xl shadow-slate-200 sticky top-24">
-            <h3 className="text-lg font-bold mb-6 flex items-center gap-2">
-              <ShieldCheck className="text-teal-400" size={20} />
-              Summary
-            </h3>
-            
-            <div className="space-y-4">
-              <div className="flex justify-between text-slate-400 text-sm">
-                <span>Base Cost</span>
-                <span>£{cost.toLocaleString()}</span>
-              </div>
-              <div className="flex justify-between text-slate-400 text-sm">
-                <span>Total Discount</span>
-                <span className="text-teal-400">- £{discount.toLocaleString()}</span>
-              </div>
-              <div className="pt-4 border-t border-slate-800">
-                <div className="flex justify-between items-baseline">
-                  <span className="font-medium">Total to Pay</span>
-                  <span className="text-3xl font-bold text-teal-400">£{totalToPay.toLocaleString()}</span>
-                </div>
-              </div>
-            </div>
-
-            <button 
-              onClick={handleGenerateContract}
-              disabled={!selectedService || isSaving}
-              className={cn(
-                "w-full mt-8 py-3 rounded-xl font-bold transition-all active:scale-95",
-                (!selectedService || isSaving)
-                  ? "bg-slate-800 text-slate-500 cursor-not-allowed" 
-                  : "bg-teal-500 hover:bg-teal-400 text-slate-900 shadow-lg shadow-teal-500/20"
-              )}
-            >
-              {isSaving ? 'Saving...' : 'Generate Contract'}
-            </button>
-          </div>
         </div>
       </div>
     </div>

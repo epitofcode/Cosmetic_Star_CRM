@@ -195,8 +195,8 @@ export default function Patients() {
               <tr className="bg-slate-50/50 border-b border-slate-100">
                 <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Patient Identity</th>
                 <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Contact Details</th>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Registration Date</th>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Clinical Status</th>
+                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] hidden md:table-cell">Registration Date</th>
+                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] hidden sm:table-cell">Clinical Status</th>
                 <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-right">Actions</th>
               </tr>
             </thead>
@@ -228,45 +228,45 @@ export default function Patients() {
                   <td className="px-8 py-6">
                     <div className="flex items-center gap-4">
                       <div className={cn(
-                        "w-12 h-12 rounded-2xl flex items-center justify-center font-black text-sm transition-all shadow-sm",
+                        "w-10 h-10 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center font-black text-xs sm:text-sm transition-all shadow-sm",
                         selectedPatient?.id === patient.id 
                           ? "bg-teal-600 text-white scale-110 shadow-teal-200" 
                           : "bg-white border border-slate-200 text-slate-400 group-hover:border-teal-300 group-hover:text-teal-600"
                       )}>
                         {patient.first_name[0]}{patient.last_name[0]}
                       </div>
-                      <div>
+                      <div className="min-w-0">
                         <div className="flex items-center gap-2">
-                          <p className="font-black text-slate-900">{patient.first_name} {patient.last_name}</p>
+                          <p className="font-black text-slate-900 truncate">{patient.first_name} {patient.last_name}</p>
                           {selectedPatient?.id === patient.id && (
-                            <div className="bg-teal-500 rounded-full p-0.5">
+                            <div className="bg-teal-500 rounded-full p-0.5 shrink-0">
                               <UserCheck size={10} className="text-white" />
                             </div>
                           )}
                         </div>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">ID: {patient.id.slice(0, 8)}</p>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5 truncate">ID: {patient.id.slice(0, 8)}</p>
                       </div>
                     </div>
                   </td>
                   <td className="px-8 py-6">
-                    <div className="space-y-1.5 text-sm font-medium">
+                    <div className="space-y-1 text-[11px] sm:text-sm font-medium">
                       <div className="flex items-center gap-2 text-slate-600">
-                        <Phone size={14} className="text-slate-300 group-hover:text-teal-500 transition-colors" />
-                        {patient.phone}
+                        <Phone size={12} className="text-slate-300 group-hover:text-teal-500 transition-colors" />
+                        <span className="truncate">{patient.phone}</span>
                       </div>
                       <div className="flex items-center gap-2 text-slate-600">
-                        <Mail size={14} className="text-slate-300 group-hover:text-teal-500 transition-colors" />
-                        {patient.email}
+                        <Mail size={12} className="text-slate-300 group-hover:text-teal-500 transition-colors" />
+                        <span className="truncate">{patient.email}</span>
                       </div>
                     </div>
                   </td>
-                  <td className="px-8 py-6 text-sm font-bold text-slate-500">
+                  <td className="px-8 py-6 text-sm font-bold text-slate-500 hidden md:table-cell">
                     <div className="flex items-center gap-2 uppercase tracking-tight">
                       <CalendarIcon size={14} className="text-slate-300" />
                       {new Date(patient.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
                     </div>
                   </td>
-                  <td className="px-8 py-6">
+                  <td className="px-8 py-6 hidden sm:table-cell">
                     <span className={cn(
                       "inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all",
                       patient.status === 'Completed' ? "bg-green-50 text-green-700 border-green-100" :

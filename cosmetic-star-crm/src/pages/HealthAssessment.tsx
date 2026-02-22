@@ -338,11 +338,11 @@ export default function HealthAssessment() {
         </section>
 
         {/* Actions */}
-        <div className="fixed bottom-0 left-0 right-0 lg:left-64 bg-white/80 backdrop-blur-md border-t border-slate-200 p-4 z-40">
-          <div className="max-w-4xl mx-auto flex justify-end">
+        <div className="fixed bottom-0 left-0 right-0 lg:left-72 bg-white/80 backdrop-blur-md border-t border-slate-200 p-4 z-40">
+          <div className="max-w-4xl mx-auto flex justify-end px-4 sm:px-6">
             <button
               type="submit"
-              className="flex items-center gap-2 bg-teal-600 hover:bg-teal-700 text-white px-8 py-3 rounded-xl font-bold shadow-lg shadow-teal-500/20 transition-all active:scale-95"
+              className="flex items-center justify-center gap-2 bg-teal-600 hover:bg-teal-700 text-white w-full sm:w-auto px-8 py-3 rounded-xl font-bold shadow-lg shadow-teal-500/20 transition-all active:scale-95"
             >
               <Save size={20} />
               Save Assessment

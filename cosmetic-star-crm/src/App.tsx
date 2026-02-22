@@ -155,7 +155,7 @@ const Dashboard = () => {
       {/* Analytics Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Revenue Performance Area Chart */}
-        <div className="lg:col-span-2 bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
+        <div className="md:col-span-2 lg:col-span-2 bg-white p-6 sm:p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
           <div className="flex items-center justify-between mb-8">
             <div>
               <h3 className="text-lg font-black text-slate-900 tracking-tight">Financial Stream</h3>
@@ -165,7 +165,7 @@ const Dashboard = () => {
               <TrendingUp size={20} />
             </div>
           </div>
-          <div className="h-[300px] w-full">
+          <div className="h-[250px] sm:h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={stats?.revenueAnalytics}>
                 <defs>
@@ -206,7 +206,7 @@ const Dashboard = () => {
         </div>
 
         {/* Clinical Distribution Pie Chart */}
-        <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
+        <div className="bg-white p-6 sm:p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
           <div className="flex items-center justify-between mb-8">
             <div>
               <h3 className="text-lg font-black text-slate-900 tracking-tight">Patient Pipeline</h3>
@@ -216,15 +216,15 @@ const Dashboard = () => {
               <Activity size={20} />
             </div>
           </div>
-          <div className="h-[300px] w-full">
+          <div className="h-[250px] sm:h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
                   data={stats?.clinicalDistribution}
                   cx="50%"
                   cy="50%"
-                  innerRadius={60}
-                  outerRadius={90}
+                  innerRadius={window.innerWidth < 640 ? 40 : 60}
+                  outerRadius={window.innerWidth < 640 ? 70 : 90}
                   paddingAngle={8}
                   dataKey="value"
                 >
@@ -249,27 +249,27 @@ const Dashboard = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
-          <div className="p-8 border-b border-slate-50 flex items-center justify-between">
+          <div className="p-6 sm:p-8 border-b border-slate-50 flex items-center justify-between">
             <div>
               <h3 className="text-lg font-black text-slate-900 tracking-tight">Recent Appointments</h3>
               <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">Upcoming surgery queue</p>
             </div>
-            <button onClick={() => window.location.href = '/calendar'} className="text-teal-600 font-bold text-sm hover:bg-teal-50 px-4 py-2 rounded-xl transition-all">View Schedule</button>
+            <button onClick={() => window.location.href = '/calendar'} className="text-teal-600 font-bold text-sm hover:bg-teal-50 px-4 py-2 rounded-xl transition-all whitespace-nowrap">View Schedule</button>
           </div>
           <div className="divide-y divide-slate-50">
             {recentAppointments.length > 0 ? (
               recentAppointments.map((app, i) => (
-                <div key={i} className="p-6 flex items-center justify-between hover:bg-slate-50/50 transition-colors group">
-                  <div className="flex items-center gap-5">
-                    <div className="w-12 h-12 bg-slate-100 rounded-2xl flex items-center justify-center font-black text-slate-400 group-hover:bg-teal-100 group-hover:text-teal-600 transition-colors">
+                <div key={i} className="p-4 sm:p-6 flex items-center justify-between hover:bg-slate-50/50 transition-colors group">
+                  <div className="flex items-center gap-3 sm:gap-5 min-w-0">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-slate-100 rounded-2xl flex items-center justify-center font-black text-slate-400 group-hover:bg-teal-100 group-hover:text-teal-600 transition-colors shrink-0">
                       {app.name.split(' ').map((n: string) => n[0]).join('')}
                     </div>
-                    <div>
-                      <p className="font-bold text-slate-900">{app.name}</p>
-                      <p className="text-xs font-medium text-slate-500 mt-0.5">{app.service} • {app.time}</p>
+                    <div className="min-w-0">
+                      <p className="font-bold text-slate-900 truncate">{app.name}</p>
+                      <p className="text-[10px] sm:text-xs font-medium text-slate-500 mt-0.5 truncate">{app.service} • {app.time}</p>
                     </div>
                   </div>
-                  <span className={cn("px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest border", app.status === 'Confirmed' ? "bg-green-50 text-green-600 border-green-100" : app.status === 'In Review' ? "bg-blue-50 text-blue-600 border-blue-100" : "bg-amber-50 text-amber-600 border-amber-100")}>
+                  <span className={cn("px-3 sm:px-4 py-1.5 rounded-xl text-[8px] sm:text-[10px] font-black uppercase tracking-widest border shrink-0 ml-2", app.status === 'Confirmed' ? "bg-green-50 text-green-700 border-green-100" : app.status === 'In Review' ? "bg-blue-50 text-blue-600 border-blue-100" : "bg-amber-50 text-amber-600 border-amber-100")}>
                     {app.status}
                   </span>
                 </div>
@@ -283,12 +283,12 @@ const Dashboard = () => {
         </div>
 
         {/* Live Clinic Activity Mini-Chart */}
-        <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm flex flex-col">
+        <div className="bg-white p-6 sm:p-8 rounded-[2.5rem] border border-slate-100 shadow-sm flex flex-col">
           <div className="mb-6">
             <h3 className="text-lg font-black text-slate-900 tracking-tight">Clinic Pulse</h3>
             <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">Live activity volume</p>
           </div>
-          <div className="flex-1 min-h-[200px]">
+          <div className="flex-1 min-h-[150px] sm:min-h-[200px]">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={stats?.activityAnalytics}>
                 <Tooltip 
@@ -313,12 +313,12 @@ const Dashboard = () => {
           </div>
           <div className="mt-6 grid grid-cols-2 gap-4">
             <div className="p-3 bg-teal-50 rounded-2xl">
-              <p className="text-[10px] font-black text-teal-600 uppercase tracking-wider mb-1">Reg Rate</p>
-              <p className="text-xl font-black text-teal-900">High</p>
+              <p className="text-[8px] sm:text-[10px] font-black text-teal-600 uppercase tracking-wider mb-1">Reg Rate</p>
+              <p className="text-lg sm:text-xl font-black text-teal-900">High</p>
             </div>
             <div className="p-3 bg-indigo-50 rounded-2xl">
-              <p className="text-[10px] font-black text-indigo-600 uppercase tracking-wider mb-1">Bookings</p>
-              <p className="text-xl font-black text-indigo-900">Steady</p>
+              <p className="text-[8px] sm:text-[10px] font-black text-indigo-600 uppercase tracking-wider mb-1">Bookings</p>
+              <p className="text-lg sm:text-xl font-black text-indigo-900">Steady</p>
             </div>
           </div>
         </div>

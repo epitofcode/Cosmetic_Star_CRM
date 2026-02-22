@@ -175,14 +175,14 @@ export default function Financials() {
           {/* Main Financial Card */}
           <div className="xl:col-span-2 space-y-6">
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-              <div className="p-8 bg-slate-900 text-white">
-                <div className="flex justify-between items-start mb-8">
+              <div className="p-6 sm:p-8 bg-slate-900 text-white">
+                <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-8">
                   <div>
-                    <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1">Treatment Plan</p>
-                    <h2 className="text-2xl font-bold">{billingRecord.service_name}</h2>
+                    <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">Treatment Plan</p>
+                    <h2 className="text-xl sm:text-2xl font-bold">{billingRecord.service_name}</h2>
                   </div>
                   <span className={cn(
-                    "px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border",
+                    "px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border",
                     billingRecord.status === 'Payment Done' 
                       ? "bg-green-500/10 border-green-500/20 text-green-400" 
                       : "bg-amber-500/10 border-amber-500/20 text-amber-400"
@@ -191,18 +191,18 @@ export default function Financials() {
                   </span>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8">
                   <div>
-                    <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">Total Contract Value</p>
-                    <p className="text-2xl font-black">£{billingRecord.total_amount.toLocaleString()}</p>
+                    <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">Total Contract</p>
+                    <p className="text-xl sm:text-2xl font-black">£{billingRecord.total_amount.toLocaleString()}</p>
                   </div>
                   <div>
                     <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">Amount Paid</p>
-                    <p className="text-2xl font-black text-teal-400">£{billingRecord.amount_paid.toLocaleString()}</p>
+                    <p className="text-xl sm:text-2xl font-black text-teal-400">£{billingRecord.amount_paid.toLocaleString()}</p>
                   </div>
                   <div>
-                    <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">Remaining Balance</p>
-                    <p className="text-2xl font-black text-red-400">£{(billingRecord.total_amount - billingRecord.amount_paid).toLocaleString()}</p>
+                    <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">Remaining</p>
+                    <p className="text-xl sm:text-2xl font-black text-red-400">£{(billingRecord.total_amount - billingRecord.amount_paid).toLocaleString()}</p>
                   </div>
                 </div>
 
@@ -214,15 +214,15 @@ export default function Financials() {
                 </div>
               </div>
 
-              <div className="p-6 flex justify-between items-center border-t border-slate-100">
-                <p className="text-sm text-slate-500 italic">Last transaction: {billingRecord.transactions[0]?.date || 'No payments yet'}</p>
+              <div className="p-4 sm:p-6 flex flex-col sm:flex-row justify-between items-center gap-4 border-t border-slate-100">
+                <p className="text-xs sm:text-sm text-slate-500 italic">Last txn: {billingRecord.transactions[0]?.date || 'None'}</p>
                 {billingRecord.status === 'Payment Pending' && (
                   <button 
                     onClick={() => setIsPaymentModalOpen(true)}
-                    className="bg-teal-600 hover:bg-teal-700 text-white px-6 py-2.5 rounded-xl font-bold text-sm transition-all shadow-lg shadow-teal-500/20 flex items-center gap-2"
+                    className="w-full sm:w-auto bg-teal-600 hover:bg-teal-700 text-white px-6 py-2.5 rounded-xl font-bold text-sm transition-all shadow-lg shadow-teal-500/20 flex items-center justify-center gap-2"
                   >
                     <Plus size={18} />
-                    Record New Payment
+                    Record Payment
                   </button>
                 )}
               </div>
@@ -237,21 +237,21 @@ export default function Financials() {
                 <table className="w-full text-left">
                   <thead>
                     <tr className="border-b border-slate-100">
-                      <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase">Receipt #</th>
-                      <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase">Date</th>
-                      <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase">Amount</th>
-                      <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase text-right">Actions</th>
+                      <th className="px-4 sm:px-6 py-4 text-[10px] font-bold text-slate-400 uppercase">Receipt #</th>
+                      <th className="px-4 sm:px-6 py-4 text-[10px] font-bold text-slate-400 uppercase hidden sm:table-cell">Date</th>
+                      <th className="px-4 sm:px-6 py-4 text-[10px] font-bold text-slate-400 uppercase">Amount</th>
+                      <th className="px-4 sm:px-6 py-4 text-[10px] font-bold text-slate-400 uppercase text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50">
                     {billingRecord.transactions.map(t => (
                       <tr key={t.id} className="hover:bg-slate-50/50 transition-colors">
-                        <td className="px-6 py-4">
-                          <span className="font-mono text-xs font-bold text-slate-600">{t.receipt_number}</span>
+                        <td className="px-4 sm:px-6 py-4">
+                          <span className="font-mono text-[10px] sm:text-xs font-bold text-slate-600">{t.receipt_number}</span>
                         </td>
-                        <td className="px-6 py-4 text-sm text-slate-600">{t.date}</td>
-                        <td className="px-6 py-4 font-bold text-slate-900">£{t.amount.toLocaleString()}</td>
-                        <td className="px-6 py-4 text-right">
+                        <td className="px-4 sm:px-6 py-4 text-xs sm:text-sm text-slate-600 hidden sm:table-cell">{t.date}</td>
+                        <td className="px-4 sm:px-6 py-4 font-bold text-slate-900 text-xs sm:text-sm">£{t.amount.toLocaleString()}</td>
+                        <td className="px-4 sm:px-6 py-4 text-right">
                           <div className="flex justify-end gap-2">
                             <button 
                               onClick={() => setActiveReceipt({

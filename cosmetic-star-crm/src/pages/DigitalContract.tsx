@@ -190,15 +190,15 @@ export default function DigitalContract({ onSign }: DigitalContractProps) {
             </div>
           </div>
           <div className="p-6">
-            <div className="border-2 border-dashed border-slate-200 rounded-xl bg-slate-50 overflow-hidden min-h-[16rem] flex items-center justify-center">
+            <div className="border-2 border-dashed border-slate-200 rounded-xl bg-slate-50 overflow-hidden min-h-[12rem] sm:min-h-[16rem] flex items-center justify-center">
               {existingSignature ? (
-                <img src={existingSignature} alt="Electronic Signature" className="max-h-64 object-contain" />
+                <img src={existingSignature} alt="Electronic Signature" className="max-h-48 sm:max-h-64 object-contain" />
               ) : (
                 <SignatureCanvas 
                   ref={sigCanvas}
                   penColor="#0f172a"
                   canvasProps={{
-                    className: "w-full h-64 cursor-crosshair"
+                    className: "w-full h-48 sm:h-64 cursor-crosshair"
                   }}
                 />
               )}

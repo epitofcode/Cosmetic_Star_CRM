@@ -119,6 +119,8 @@ export default function DashboardLayout({ children, isContractSigned }: { childr
                     e.preventDefault();
                     if (isPatientLocked) alert('Please select a patient first.');
                     else if (isContractLocked) alert('Please sign the contract to unlock this section.');
+                  } else {
+                    setIsSidebarOpen(false);
                   }
                 }}
               >

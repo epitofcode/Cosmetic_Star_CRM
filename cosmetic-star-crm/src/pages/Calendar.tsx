@@ -146,7 +146,7 @@ export default function CalendarPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Calendar Picker */}
           <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-            <div className="p-6 flex items-center justify-between border-b border-slate-100">
+            <div className="p-4 sm:p-6 flex items-center justify-between border-b border-slate-100">
               <h2 className="text-lg font-bold text-slate-900">{format(currentDate, 'MMMM yyyy')}</h2>
               <div className="flex gap-2">
                 <button onClick={handlePrevMonth} className="p-2 hover:bg-slate-100 rounded-lg text-slate-600">
@@ -158,15 +158,15 @@ export default function CalendarPage() {
               </div>
             </div>
 
-            <div className="p-6">
-              <div className="grid grid-cols-7 gap-2 mb-4">
+            <div className="p-4 sm:p-6">
+              <div className="grid grid-cols-7 gap-1 sm:gap-2 mb-4">
                 {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => (
-                  <div key={day} className="text-center text-xs font-bold text-slate-400 uppercase tracking-widest py-2">
+                  <div key={day} className="text-center text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-widest py-2">
                     {day}
                   </div>
                 ))}
               </div>
-              <div className="grid grid-cols-7 gap-2">
+              <div className="grid grid-cols-7 gap-1 sm:gap-2">
                 {days.map((day, idx) => {
                   const isSelected = selectedDate && isSameDay(day, selectedDate);
                   const isCurrentMonth = isSameMonth(day, monthStart);
@@ -181,7 +181,7 @@ export default function CalendarPage() {
                         setSelectedSlot(null);
                       }}
                       className={cn(
-                        "h-14 flex flex-col items-center justify-center rounded-xl transition-all border relative",
+                        "h-10 sm:h-14 flex flex-col items-center justify-center rounded-lg sm:rounded-xl transition-all border relative",
                         !isCurrentMonth ? "text-slate-300 border-transparent" : "border-slate-100",
                         isSelected 
                           ? "bg-teal-600 border-teal-600 text-white shadow-lg shadow-teal-500/20 scale-105 z-10" 
@@ -190,10 +190,10 @@ export default function CalendarPage() {
                             : "hover:border-teal-500 hover:text-teal-600 bg-white text-slate-700"
                       )}
                     >
-                      <span className="text-sm font-bold">{format(day, 'd')}</span>
+                      <span className="text-xs sm:text-sm font-bold">{format(day, 'd')}</span>
                       {isToday(day) && (
                         <span className={cn(
-                          "absolute bottom-2 w-1 h-1 rounded-full",
+                          "absolute bottom-1.5 sm:bottom-2 w-1 h-1 rounded-full",
                           isSelected ? "bg-white" : "bg-teal-500"
                         )} />
                       )}
