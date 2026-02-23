@@ -28,7 +28,9 @@
   "optionalDependencies": {
     "@rollup/rollup-linux-x64-gnu": "*",
     "@rollup/rollup-linux-arm64-gnu": "*",
-    "@esbuild/linux-x64": "*"
+    "@esbuild/linux-x64": "*",
+    "@tailwindcss/oxide-linux-x64-gnu": "*",
+    "@tailwindcss/oxide-linux-arm64-gnu": "*"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
