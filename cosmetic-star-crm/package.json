@@ -27,7 +27,8 @@
   },
   "optionalDependencies": {
     "@rollup/rollup-linux-x64-gnu": "*",
-    "@rollup/rollup-linux-arm64-gnu": "*"
+    "@rollup/rollup-linux-arm64-gnu": "*",
+    "@esbuild/linux-x64": "*"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
