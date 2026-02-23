@@ -50,6 +50,7 @@ function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+// Final deployment build: 2026-02-23
 function StarIcon({ className, size }: { className?: string, size?: number }) {
   return (
     <svg width={size || 24} height={size || 24} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className={className}>
