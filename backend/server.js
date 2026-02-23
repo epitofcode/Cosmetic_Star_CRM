@@ -348,46 +348,72 @@ app.post('/api/transactions', upload.single('proof'), async (req, res) => {
 // 11. Get Dashboard Stats
 app.get('/api/dashboard/stats', async (req, res) => {
     try {
+        const now = new Date();
+        const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+
+        // 1. Total Patients
         const { count: patientCount } = await supabase.from('patients').select('*', { count: 'exact', head: true });
+        
+        // 2. Surgery Bookings
         const { count: bookingCount } = await supabase.from('bookings').select('*', { count: 'exact', head: true });
         
-        // Sum revenue from transactions
-        const { data: transactions } = await supabase.from('transactions').select('amount, date').order('date', { ascending: true });
-        const totalRevenue = transactions?.reduce((sum, t) => sum + Number(t.amount), 0) || 0;
+        // 3. Monthly Revenue (Current Month)
+        const { data: monthlyTransactions } = await supabase
+            .from('transactions')
+            .select('amount')
+            .gte('date', firstDayOfMonth);
+        const monthlyRevenue = monthlyTransactions?.reduce((sum, t) => sum + Number(t.amount), 0) || 0;
 
-        // Count pending reports (patients with treatment plans but not completed)
-        const { count: pendingPayments } = await supabase.from('treatment_plans').select('*', { count: 'exact', head: true }).neq('status', 'Completed');
+        // 4. Pending Reports (Patients without Medical Intake)
+        // We get all patient IDs and all medical intake patient IDs to find the difference
+        const { data: allPatients } = await supabase.from('patients').select('id');
+        const { data: allIntakes } = await supabase.from('medical_intakes').select('patient_id');
+        const intakeIds = new Set(allIntakes?.map(i => i.patient_id));
+        const pendingReports = allPatients?.filter(p => !intakeIds.has(p.id)).length || 0;
 
-        // Revenue Analytics (Last 7 days)
+        // --- Charts Data ---
+
+        // Last 7 Days Range
         const last7Days = [...Array(7)].map((_, i) => {
             const d = new Date();
             d.setDate(d.getDate() - i);
             return d.toISOString().split('T')[0];
         }).reverse();
 
-        // Calculate a "Daily Average" based on actual total revenue
-        const dailyAvg = totalRevenue / (transactions?.length || 1);
+        // 5. Revenue Analytics (Actual Transactions per day)
+        const { data: recentTransactions } = await supabase
+            .from('transactions')
+            .select('amount, date')
+            .gte('date', last7Days[0]);
+
+        const revenueAnalytics = last7Days.map(date => ({
+            date: new Date(date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }),
+            amount: recentTransactions?.filter(t => t.date === date).reduce((sum, t) => sum + Number(t.amount), 0) || 0
+        }));
+
+        // 6. Clinic Activity (Actual Registrations and Bookings per day)
+        const { data: recentPatients } = await supabase
+            .from('patients')
+            .select('created_at')
+            .gte('created_at', new Date(last7Days[0]).toISOString());
         
-        const revenueAnalytics = last7Days.map((date, index) => {
-            const actualForDay = transactions?.filter(t => t.date === date).reduce((sum, t) => sum + Number(t.amount), 0) || 0;
-            // Add a "Jitter" if actual data is 0 to make the chart look active for demo
-            // But we keep it proportional to the total clinic performance
-            const demoJitter = totalRevenue > 0 ? (Math.random() * (dailyAvg * 0.5)) : (Math.random() * 500);
+        const { data: recentBookings } = await supabase
+            .from('bookings')
+            .select('created_at')
+            .gte('created_at', new Date(last7Days[0]).toISOString());
+
+        const activityAnalytics = last7Days.map(date => {
+            const regs = recentPatients?.filter(p => p.created_at.split('T')[0] === date).length || 0;
+            const books = recentBookings?.filter(b => b.created_at.split('T')[0] === date).length || 0;
             return {
                 date: new Date(date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }),
-                amount: actualForDay > 0 ? actualForDay : Math.floor(demoJitter)
+                patients: regs,
+                bookings: books
             };
         });
 
-        // Clinical Activity (Line Chart Data)
-        const activityAnalytics = last7Days.map((date, index) => ({
-            date: new Date(date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }),
-            patients: Math.floor(patientCount / 7) + Math.floor(Math.random() * 5),
-            bookings: Math.floor(bookingCount / 7) + Math.floor(Math.random() * 3)
-        }));
-
-        // Clinical Distribution
-        const { data: patients } = await supabase.from('patients').select('id, treatment_plans(status), contracts(id)');
+        // 7. Clinical Distribution (Patient Funnel)
+        const { data: distributionData } = await supabase.from('patients').select('id, treatment_plans(status), contracts(id)');
         const distribution = {
             'New Patients': 0,
             'Treatment Plans': 0,
@@ -395,31 +421,28 @@ app.get('/api/dashboard/stats', async (req, res) => {
             'Completed': 0
         };
 
-        patients?.forEach(p => {
+        distributionData?.forEach(p => {
             if (p.treatment_plans?.[0]?.status === 'Completed') distribution['Completed']++;
             else if (p.contracts?.length > 0) distribution['Contracts Signed']++;
             else if (p.treatment_plans?.length > 0) distribution['Treatment Plans']++;
             else distribution['New Patients']++;
         });
 
-        // If distribution is all zeros, add some "Market Research" data for the demo
-        if (patientCount === 0) {
-            distribution['New Patients'] = 12;
-            distribution['Treatment Plans'] = 8;
-            distribution['Contracts Signed'] = 5;
-        }
-
         const clinicalDistribution = Object.entries(distribution).map(([name, value]) => ({ name, value }));
 
         res.json({
             totalPatients: patientCount || 0,
             surgeryBookings: bookingCount || 0,
-            totalRevenue: totalRevenue,
-            pendingReports: pendingPayments || 0,
+            totalRevenue: monthlyRevenue,
+            pendingReports: pendingReports,
             revenueAnalytics,
             activityAnalytics,
             clinicalDistribution
         });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
