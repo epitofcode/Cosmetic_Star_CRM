@@ -7,6 +7,7 @@ import TreatmentPlan from './pages/TreatmentPlan';
 import DigitalContract from './pages/DigitalContract';
 import CalendarPage from './pages/Calendar';
 import Financials from './pages/Financials';
+import Settings from './pages/Settings';
 import { PatientProvider, usePatient } from './context/PatientContext';
 import { checkContractStatus, getDashboardStats, getRecentAppointments } from './services/api';
 
@@ -353,7 +354,7 @@ function AppContent() {
           <Route path="/contract" element={<DigitalContract onSign={() => setIsContractSigned(true)} />} />
           <Route path="/calendar" element={isContractSigned ? <CalendarPage /> : <Navigate to="/contract" replace />} />
           <Route path="/financials" element={<Financials />} />
-          <Route path="/settings" element={<div className="p-8">Settings Page Placeholder</div>} />
+          <Route path="/settings" element={<Settings />} />
         </Routes>
       </DashboardLayout>
     </Router>

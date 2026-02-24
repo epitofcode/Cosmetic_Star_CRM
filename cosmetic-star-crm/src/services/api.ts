@@ -95,6 +95,22 @@ export const recordTransaction = async (formData: FormData) => {
     return response.data;
 };
 
+// Admin Database Explorer
+export const adminGetTableData = async (tableName: string) => {
+    const response = await api.get(`/admin/tables/${tableName}`);
+    return response.data;
+};
+
+export const adminUpdateRow = async (tableName: string, id: string, data: any) => {
+    const response = await api.put(`/admin/tables/${tableName}/${id}`, data);
+    return response.data;
+};
+
+export const adminDeleteRow = async (tableName: string, id: string) => {
+    const response = await api.delete(`/admin/tables/${tableName}/${id}`);
+    return response.data;
+};
+
 // Dashboard
 export const getDashboardStats = async () => {
     const response = await api.get('/dashboard/stats');

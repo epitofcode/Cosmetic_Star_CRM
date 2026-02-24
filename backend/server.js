@@ -492,6 +492,45 @@ app.get('/api/dashboard/recent-appointments', async (req, res) => {
     }
 });
 
+// --- Admin Database Explorer Endpoints ---
+
+// 13. Get all rows from a specific table
+app.get('/api/admin/tables/:tableName', async (req, res) => {
+    const { tableName } = req.params;
+    const { data, error } = await supabase.from(tableName).select('*').order('created_at', { ascending: false });
+    
+    if (error) return res.status(400).json({ error: error.message });
+    res.json(data);
+});
+
+// 14. Update a row in any table
+app.put('/api/admin/tables/:tableName/:id', async (req, res) => {
+    const { tableName, id } = req.params;
+    const updateData = req.body;
+    
+    // Remove protected fields
+    delete updateData.id;
+    delete updateData.created_at;
+
+    const { data, error } = await supabase
+        .from(tableName)
+        .update(updateData)
+        .eq('id', id)
+        .select();
+
+    if (error) return res.status(400).json({ error: error.message });
+    res.json(data[0]);
+});
+
+// 15. Delete a row from any table
+app.delete('/api/admin/tables/:tableName/:id', async (req, res) => {
+    const { tableName, id } = req.params;
+    const { error } = await supabase.from(tableName).delete().eq('id', id);
+
+    if (error) return res.status(400).json({ error: error.message });
+    res.json({ message: 'Record deleted successfully' });
+});
+
 // 404 Handler
 app.use((req, res) => {
     console.warn(`404 - Not Found: ${req.method} ${req.url}`);
