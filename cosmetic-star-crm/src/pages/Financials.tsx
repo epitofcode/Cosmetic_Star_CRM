@@ -28,6 +28,7 @@ function cn(...inputs: ClassValue[]) {
 interface Transaction {
   id: string;
   amount: number;
+  type?: string;
   date: string;
   proof_name: string;
   receipt_number: string;
