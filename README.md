@@ -1,118 +1,83 @@
-# Cosmetic Star CRM
+# Cosmetic Star CRM (v1.0.6-STABLE)
 
 A professional, cloud-native clinical management and patient onboarding platform designed for **Cosmetic Star UK**. This system digitizes the entire patient lifecycle—from initial registration and medical assessments to digital contract signing and surgery scheduling.
 
-## 🚀 Live Demo
-*   **Frontend:** [https://cosmetic-star-crm.vercel.app](https://cosmetic-star-crm.vercel.app)
-*   **Backend API:** [https://cosmetic-star-crm.onrender.com](https://cosmetic-star-crm.onrender.com)
-*   **Health Status:** [https://cosmetic-star-crm.onrender.com/api/health](https://cosmetic-star-crm.onrender.com/api/health) (Check for version 1.0.2+)
+## 🚀 Live Demo & Status
+*   **Frontend (Production):** [https://cosmetic-star-crm.vercel.app](https://cosmetic-star-crm.vercel.app)
+*   **Backend API (Render):** [https://cosmetic-star-crm.onrender.com](https://cosmetic-star-crm.onrender.com)
+*   **Health Check:** [Verify Version 1.0.6-STABLE](https://cosmetic-star-crm.onrender.com/api/health)
 
 ---
 
-## ✨ Key Features
+## ✨ Core Clinical Workflows
 
-### 1. Executive Analytics Dashboard
-*   **Real-Time Metrics:** Live tracking of Total Patients, Surgery Bookings, and Monthly Revenue.
-*   **Financial Stream:** Interactive Area Charts showing 7-day revenue trends.
-*   **Patient Funnel:** Visual breakdown of clinical statuses (New -> Plan -> Signed -> Completed).
-*   **Clinic Pulse:** Comparative activity chart for registrations vs. bookings.
+### 1. Advanced Executive Dashboard
+*   **Real-Time Analytics:** Accurate, database-driven metrics for Total Patients, Surgery Bookings, and Monthly Revenue.
+*   **Clinical Activity Charts:** 7-day Area Charts for revenue trends and Step-Charts for clinic registration vs. booking volume.
+*   **Patient Lifecycle Funnel:** Visual breakdown of statuses (New -> Plan -> Signed -> Completed).
+*   **Live Auto-Sync:** Automated 30-second polling with pulsing connectivity indicator.
 
-### 2. Patient & Clinical Management
-*   **Comprehensive Registry:** Searchable database with clinical status indicators.
-*   **Dynamic Health Assessments:** 5-section medical form with conditional logic for high-fidelity data capture.
-*   **Treatment Planning:** Custom package builder with automatic discount and total-to-pay calculations.
+### 2. Digital Tablet Handover Logic
+*   **Staff-Driven Assessments:** 5-section medical consult form with dynamic conditional visibility for clinical details.
+*   **Electronic Signature:** Integrated signature pad for on-site contract signing. Signatures are encrypted and saved to cloud storage.
+*   **Security Rule:** Chronological booking enforcement—surgical slots are locked until a verified contract is present.
 
-### 3. Handover Workflow & Security
-*   **Digital Contracts:** Integrated signature pad for on-site tablet handover.
-*   **Cloud Storage:** Signatures and payment proofs are securely stored in encrypted cloud buckets.
-*   **Chronological Booking:** Advanced logic that prevents surgery booking until a verified contract is signed.
+### 3. Persistent Surgical Scheduling
+*   **Choice Memory:** The Calendar intelligently remembers and auto-loads a patient's previous slot choice.
+*   **Double-Booking Prevention:** Occupied slots are automatically struck through and disabled in real-time.
+*   **Cloud Persistence:** All bookings are saved to Supabase with automatic dashboard updates.
 
-### 4. Financials & Receipts
-*   **Flexible Payments:** Support for one-time payments, monthly installments, and cash transactions.
-*   **Receipt Generation:** Automated, professional PDF receipts generated instantly on the client-side.
-*   **Payment Verification:** Admin workflow for uploading and reviewing proofs of payment.
-
----
-
-## 🛠️ Tech Stack
-
-### Frontend
-*   **Framework:** React 19 (TypeScript)
-*   **Build Tool:** Vite
-*   **Styling:** Tailwind CSS v4
-*   **Charts:** Recharts
-*   **Icons:** Lucide React
-*   **Animations:** Framer Motion
-
-### Backend
-*   **Runtime:** Node.js
-*   **Framework:** Express.js
-*   **Database:** Supabase (PostgreSQL)
-*   **Storage:** Supabase Storage (S3-compatible)
-
-### Infrastructure
-*   **Hosting:** Vercel (Frontend), Render (Backend)
-*   **Emails:** EmailJS Integration
-*   **PDF Logic:** jsPDF + html2canvas
+### 4. Financial & Revenue Management
+*   **Multi-Mode Payments:** Full support for **Installments (with Proof of Payment)** and **Cash Payments (Instant)**.
+*   **Receipt Engine:** Automatic generation of professional, branded PDF receipts with balance tracking.
+*   **Verification Workflow:** High-fidelity document upload for bank transfer and card payment proofs.
 
 ---
 
-## 📂 Project Structure
+## 🛠️ Industrial Tech Stack
+
+### Client Layer
+*   **Core:** React 19 (TypeScript), Vite
+*   **Visuals:** Recharts (High-end Data Viz), Lucide React (Clinical Icons), Framer Motion
+*   **Styling:** Tailwind CSS v4 (Mobile-First Responsive Design)
+
+### Engine & Storage
+*   **API:** Node.js, Express.js (v4.x Stable)
+*   **Persistence:** Supabase (PostgreSQL) with JSONB for dynamic medical data.
+*   **Object Storage:** Supabase Storage for encrypted signatures and payment docs.
+
+---
+
+## 📂 Project Architecture
 
 ```text
-├── backend/                # Node.js Express server
-│   ├── server.js           # API endpoints & logic
-│   ├── schema.sql          # Database structure
+├── backend/                # Node.js Express server (Production Engine)
+│   ├── server.js           # REST API endpoints & Clinical Logic
+│   ├── schema.sql          # DB Structure & RLS Security Rules
 │   └── package.json
-├── cosmetic-star-crm/      # React Frontend
+├── cosmetic-star-crm/      # React 19 Frontend (Vercel Optimized)
 │   ├── src/
-│   │   ├── components/     # UI Components (Receipts, Layouts)
-│   │   ├── pages/          # Dashboard, Patients, Contract, etc.
-│   │   ├── services/       # API abstraction (axios)
-│   │   └── context/        # Patient state management
-│   └── package.json
-└── vercel.json             # Root deployment config
+│   │   ├── components/     # PDF Receipt Generator, Layouts
+│   │   ├── pages/          # Dashboard, Patients, Calendar, etc.
+│   │   ├── services/       # API Layer (Axios)
+│   │   └── context/        # Patient State Management
+│   └── vercel.json         # Workspace Deployment Config
+└── README.md
 ```
 
 ---
 
-## ⚙️ Setup & Installation
+## 📝 Maintenance & Production Handover
 
-### Prerequisites
-*   Node.js (v18+)
-*   Supabase Project URL & Service Role Key
+### ⚠️ Critical Deployment Note
+The system is optimized for cross-platform builds. The `optionalDependencies` in `package.json` include Linux-specific binaries (@rollup, @esbuild, @tailwindcss/oxide) to ensure zero-downtime deployments on Vercel and Render.
 
-### 1. Database Setup
-Run the SQL commands found in `backend/schema.sql` inside your Supabase SQL Editor to initialize the tables and disable RLS for the prototype.
-
-### 2. Backend Setup
-```bash
-cd backend
-npm install
-# Create a .env file with:
-# PORT=3001
-# SUPABASE_URL=your_url
-# SUPABASE_KEY=your_service_role_key
-npm start
-```
-
-### 3. Frontend Setup
-```bash
-cd cosmetic-star-crm
-npm install
-# Create a .env.local file with:
-# VITE_API_URL=http://localhost:3001/api
-npm run dev
-```
+### Database Readiness
+The database is pre-configured with the following rule-sets:
+*   `patients_email_key`: Prevents duplicate registrations.
+*   `bookings_patient_id_key`: Enables slot persistence and choice memory.
+*   `transactions_patient_id_fkey`: Decouples payments from bookings for flexible clinic revenue tracking.
 
 ---
 
-## 📝 Proposal & Handover
-This project is currently in its **Phase 1 Prototype** stage.
-*   **Scalability:** Ready for transition to Supabase Pro for automated backups and higher storage limits.
-*   **Responsiveness:** Fully optimized for Desktop, Tablet, and Mobile views.
-*   **Production Readiness:** Requires replacement of Mock EmailJS IDs with production credentials.
-
----
-
-**Developed by epitofcode for Cosmetic Star UK.**
+**Developed with precision for Cosmetic Star UK.**
