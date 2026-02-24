@@ -30,7 +30,7 @@ app.use((req, res, next) => {
 app.get('/api/health', (req, res) => {
     res.json({ 
         status: 'ok', 
-        version: '1.0.3',
+        version: '1.0.4',
         supabaseConnected: !!supabaseUrl && !!supabaseKey,
         time: new Date().toISOString() 
     });
