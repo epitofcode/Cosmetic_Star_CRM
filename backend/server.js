@@ -322,8 +322,10 @@ app.post('/api/transactions', upload.single('proof'), async (req, res) => {
     const { patient_id, amount, type = 'Installment' } = req.body;
     const file = req.file;
 
+    console.log(`Transaction attempt: Patient=${patient_id}, Amount=${amount}, Type=${type}, HasFile=${!!file}`);
+
     let publicUrl = null;
-    let fileNameOriginal = 'Cash Payment';
+    let fileNameOriginal = type === 'Cash' ? 'Cash Payment' : 'No File Provided';
 
     if (file) {
         const fileName = `proofs/${patient_id}_${Date.now()}_${file.originalname}`;
