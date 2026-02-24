@@ -30,8 +30,7 @@ app.use((req, res, next) => {
 app.get('/api/health', (req, res) => {
     res.json({ 
         status: 'ok', 
-        version: '1.0.5-FINAL-SYNC',
-        deployment_id: 'deploy_' + Date.now(),
+        version: '1.0.6-STABLE',
         supabaseConnected: !!supabaseUrl && !!supabaseKey,
         time: new Date().toISOString() 
     });
@@ -351,8 +350,9 @@ app.post('/api/transactions', upload.single('proof'), async (req, res) => {
             type: type, 
             proof_url: publicUrl,
             proof_name: fileNameOriginal,
-            receipt_number: receiptNumber,
-            date: new Date().toISOString().split('T')[0]
+            receipt_number: receiptNumber
+            // Note: 'date' is omitted here to bypass Supabase schema cache issues.
+            // The DB handles it automatically via DEFAULT CURRENT_DATE.
         }])
         .select();
 
