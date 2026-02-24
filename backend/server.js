@@ -30,7 +30,7 @@ app.use((req, res, next) => {
 app.get('/api/health', (req, res) => {
     res.json({ 
         status: 'ok', 
-        version: '1.0.6-STABLE',
+        version: '1.0.7-ADMIN-FIX',
         supabaseConnected: !!supabaseUrl && !!supabaseKey,
         time: new Date().toISOString() 
     });
@@ -497,7 +497,15 @@ app.get('/api/dashboard/recent-appointments', async (req, res) => {
 // 13. Get all rows from a specific table
 app.get('/api/admin/tables/:tableName', async (req, res) => {
     const { tableName } = req.params;
-    const { data, error } = await supabase.from(tableName).select('*').order('created_at', { ascending: false });
+    let query = supabase.from(tableName).select('*');
+    
+    if (tableName === 'contracts') {
+        query = query.order('signed_at', { ascending: false });
+    } else {
+        query = query.order('created_at', { ascending: false });
+    }
+    
+    const { data, error } = await query;
     
     if (error) return res.status(400).json({ error: error.message });
     res.json(data);
