@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "outputDirectory": "cosmetic-star-crm/dist",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
