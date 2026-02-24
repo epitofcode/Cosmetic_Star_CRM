@@ -29,7 +29,7 @@ import {
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { usePatient } from '../context/PatientContext';
-import { getBookedSlots, createBooking } from '../services/api';
+import { getBookedSlots, createBooking, getBooking } from '../services/api';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -47,6 +47,7 @@ export default function CalendarPage() {
   const [bookedSlots, setBookedSlots] = useState<string[]>([]);
   const [isBookingConfirmed, setIsBookingConfirmed] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [isLoadingSlots, setIsLoadingSlots] = useState(false);
 
   const monthStart = startOfMonth(currentDate);
@@ -63,10 +64,32 @@ export default function CalendarPage() {
   const handleNextMonth = () => setCurrentDate(addWeeks(currentDate, 4));
 
   useEffect(() => {
-    if (selectedDate) {
+    if (selectedPatient) {
+      fetchExistingBooking();
+    }
+  }, [selectedPatient]);
+
+  const fetchExistingBooking = async () => {
+    try {
+      setLoading(true);
+      const booking = await getBooking(selectedPatient!.id);
+      if (booking) {
+        setSelectedDate(new Date(booking.date));
+        setSelectedSlot(booking.time_slot);
+        setIsBookingConfirmed(true);
+      }
+    } catch (error) {
+      console.error('Error fetching booking:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (selectedDate && !isBookingConfirmed) {
       fetchSlots();
     }
-  }, [selectedDate]);
+  }, [selectedDate, isBookingConfirmed]);
 
   const fetchSlots = async () => {
     if (!selectedDate) return;
@@ -121,6 +144,15 @@ export default function CalendarPage() {
           <h2 className="text-xl font-bold text-slate-900">No Patient Selected</h2>
           <p className="text-slate-500 max-w-xs mx-auto">Please select a patient first to book a surgery slot.</p>
         </div>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20">
+        <Loader2 className="animate-spin text-teal-600 mb-4" size={40} />
+        <p className="text-slate-500 font-medium font-black uppercase tracking-widest text-xs">Retrieving Booking Data...</p>
       </div>
     );
   }

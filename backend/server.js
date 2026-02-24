@@ -30,7 +30,7 @@ app.use((req, res, next) => {
 app.get('/api/health', (req, res) => {
     res.json({ 
         status: 'ok', 
-        version: '1.0.2',
+        version: '1.0.3',
         supabaseConnected: !!supabaseUrl && !!supabaseKey,
         time: new Date().toISOString() 
     });
@@ -232,11 +232,24 @@ app.post('/api/bookings', async (req, res) => {
 
     const { data, error } = await supabase
         .from('bookings')
-        .insert([{ patient_id, service_type, date, time_slot }])
+        .upsert([{ patient_id, service_type, date, time_slot }], { onConflict: 'patient_id' })
         .select();
 
     if (error) return res.status(400).json({ error: error.message });
     res.status(201).json(data[0]);
+});
+
+// 7b. Get Booking for a Patient
+app.get('/api/bookings/:patientId', async (req, res) => {
+    const { patientId } = req.params;
+    const { data, error } = await supabase
+        .from('bookings')
+        .select('*')
+        .eq('patient_id', patientId)
+        .maybeSingle();
+
+    if (error) return res.status(400).json({ error: error.message });
+    res.json(data || null);
 });
 
 // 8. Create or Update Treatment Plan
@@ -366,22 +379,19 @@ app.get('/api/dashboard/stats', async (req, res) => {
         const monthlyRevenue = monthlyTransactions?.reduce((sum, t) => sum + Number(t.amount), 0) || 0;
 
         // 4. Pending Reports (Patients without Medical Intake)
-        // We get all patient IDs and all medical intake patient IDs to find the difference
         const { data: allPatients } = await supabase.from('patients').select('id');
         const { data: allIntakes } = await supabase.from('medical_intakes').select('patient_id');
         const intakeIds = new Set(allIntakes?.map(i => i.patient_id));
         const pendingReports = allPatients?.filter(p => !intakeIds.has(p.id)).length || 0;
 
         // --- Charts Data ---
-
-        // Last 7 Days Range
         const last7Days = [...Array(7)].map((_, i) => {
             const d = new Date();
             d.setDate(d.getDate() - i);
             return d.toISOString().split('T')[0];
         }).reverse();
 
-        // 5. Revenue Analytics (Actual Transactions per day)
+        // 5. Revenue Analytics
         const { data: recentTransactions } = await supabase
             .from('transactions')
             .select('amount, date')
@@ -392,7 +402,7 @@ app.get('/api/dashboard/stats', async (req, res) => {
             amount: recentTransactions?.filter(t => t.date === date).reduce((sum, t) => sum + Number(t.amount), 0) || 0
         }));
 
-        // 6. Clinic Activity (Actual Registrations and Bookings per day)
+        // 6. Clinic Activity
         const { data: recentPatients } = await supabase
             .from('patients')
             .select('created_at')
@@ -413,7 +423,7 @@ app.get('/api/dashboard/stats', async (req, res) => {
             };
         });
 
-        // 7. Clinical Distribution (Patient Funnel)
+        // 7. Clinical Distribution
         const { data: distributionData } = await supabase.from('patients').select('id, treatment_plans(status), contracts(id)');
         const distribution = {
             'New Patients': 0,

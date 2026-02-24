@@ -77,6 +77,11 @@ export const createBooking = async (bookingData: any) => {
     return response.data;
 };
 
+export const getBooking = async (patientId: string) => {
+    const response = await api.get(`/bookings/${patientId}`);
+    return response.data;
+};
+
 // Financials
 export const getFinancials = async (patientId: string) => {
     const response = await api.get(`/financials/${patientId}`);
