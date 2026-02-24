@@ -125,6 +125,7 @@ export default function Financials() {
           serviceName: billingRecord.service_name,
           totalAmount: billingRecord.total_amount,
           amountPaid: Number(paymentAmount),
+          paymentMethod: isCashPayment ? 'Cash' : 'Bank Transfer/Card',
           date: new Date().toLocaleDateString('en-GB'),
           receiptNumber: newTransaction.receipt_number
         }
@@ -261,6 +262,7 @@ export default function Financials() {
                                   serviceName: billingRecord.service_name,
                                   totalAmount: billingRecord.total_amount,
                                   amountPaid: t.amount,
+                                  paymentMethod: t.type || 'Bank Transfer/Card',
                                   date: t.date,
                                   receiptNumber: t.receipt_number
                                 }

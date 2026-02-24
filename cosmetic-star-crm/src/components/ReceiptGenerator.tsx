@@ -25,6 +25,7 @@ interface ReceiptGeneratorProps {
     serviceName: string;
     totalAmount: number;
     amountPaid: number;
+    paymentMethod: string;
     date: string;
     receiptNumber: string;
   };
@@ -94,10 +95,9 @@ export default function ReceiptGenerator({ isOpen, onClose, data }: ReceiptGener
               </div>
               <h2 className="text-2xl font-black text-slate-900 tracking-tight uppercase">Cosmetic Star</h2>
               <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Premium Aesthetic Clinic</p>
-              <div className="flex items-center justify-center gap-2 text-[10px] text-slate-400 font-medium">
-                <span>123 Harley Street, London</span>
-                <span>•</span>
-                <span>+44 20 7946 0000</span>
+              <div className="flex flex-col items-center justify-center gap-1 text-[10px] text-slate-400 font-medium">
+                <span>[Clinic Address Line 1], Manchester, UK</span>
+                <span>[Postcode] • +44 161 000 0000</span>
               </div>
             </div>
 
@@ -130,9 +130,14 @@ export default function ReceiptGenerator({ isOpen, onClose, data }: ReceiptGener
                 <span className="text-slate-500 font-medium">Subtotal</span>
                 <span className="text-slate-900 font-bold">£{data.totalAmount.toLocaleString()}</span>
               </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-slate-500 font-medium">Amount Paid Today</span>
-                <span className="text-teal-600 font-bold">- £{data.amountPaid.toLocaleString()}</span>
+              <div className="space-y-1">
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-500 font-medium">Amount Paid Today</span>
+                  <span className="text-teal-600 font-bold">- £{data.amountPaid.toLocaleString()}</span>
+                </div>
+                <p className="text-[10px] text-right text-slate-400 font-medium italic">
+                  via {data.paymentMethod}
+                </p>
               </div>
               
               <div className="pt-4 border-t-2 border-slate-900">
@@ -149,14 +154,21 @@ export default function ReceiptGenerator({ isOpen, onClose, data }: ReceiptGener
             </div>
 
             {/* Footer Note */}
-            <div className="text-center pt-4">
+            <div className="text-center pt-4 space-y-4">
               <div className="inline-flex items-center gap-2 px-3 py-1 bg-teal-50 text-teal-700 rounded-full text-[10px] font-bold uppercase tracking-wider">
                 <CheckCircle2 size={12} />
                 Transaction Verified
               </div>
-              <p className="text-[10px] text-slate-400 mt-4 font-medium italic">
-                Thank you for choosing Cosmetic Star. Please keep this receipt for your records.
-              </p>
+              
+              <div className="space-y-1">
+                <p className="text-[10px] text-slate-400 font-medium italic">
+                  Thank you for choosing Cosmetic Star. Please keep this receipt for your records.
+                </p>
+                <div className="pt-4 border-t border-slate-100 flex flex-col gap-1 text-[8px] text-slate-400 font-bold uppercase tracking-widest">
+                  <p>Cosmetic Star UK Ltd • Registered in England & Wales</p>
+                  <p>CRN: [00000000] • VAT: [GB 000 0000 00]</p>
+                </div>
+              </div>
             </div>
           </div>
 
