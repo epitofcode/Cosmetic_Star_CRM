@@ -5,6 +5,7 @@ A professional, cloud-native clinical management and patient onboarding platform
 ## 🚀 Live Demo
 *   **Frontend:** [https://cosmetic-star-crm.vercel.app](https://cosmetic-star-crm.vercel.app)
 *   **Backend API:** [https://cosmetic-star-crm.onrender.com](https://cosmetic-star-crm.onrender.com)
+*   **Health Status:** [https://cosmetic-star-crm.onrender.com/api/health](https://cosmetic-star-crm.onrender.com/api/health) (Check for version 1.0.2+)
 
 ---
 
