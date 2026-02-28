@@ -132,9 +132,10 @@ export default function CalendarPage() {
       });
       
       setIsBookingConfirmed(true);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Booking error:', error);
-      alert('Failed to schedule booking. Ensure contract is signed.');
+      const errorMessage = error.response?.data?.error || 'Failed to schedule booking. Ensure contract is signed.';
+      alert(errorMessage);
     } finally {
       setIsSaving(false);
     }
@@ -260,20 +261,26 @@ export default function CalendarPage() {
                   <div className="grid grid-cols-2 gap-3">
                     {TIME_SLOTS.map(slot => {
                       const isBooked = bookedSlots.includes(slot);
+                      const isSelected = selectedSlot === slot;
                       return (
                         <button
                           key={slot}
                           disabled={isBooked}
                           onClick={() => setSelectedSlot(slot)}
                           className={cn(
-                            "py-3 px-4 rounded-xl text-sm font-bold transition-all border",
-                            selectedSlot === slot
+                            "py-3 px-4 rounded-xl text-sm font-bold transition-all border relative overflow-hidden",
+                            isSelected
                               ? "bg-teal-50 border-teal-500 text-teal-700 shadow-sm ring-1 ring-teal-500"
                               : isBooked
-                                ? "bg-slate-100 border-slate-100 text-slate-300 cursor-not-allowed line-through"
+                                ? "bg-slate-100 border-slate-100 text-slate-300 cursor-not-allowed"
                                 : "bg-slate-50 border-slate-100 text-slate-600 hover:border-slate-300"
                           )}
                         >
+                          {isBooked && (
+                            <span className="absolute inset-0 bg-slate-100/80 flex items-center justify-center text-[10px] font-black uppercase tracking-widest text-slate-400">
+                              Blocked
+                            </span>
+                          )}
                           {slot}
                         </button>
                       );

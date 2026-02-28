@@ -223,10 +223,11 @@ app.get('/api/slots', async (req, res) => {
     res.json(data.map(b => b.time_slot));
 });
 
-// 7. Create Booking (Requires Contract)
+// 7. Create Booking (Requires Contract & Slot Check)
 app.post('/api/bookings', async (req, res) => {
     const { patient_id, service_type, date, time_slot } = req.body;
 
+    // 1. Check if patient has a contract
     const { data: contract } = await supabase
         .from('contracts')
         .select('id')
@@ -234,6 +235,22 @@ app.post('/api/bookings', async (req, res) => {
         .maybeSingle();
 
     if (!contract) return res.status(403).json({ error: 'Patient must sign a contract before booking.' });
+
+    // 2. Check if the slot is already taken by ANOTHER patient
+    const { data: existingBooking } = await supabase
+        .from('bookings')
+        .select('id')
+        .eq('date', date)
+        .eq('time_slot', time_slot)
+        .neq('patient_id', patient_id) // Allow patient to reschedule their own slot
+        .maybeSingle();
+
+    if (existingBooking) {
+        return res.status(409).json({ 
+            error: 'This time slot has been blocked by another clinical appointment. Please select a different time.',
+            code: 'SLOT_BLOCKED'
+        });
+    }
 
     const { data, error } = await supabase
         .from('bookings')
@@ -399,27 +416,26 @@ app.get('/api/dashboard/stats', async (req, res) => {
             return d.toISOString().split('T')[0];
         }).reverse();
 
-        // 5. Revenue Analytics (Seeded by actual monthly revenue)
-        const dailyAvg = monthlyRevenue / (now.getDate() || 1);
-        const revenueAnalytics = last7Days.map((date, index) => {
-            const actualForDay = monthlyTransactions?.filter(t => t.date === date).reduce((sum, t) => sum + Number(t.amount), 0) || 0;
-            // Seed randomness based on clinic size (total patients)
-            const seed = patientCount > 0 ? (patientCount * 10) : 200;
-            const jitter = Math.floor(Math.random() * seed) + (index * 50);
+        // 5. Revenue Analytics (Based on 7-day rolling window)
+        const revenueAnalytics = last7Days.map((date) => {
+            const dayTotal = monthlyTransactions?.filter(t => t.date === date).reduce((sum, t) => sum + Number(t.amount), 0) || 0;
             return {
                 date: new Date(date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }),
-                amount: actualForDay > 0 ? actualForDay : jitter
+                amount: dayTotal
             };
         });
 
-        // 6. Clinic Activity (Seeded by actual counts)
-        const activityAnalytics = last7Days.map((date, index) => {
-            const patientSeed = Math.max(1, Math.floor(patientCount / 10));
-            const bookingSeed = Math.max(1, Math.floor(bookingCount / 10));
+        // 6. Clinic Activity (Based on 7-day rolling patient registrations and bookings)
+        const { data: recentPatients } = await supabase.from('patients').select('created_at').gte('created_at', last7Days[0]);
+        const { data: recentBookings } = await supabase.from('bookings').select('created_at').gte('created_at', last7Days[0]);
+
+        const activityAnalytics = last7Days.map((date) => {
+            const patientsOnDay = recentPatients?.filter(p => p.created_at.startsWith(date)).length || 0;
+            const bookingsOnDay = recentBookings?.filter(b => b.created_at.startsWith(date)).length || 0;
             return {
                 date: new Date(date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }),
-                patients: patientSeed + Math.floor(Math.random() * 5),
-                bookings: bookingSeed + Math.floor(Math.random() * 3)
+                patients: patientsOnDay,
+                bookings: bookingsOnDay
             };
         });
 
