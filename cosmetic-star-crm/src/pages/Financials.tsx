@@ -31,6 +31,7 @@ interface Transaction {
   type?: string;
   date: string;
   proof_name: string;
+  proof_url?: string;
   receipt_number: string;
 }
 
@@ -131,6 +132,17 @@ export default function Financials() {
           receiptNumber: newTransaction.receipt_number
         }
       });
+
+      // Send Automated Receipt via Resend
+      api.post('/email/send-payment-receipt', {
+        to_email: selectedPatient.email,
+        to_name: `${selectedPatient.first_name} ${selectedPatient.last_name}`,
+        amount: paymentAmount,
+        service_name: billingRecord.service_name,
+        receipt_number: newTransaction.receipt_number,
+        date: new Date().toLocaleDateString('en-GB')
+      }).catch(err => console.error('Automated receipt email failed:', err));
+
     } catch (error: any) {
       console.error('Error recording payment:', error);
       const message = error.response?.data?.error || error.message || 'Unknown error';
@@ -309,9 +321,17 @@ export default function Financials() {
                         <p className="text-[10px] text-slate-500">Ref: {t.receipt_number}</p>
                       </div>
                     </div>
-                    <button className="text-slate-400 hover:text-teal-600 transition-colors">
-                      <Download size={16} />
-                    </button>
+                    {t.proof_url ? (
+                      <button 
+                        onClick={() => window.open(t.proof_url, '_blank')}
+                        className="text-slate-400 hover:text-teal-600 transition-colors"
+                        title="Download Proof"
+                      >
+                        <Download size={16} />
+                      </button>
+                    ) : (
+                      <div className="w-8 h-8" /> // Spacer for cash payments
+                    )}
                   </div>
                 ))}
                 {billingRecord.transactions.length === 0 && (

@@ -3,6 +3,8 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import multer from 'multer';
 import { createClient } from '@supabase/supabase-js';
+import { Resend } from 'resend';
+import { jsPDF } from 'jspdf';
 
 dotenv.config();
 
@@ -13,6 +15,9 @@ const port = process.env.PORT || 3001;
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
+
+// Resend Configuration
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 // Multer Configuration for Uploads
 const upload = multer({ storage: multer.memoryStorage() });
@@ -540,6 +545,134 @@ app.delete('/api/admin/tables/:tableName/:id', async (req, res) => {
 
     if (error) return res.status(400).json({ error: error.message });
     res.json({ message: 'Record deleted successfully' });
+});
+
+// --- Email Endpoints (Resend Integration) ---
+
+// 16. Send Booking Confirmation
+app.post('/api/email/send-confirmation', async (req, res) => {
+    const { to_email, to_name, date, time, practitioner, service } = req.body;
+
+    try {
+        const { data, error } = await resend.emails.send({
+            from: 'Cosmetic Star <onboarding@resend.dev>', 
+            to: [to_email],
+            subject: 'Appointment Confirmation - Cosmetic Star',
+            html: `
+                <div style="font-family: sans-serif; color: #334155; line-height: 1.6; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
+                    <div style="background-color: #0d9488; padding: 32px; text-align: center;">
+                        <h1 style="color: white; margin: 0; font-size: 24px;">Booking Confirmed!</h1>
+                    </div>
+                    <div style="padding: 32px; background-color: #ffffff;">
+                        <p style="font-size: 16px;">Hello <strong>${to_name}</strong>,</p>
+                        <p>We are delighted to confirm your appointment at <strong>Cosmetic Star</strong>. Here are your booking details:</p>
+                        
+                        <div style="background-color: #f8fafc; padding: 24px; border-radius: 8px; margin: 24px 0;">
+                            <p style="margin: 8px 0;"><strong>Procedure:</strong> ${service}</p>
+                            <p style="margin: 8px 0;"><strong>Date:</strong> ${date}</p>
+                            <p style="margin: 8px 0;"><strong>Arrival Time:</strong> ${time}</p>
+                            <p style="margin: 8px 0;"><strong>Practitioner:</strong> Dr. Kavya Sangameswara</p>
+                        </div>
+
+                        <p>If you need to reschedule or cancel, please contact the clinic at least 24 hours in advance.</p>
+                        <p style="margin-top: 32px;">Warm regards,<br>The Cosmetic Star Team</p>
+                    </div>
+                    <div style="background-color: #f1f5f9; padding: 16px; text-align: center; font-size: 12px; color: #94a3b8;">
+                        &copy; 2026 Cosmetic Star UK Ltd. All rights reserved.
+                    </div>
+                </div>
+            `
+        });
+
+        if (error) throw error;
+        res.json({ success: true, messageId: data.id });
+    } catch (error) {
+        console.error('Resend error:', error);
+        res.status(500).json({ error: 'Failed to send automated email.' });
+    }
+});
+
+// 17. Send Payment Receipt (Automated PDF)
+app.post('/api/email/send-payment-receipt', async (req, res) => {
+    const { to_email, to_name, amount, service_name, receipt_number, date } = req.body;
+
+    try {
+        // --- Generate PDF on the server ---
+        const doc = new jsPDF();
+        
+        // Header
+        doc.setFontSize(22);
+        doc.setTextColor(13, 148, 136); // Teal-600
+        doc.text('COSMETIC STAR', 105, 30, { align: 'center' });
+        
+        doc.setFontSize(10);
+        doc.setTextColor(100);
+        doc.text('PREMIUM AESTHETIC CLINIC', 105, 38, { align: 'center' });
+        
+        // Line
+        doc.setDrawColor(226, 232, 240);
+        doc.line(20, 45, 190, 45);
+        
+        // Receipt Info
+        doc.setFontSize(12);
+        doc.setTextColor(51, 65, 85);
+        doc.text(`Receipt #: ${receipt_number}`, 20, 60);
+        doc.text(`Date: ${date}`, 190, 60, { align: 'right' });
+        
+        doc.text(`Patient: ${to_name}`, 20, 75);
+        doc.text(`Service: ${service_name}`, 20, 85);
+        
+        // Amount Box
+        doc.setFillColor(248, 250, 252);
+        doc.rect(20, 95, 170, 30, 'F');
+        doc.setFontSize(14);
+        doc.text('Amount Paid:', 30, 115);
+        doc.setFontSize(18);
+        doc.text(`£${Number(amount).toLocaleString()}`, 180, 115, { align: 'right' });
+        
+        // Footer
+        doc.setFontSize(10);
+        doc.setTextColor(148, 163, 184);
+        doc.text('Thank you for choosing Cosmetic Star.', 105, 150, { align: 'center' });
+        doc.text('Cosmetic Star UK Ltd • Registered in England & Wales', 105, 280, { align: 'center' });
+
+        const pdfBase64 = doc.output('datauristring').split(',')[1];
+
+        // --- Send Email with Attachment ---
+        const { data: emailData, error } = await resend.emails.send({
+            from: 'Cosmetic Star <onboarding@resend.dev>',
+            to: [to_email],
+            subject: `Payment Receipt: ${receipt_number} - Cosmetic Star`,
+            attachments: [
+                {
+                    filename: `Receipt-${receipt_number}.pdf`,
+                    content: pdfBase64,
+                }
+            ],
+            html: `
+                <div style="font-family: sans-serif; color: #334155; line-height: 1.6; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
+                    <div style="background-color: #0d9488; padding: 32px; text-align: center;">
+                        <h1 style="color: white; margin: 0; font-size: 24px;">Payment Received</h1>
+                    </div>
+                    <div style="padding: 32px; background-color: #ffffff;">
+                        <p style="font-size: 16px;">Hello <strong>${to_name}</strong>,</p>
+                        <p>This email is to confirm that we have received your payment of <strong>£${Number(amount).toLocaleString()}</strong> for <strong>${service_name}</strong>.</p>
+                        
+                        <p>Your official receipt (#${receipt_number}) is attached to this email for your records.</p>
+                        
+                        <p style="margin-top: 32px;">If you have any questions regarding your billing, please don't hesitate to contact us.</p>
+                        <p style="margin-top: 32px;">Warm regards,<br>The Cosmetic Star Financial Team</p>
+                    </div>
+                </div>
+            `
+        });
+
+        if (error) throw error;
+        res.json({ success: true, messageId: emailData.id });
+    } catch (error) {
+        console.error('Payment receipt email error:', error);
+        res.status(500).json({ error: 'Failed to send automated payment receipt.' });
+    }
 });
 
 // 404 Handler

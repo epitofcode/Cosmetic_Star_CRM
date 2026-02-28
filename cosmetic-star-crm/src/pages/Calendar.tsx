@@ -49,6 +49,7 @@ export default function CalendarPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [loading, setLoading] = useState(false);
   const [isLoadingSlots, setIsLoadingSlots] = useState(false);
+  const [treatmentPlan, setTreatmentPlan] = useState<any>(null);
 
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(monthStart);
@@ -72,14 +73,19 @@ export default function CalendarPage() {
   const fetchExistingBooking = async () => {
     try {
       setLoading(true);
-      const booking = await getBooking(selectedPatient!.id);
+      const [booking, plan] = await Promise.all([
+        getBooking(selectedPatient!.id),
+        getTreatmentPlan(selectedPatient!.id)
+      ]);
+      
       if (booking) {
         setSelectedDate(new Date(booking.date));
         setSelectedSlot(booking.time_slot);
         setIsBookingConfirmed(true);
       }
+      setTreatmentPlan(plan);
     } catch (error) {
-      console.error('Error fetching booking:', error);
+      console.error('Error fetching booking/plan:', error);
     } finally {
       setLoading(false);
     }
@@ -111,7 +117,7 @@ export default function CalendarPage() {
       setIsSaving(true);
       await createBooking({
         patient_id: selectedPatient.id,
-        service_type: 'Surgery',
+        service_type: treatmentPlan?.service_name || 'Surgery',
         date: format(selectedDate, 'yyyy-MM-dd'),
         time_slot: selectedSlot
       });
@@ -122,7 +128,7 @@ export default function CalendarPage() {
         date: format(selectedDate, 'PPP'),
         time: selectedSlot,
         practitioner: 'Dr. Kavya Sangameswara',
-        service: 'FUE Hair Transplant'
+        service: treatmentPlan?.service_name || 'Surgery'
       });
       
       setIsBookingConfirmed(true);
