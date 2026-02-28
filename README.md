@@ -1,83 +1,44 @@
-# Cosmetic Star CRM (v1.0.6-STABLE)
+# Cosmetic Star CRM: Bentley Automation Suite
 
-A professional, cloud-native clinical management and patient onboarding platform designed for **Cosmetic Star UK**. This system digitizes the entire patient lifecycle—from initial registration and medical assessments to digital contract signing and surgery scheduling.
+A high-performance, clinical-grade CRM built for **Cosmetic Star UK**. This platform disruptions traditional clinic management by combining advanced React 19 architecture with automated medical workflows.
 
-## 🚀 Live Demo & Status
-*   **Frontend (Production):** [https://cosmetic-star-crm.vercel.app](https://cosmetic-star-crm.vercel.app)
-*   **Backend API (Render):** [https://cosmetic-star-crm.onrender.com](https://cosmetic-star-crm.onrender.com)
-*   **Health Check:** [Verify Version 1.0.6-STABLE](https://cosmetic-star-crm.onrender.com/api/health)
+## 🚀 Automated Clinical Infrastructure
+The system is built on a "Decoupled Triple-Stack" for maximum reliability:
+*   **Frontend:** React 19 (Vite + Tailwind CSS v4) hosted on **Vercel**.
+*   **Backend:** Node.js Express API hosted on **Railway**.
+*   **Database:** Supabase (PostgreSQL) with JSONB medical intake storage.
+*   **Communications:** Automated via **Resend** (Medical-grade mail server).
 
----
+## 💎 Key Automated Features
+### 1. The "Handover" Workflow
+*   **Digital Onboarding:** Smooth patient registration with real-time validation.
+*   **Health Assessments:** Multi-section dynamic medical forms stored securely.
+*   **Digital Contract:** Tablet-native signature capture with encrypted storage.
 
-## ✨ Core Clinical Workflows
+### 2. Smart Booking & Communications
+*   **Dynamic Calendar:** Surgery slots are automatically locked until a contract is signed.
+*   **Automated Confirmations:** Instant, branded emails sent via Resend upon booking.
+*   **Dynamic Service Injection:** Emails automatically reflect the patient's specific treatment plan.
 
-### 1. Advanced Executive Dashboard
-*   **Real-Time Analytics:** Accurate, database-driven metrics for Total Patients, Surgery Bookings, and Monthly Revenue.
-*   **Clinical Activity Charts:** 7-day Area Charts for revenue trends and Step-Charts for clinic registration vs. booking volume.
-*   **Patient Lifecycle Funnel:** Visual breakdown of statuses (New -> Plan -> Signed -> Completed).
-*   **Live Auto-Sync:** Automated 30-second polling with pulsing connectivity indicator.
+### 3. Financial Suite
+*   **Transaction Tracking:** Support for Bank Transfer, Card, and Cash payments.
+*   **Automated Receipts:** The server generates a **Branded PDF Receipt** instantly upon payment.
+*   **Paperless Delivery:** Receipts are automatically attached and emailed to the patient.
 
-### 2. Digital Tablet Handover Logic
-*   **Staff-Driven Assessments:** 5-section medical consult form with dynamic conditional visibility for clinical details.
-*   **Electronic Signature:** Integrated signature pad for on-site contract signing. Signatures are encrypted and saved to cloud storage.
-*   **Security Rule:** Chronological booking enforcement—surgical slots are locked until a verified contract is present.
+## 🛠️ Technical Setup (Environmental Controls)
+To maintain "Bentley-Standard" security, the following Environment Variables must be configured in the Production (Railway/Render) dashboards:
 
-### 3. Persistent Surgical Scheduling
-*   **Choice Memory:** The Calendar intelligently remembers and auto-loads a patient's previous slot choice.
-*   **Double-Booking Prevention:** Occupied slots are automatically struck through and disabled in real-time.
-*   **Cloud Persistence:** All bookings are saved to Supabase with automatic dashboard updates.
+| Variable | Source | Purpose |
+| :--- | :--- | :--- |
+| `SUPABASE_URL` | Supabase | Database Connection |
+| `SUPABASE_KEY` | Supabase | Service Role Access |
+| `RESEND_API_KEY` | Resend | Automated Email Delivery |
+| `PORT` | System | Backend Port (Default 3001) |
 
-### 4. Financial & Revenue Management
-*   **Multi-Mode Payments:** Full support for **Installments (with Proof of Payment)** and **Cash Payments (Instant)**.
-*   **Receipt Engine:** Automatic generation of professional, branded PDF receipts with balance tracking.
-*   **Verification Workflow:** High-fidelity document upload for bank transfer and card payment proofs.
-
----
-
-## 🛠️ Industrial Tech Stack
-
-### Client Layer
-*   **Core:** React 19 (TypeScript), Vite
-*   **Visuals:** Recharts (High-end Data Viz), Lucide React (Clinical Icons), Framer Motion
-*   **Styling:** Tailwind CSS v4 (Mobile-First Responsive Design)
-
-### Engine & Storage
-*   **API:** Node.js, Express.js (v4.x Stable)
-*   **Persistence:** Supabase (PostgreSQL) with JSONB for dynamic medical data.
-*   **Object Storage:** Supabase Storage for encrypted signatures and payment docs.
+## 🛡️ Administrative Security
+*   **Database Explorer:** A secure, password-protected portal (`Settings`) for raw data management.
+*   **Sovereignty:** All data is handled with UK-centric security protocols (AES-256 encryption at rest).
 
 ---
-
-## 📂 Project Architecture
-
-```text
-├── backend/                # Node.js Express server (Production Engine)
-│   ├── server.js           # REST API endpoints & Clinical Logic
-│   ├── schema.sql          # DB Structure & RLS Security Rules
-│   └── package.json
-├── cosmetic-star-crm/      # React 19 Frontend (Vercel Optimized)
-│   ├── src/
-│   │   ├── components/     # PDF Receipt Generator, Layouts
-│   │   ├── pages/          # Dashboard, Patients, Calendar, etc.
-│   │   ├── services/       # API Layer (Axios)
-│   │   └── context/        # Patient State Management
-│   └── vercel.json         # Workspace Deployment Config
-└── README.md
-```
-
----
-
-## 📝 Maintenance & Production Handover
-
-### ⚠️ Critical Deployment Note
-The system is optimized for cross-platform builds. The `optionalDependencies` in `package.json` include Linux-specific binaries (@rollup, @esbuild, @tailwindcss/oxide) to ensure zero-downtime deployments on Vercel and Render.
-
-### Database Readiness
-The database is pre-configured with the following rule-sets:
-*   `patients_email_key`: Prevents duplicate registrations.
-*   `bookings_patient_id_key`: Enables slot persistence and choice memory.
-*   `transactions_patient_id_fkey`: Decouples payments from bookings for flexible clinic revenue tracking.
-
----
-
-**Developed with precision for Cosmetic Star UK.**
+**Maintained by:** Sritej Reddy / Principal Engineer
+**Last Updated:** February 2026
