@@ -399,7 +399,7 @@ app.get('/api/dashboard/stats', async (req, res) => {
         // 3. Monthly Revenue (Current Month)
         const { data: monthlyTransactions } = await supabase
             .from('transactions')
-            .select('amount')
+            .select('amount, date')
             .gte('date', firstDayOfMonth);
         const monthlyRevenue = monthlyTransactions?.reduce((sum, t) => sum + Number(t.amount), 0) || 0;
 
