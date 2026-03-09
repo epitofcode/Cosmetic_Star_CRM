@@ -698,6 +698,6 @@ app.use((req, res) => {
     res.status(404).json({ error: `Path ${req.url} with method ${req.method} not found on this server.` });
 });
 
-app.listen(port, () => {
-    console.log(`Server running on port ${port}`);
+app.listen(port, '0.0.0.0', () => {
+    console.log(`Server v1.0.9 is active on port ${port} (Network: 0.0.0.0)`);
 });
