@@ -8,6 +8,7 @@ import { Resend } from 'resend';
 import { jsPDF } from 'jspdf';
 
 dotenv.config();
+dotenv.config({ path: '../.env' }); // Fallback for different execution contexts
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -15,7 +16,14 @@ const port = process.env.PORT || 3001;
 // Supabase Configuration
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_KEY;
-const supabase = createClient(supabaseUrl, supabaseKey);
+
+if (!supabaseUrl || !supabaseKey) {
+    console.error("CRITICAL ERROR: Supabase credentials missing!");
+    console.error("SUPABASE_URL:", supabaseUrl ? "Found" : "MISSING");
+    console.error("SUPABASE_KEY:", supabaseKey ? "Found" : "MISSING");
+}
+
+const supabase = createClient(supabaseUrl || 'https://placeholder.supabase.co', supabaseKey || 'placeholder');
 
 // Resend Configuration
 const resend = new Resend(process.env.RESEND_API_KEY);
