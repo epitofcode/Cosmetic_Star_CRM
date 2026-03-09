@@ -5,6 +5,9 @@
     "cosmetic-star-crm",
     "backend"
   ],
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "scripts": {
     "build": "npm run build --workspace=cosmetic-star-crm",
     "install-all": "npm install",
