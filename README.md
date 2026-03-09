@@ -1,44 +1,34 @@
-# Cosmetic Star CRM: Bentley Automation Suite
+# Cosmetic Star CRM 🌟
+**Premium Clinical Staging & Booking Suite**
 
-A high-performance, clinical-grade CRM built for **Cosmetic Star UK**. This platform disruptions traditional clinic management by combining advanced React 19 architecture with automated medical workflows.
+A professional, high-performance CRM built for **Cosmetic Star UK**. This system manages the end-to-end patient lifecycle: from initial onboarding and medical assessment to digital contract execution and chronological surgery booking.
 
-## 🚀 Automated Clinical Infrastructure
-The system is built on a "Decoupled Triple-Stack" for maximum reliability:
-*   **Frontend:** React 19 (Vite + Tailwind CSS v4) hosted on **Vercel**.
-*   **Backend:** Node.js Express API hosted on **Railway**.
-*   **Database:** Supabase (PostgreSQL) with JSONB medical intake storage.
-*   **Communications:** Automated via **Resend** (Medical-grade mail server).
+## 🏗 System Architecture
+The system utilizes a modern, distributed **Service-Oriented Architecture (SOA)** to ensure maximum reliability and speed:
 
-## 💎 Key Automated Features
-### 1. The "Handover" Workflow
-*   **Digital Onboarding:** Smooth patient registration with real-time validation.
-*   **Health Assessments:** Multi-section dynamic medical forms stored securely.
-*   **Digital Contract:** Tablet-native signature capture with encrypted storage.
+*   **Frontend:** React 19 (TypeScript) + Vite + Tailwind CSS v4. Hosted on **Vercel** for global Edge delivery.
+*   **API Layer:** Node.js 22 + Express.js. Hosted on **Railway** for high-availability business logic.
+*   **Database:** PostgreSQL (via **Supabase**) for structured clinical records and relational data integrity.
+*   **Storage:** Object Storage (via **Supabase Storage**) for encrypted digital signatures and payment proofs.
+*   **Communications:** **Resend** for automated transactional emails and PDF delivery.
 
-### 2. Smart Booking & Communications
-*   **Dynamic Calendar:** Surgery slots are automatically locked until a contract is signed.
-*   **Automated Confirmations:** Instant, branded emails sent via Resend upon booking.
-*   **Dynamic Service Injection:** Emails automatically reflect the patient's specific treatment plan.
+## 🔄 Core Patient Workflow
+1.  **Registry:** Staff register a new patient or select an existing one from the "Active Patient" global context.
+2.  **Assessment:** Comprehensive medical consultation using dynamic JSONB-backed forms.
+3.  **Treatment:** Service selection and financial breakdown (Pricing -> Discounts -> Totals).
+4.  **Contract:** Tablet-handover digital signature capture. **(Business Rule: Must be signed to unlock booking)**.
+5.  **Calendar:** Chronological surgery booking with automated double-booking prevention.
+6.  **Financials:** Installment tracking, proof-of-payment uploads, and automated PDF receipt generation.
 
-### 3. Financial Suite
-*   **Transaction Tracking:** Support for Bank Transfer, Card, and Cash payments.
-*   **Automated Receipts:** The server generates a **Branded PDF Receipt** instantly upon payment.
-*   **Paperless Delivery:** Receipts are automatically attached and emailed to the patient.
+## 🛠 Tech Stack
+- **Frontend:** React Router v7, Lucide Icons, Recharts (Analytics), Framer Motion.
+- **Backend:** Multer (Uploads), jsPDF (Document Generation), Axios.
+- **Security:** Managed Row-Level Security (RLS), Environment-level credential protection.
 
-## 🛠️ Technical Setup (Environmental Controls)
-To maintain "Bentley-Standard" security, the following Environment Variables must be configured in the Production (Railway/Render) dashboards:
-
-| Variable | Source | Purpose |
-| :--- | :--- | :--- |
-| `SUPABASE_URL` | Supabase | Database Connection |
-| `SUPABASE_KEY` | Supabase | Service Role Access |
-| `RESEND_API_KEY` | Resend | Automated Email Delivery |
-| `PORT` | System | Backend Port (Default 3001) |
-
-## 🛡️ Administrative Security
-*   **Database Explorer:** A secure, password-protected portal (`Settings`) for raw data management.
-*   **Sovereignty:** All data is handled with UK-centric security protocols (AES-256 encryption at rest).
+## 🚀 Deployment & Maintenance
+- **Backend Engine:** Railway (`zippy-balance`)
+- **Frontend Engine:** Vercel (`cosmetic-star-crm`)
+- **Domain:** `starteck.co.uk`
 
 ---
-**Maintained by:** Sritej Reddy / Principal Engineer
-**Last Updated:** February 2026
+© 2026 Cosmetic Star UK Ltd. Built & Maintained by Starteck.
