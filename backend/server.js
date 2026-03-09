@@ -580,7 +580,7 @@ app.post('/api/email/send-confirmation', async (req, res) => {
 
     try {
         const { data, error } = await resend.emails.send({
-            from: 'Cosmetic Star <onboarding@resend.dev>', 
+            from: 'Cosmetic Star <bookings@starteck.co.uk>', 
             to: [to_email],
             subject: 'Appointment Confirmation - Cosmetic Star',
             html: `
@@ -665,7 +665,7 @@ app.post('/api/email/send-payment-receipt', async (req, res) => {
 
         // --- Send Email with Attachment ---
         const { data: emailData, error } = await resend.emails.send({
-            from: 'Cosmetic Star <onboarding@resend.dev>',
+            from: 'Cosmetic Star <bookings@starteck.co.uk>',
             to: [to_email],
             subject: `Payment Receipt: ${receipt_number} - Cosmetic Star`,
             attachments: [
