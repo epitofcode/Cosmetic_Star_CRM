@@ -285,7 +285,7 @@ app.get('/api/bookings/:patientId', async (req, res) => {
 
 // 8. Create or Update Treatment Plan
 app.post('/api/treatment-plan', async (req, res) => {
-    const { patient_id, service_id, service_name, base_cost, discount, total_to_pay } = req.body;
+    const { patient_id, service_id, service_name, base_cost, discount, total_to_pay, status = 'Active' } = req.body;
     
     const { data, error } = await supabase
         .from('treatment_plans')
@@ -296,7 +296,7 @@ app.post('/api/treatment-plan', async (req, res) => {
             base_cost, 
             discount, 
             total_to_pay,
-            status: 'Active'
+            status
         }], { onConflict: 'patient_id' })
         .select();
 

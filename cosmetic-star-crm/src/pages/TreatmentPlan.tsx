@@ -60,8 +60,10 @@ export default function TreatmentPlan() {
   const [selectedServiceId, setSelectedServiceId] = useState('');
   const [cost, setCost] = useState<number>(0);
   const [discount, setDiscount] = useState<number>(0);
+  const [status, setStatus] = useState('Active');
   const [isSaving, setIsSaving] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [isPlanExisting, setIsPlanExisting] = useState(false);
 
   useEffect(() => {
     if (selectedPatient) {
@@ -77,6 +79,10 @@ export default function TreatmentPlan() {
         setSelectedServiceId(plan.service_id);
         setCost(Number(plan.base_cost));
         setDiscount(Number(plan.discount));
+        setStatus(plan.status || 'Active');
+        setIsPlanExisting(true);
+      } else {
+        setIsPlanExisting(false);
       }
     } catch (error) {
       console.error('Error fetching plan:', error);
@@ -89,13 +95,13 @@ export default function TreatmentPlan() {
   const totalToPay = Math.max(0, cost - discount);
 
   useEffect(() => {
-    if (selectedService && !loading) {
+    if (selectedService && !loading && !isPlanExisting) {
       setCost(selectedService.defaultPrice);
       setDiscount(0);
     }
   }, [selectedServiceId]);
 
-  const handleGenerateContract = async () => {
+  const handleSavePlan = async (targetStatus = 'Active') => {
     if (!selectedPatient || !selectedService) return;
 
     try {
@@ -106,9 +112,18 @@ export default function TreatmentPlan() {
         service_name: selectedService.name,
         base_cost: cost,
         discount: discount,
-        total_to_pay: totalToPay
+        total_to_pay: totalToPay,
+        status: targetStatus
       });
-      alert('Treatment plan saved! Proceed to contract signature.');
+      
+      setStatus(targetStatus);
+      setIsPlanExisting(true);
+      
+      if (targetStatus === 'Completed') {
+        alert('Treatment journey marked as Completed. Records finalized.');
+      } else {
+        alert('Treatment plan saved! Proceed to contract signature.');
+      }
     } catch (error: any) {
       console.error('Error saving treatment plan:', error);
       const message = error.response?.data?.error || error.message || 'Unknown error';
@@ -119,6 +134,7 @@ export default function TreatmentPlan() {
   };
 
   if (!selectedPatient) {
+// ... (rest of the component stays the same)
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
         <div className="bg-slate-100 p-6 rounded-full text-slate-400">
@@ -163,10 +179,18 @@ export default function TreatmentPlan() {
         {/* Right Column (Mobile: Top): Summary Card */}
         <div className="lg:order-2 space-y-6">
           <div className="bg-slate-900 rounded-2xl p-6 text-white shadow-xl shadow-slate-200 sticky top-24">
-            <h3 className="text-lg font-bold mb-6 flex items-center gap-2">
-              <ShieldCheck className="text-teal-400" size={20} />
-              Summary
-            </h3>
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-lg font-bold flex items-center gap-2">
+                <ShieldCheck className="text-teal-400" size={20} />
+                Summary
+              </h3>
+              <span className={cn(
+                "px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest border",
+                status === 'Completed' ? "bg-green-500/10 border-green-500/20 text-green-400" : "bg-teal-500/10 border-teal-500/20 text-teal-400"
+              )}>
+                {status}
+              </span>
+            </div>
             
             <div className="space-y-4">
               <div className="flex justify-between text-slate-400 text-sm">
@@ -185,18 +209,31 @@ export default function TreatmentPlan() {
               </div>
             </div>
 
-            <button 
-              onClick={handleGenerateContract}
-              disabled={!selectedService || isSaving}
-              className={cn(
-                "w-full mt-8 py-3 rounded-xl font-bold transition-all active:scale-95",
-                (!selectedService || isSaving)
-                  ? "bg-slate-800 text-slate-500 cursor-not-allowed" 
-                  : "bg-teal-500 hover:bg-teal-400 text-slate-900 shadow-lg shadow-teal-500/20"
+            <div className="space-y-3 mt-8">
+              <button 
+                onClick={() => handleSavePlan('Active')}
+                disabled={!selectedService || isSaving || status === 'Completed'}
+                className={cn(
+                  "w-full py-3 rounded-xl font-bold transition-all active:scale-95",
+                  (!selectedService || isSaving || status === 'Completed')
+                    ? "bg-slate-800 text-slate-500 cursor-not-allowed" 
+                    : "bg-teal-500 hover:bg-teal-400 text-slate-900 shadow-lg shadow-teal-500/20"
+                )}
+              >
+                {isSaving ? 'Saving...' : status === 'Completed' ? 'Plan Finalized' : 'Save Treatment Plan'}
+              </button>
+
+              {isPlanExisting && status === 'Active' && (
+                <button 
+                  onClick={() => handleSavePlan('Completed')}
+                  disabled={isSaving}
+                  className="w-full py-3 rounded-xl font-bold border border-green-500/30 text-green-400 hover:bg-green-500/10 transition-all active:scale-95 flex items-center justify-center gap-2"
+                >
+                  <CheckCircle2 size={18} />
+                  Mark as Completed
+                </button>
               )}
-            >
-              {isSaving ? 'Saving...' : 'Generate Contract'}
-            </button>
+            </div>
           </div>
         </div>
 
