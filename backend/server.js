@@ -412,11 +412,72 @@ app.get('/api/dashboard/stats', async (req, res) => {
             .gte('date', firstDayOfMonth);
         const monthlyRevenue = monthlyTransactions?.reduce((sum, t) => sum + Number(t.amount), 0) || 0;
 
-        // 4. Pending Reports (Patients without Medical Intake)
-        const { data: allPatients } = await supabase.from('patients').select('id');
-        const { data: allIntakes } = await supabase.from('medical_intakes').select('patient_id');
-        const intakeIds = new Set(allIntakes?.map(i => i.patient_id));
-        const pendingReports = allPatients?.filter(p => !intakeIds.has(p.id)).length || 0;
+        // 4. Detailed Pending Breakdown
+        const { data: allData } = await supabase
+            .from('patients')
+            .select(`
+                id, first_name, last_name,
+                medical_intakes(id),
+                treatment_plans(id, status, total_to_pay, service_name),
+                contracts(id),
+                bookings(id, date, time_slot),
+                transactions(amount)
+            `);
+
+        const pendingBreakdown = {
+            missingIntake: [],
+            complianceGap: [],
+            unpaidBalances: [],
+            postOpFollowups: [],
+            bookingBottleneck: []
+        };
+
+        const today = new Date();
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(today.getDate() - 7);
+
+        allData?.forEach(p => {
+            const fullName = `${p.first_name} ${p.last_name}`;
+            
+            // a. Registered but no Medical Intake
+            if (!p.medical_intakes || p.medical_intakes.length === 0) {
+                pendingBreakdown.missingIntake.push({ id: p.id, name: fullName });
+            }
+
+            // b. Compliance Gap: Plan exists but no Contract
+            if ((p.treatment_plans?.length > 0) && (!p.contracts || p.contracts.length === 0)) {
+                pendingBreakdown.complianceGap.push({ id: p.id, name: fullName, service: p.treatment_plans[0].service_name });
+            }
+
+            // c. Unpaid Balances: Treatment 'Completed' but still owes money
+            if (p.treatment_plans?.[0]?.status === 'Completed') {
+                const totalPaid = p.transactions?.reduce((sum, t) => sum + Number(t.amount), 0) || 0;
+                const balance = Number(p.treatment_plans[0].total_to_pay) - totalPaid;
+                if (balance > 0) {
+                    pendingBreakdown.unpaidBalances.push({ id: p.id, name: fullName, balance });
+                }
+            }
+
+            // d. Post-Op Follow-ups: Surgery in the last 7 days
+            p.bookings?.forEach(b => {
+                const bookingDate = new Date(b.date);
+                if (bookingDate >= sevenDaysAgo && bookingDate < today) {
+                    pendingBreakdown.postOpFollowups.push({ id: p.id, name: fullName, date: b.date, service: p.treatment_plans?.[0]?.service_name || 'Surgery' });
+                }
+            });
+
+            // e. Booking Bottleneck: Contract signed but no booking date
+            if ((p.contracts?.length > 0) && (!p.bookings || p.bookings.length === 0)) {
+                pendingBreakdown.bookingBottleneck.push({ id: p.id, name: fullName });
+            }
+        });
+
+        const totalPendingCount = 
+            pendingBreakdown.missingIntake.length + 
+            pendingBreakdown.complianceGap.length + 
+            pendingBreakdown.unpaidBalances.length + 
+            pendingBreakdown.postOpFollowups.length + 
+            pendingBreakdown.bookingBottleneck.length;
 
         // --- Charts Data ---
         const last7Days = [...Array(7)].map((_, i) => {
@@ -481,7 +542,8 @@ app.get('/api/dashboard/stats', async (req, res) => {
             totalPatients: patientCount || 0,
             surgeryBookings: bookingCount || 0,
             totalRevenue: monthlyRevenue,
-            pendingReports: pendingReports,
+            pendingReports: totalPendingCount,
+            pendingBreakdown,
             revenueAnalytics,
             activityAnalytics,
             clinicalDistribution

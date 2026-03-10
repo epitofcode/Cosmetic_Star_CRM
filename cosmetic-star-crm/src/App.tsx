@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-// v1.1.0-ST-PROD-SYNC
+// v1.1.1-PENDING-BREAKDOWN-UI
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import DashboardLayout from './layouts/DashboardLayout';
 import Patients from './pages/Patients';
@@ -19,20 +19,20 @@ import {
   Calendar as CalendarIcon, 
   ClipboardCheck, 
   Wallet, 
-  UserPlus, 
   Users, 
   FileText, 
   PenTool, 
   DollarSign,
   Loader2,
   TrendingUp,
-  Activity
+  Activity,
+  X,
+  ChevronRight,
+  AlertCircle,
+  Clock,
+  UserCheck
 } from 'lucide-react';
 import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
   CartesianGrid, 
   Tooltip, 
   ResponsiveContainer, 
@@ -43,8 +43,11 @@ import {
   LineChart,
   Line,
   AreaChart,
-  Area
+  Area,
+  XAxis,
+  YAxis
 } from 'recharts';
+import { motion, AnimatePresence } from 'framer-motion';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -52,7 +55,6 @@ function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-// Final deployment build: 2026-02-24_1030
 function StarIcon({ className, size }: { className?: string, size?: number }) {
   return (
     <svg width={size || 24} height={size || 24} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -68,6 +70,7 @@ const Dashboard = () => {
   const [recentAppointments, setRecentAppointments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isPendingModalOpen, setIsPendingModalOpen] = useState(false);
 
   const fetchDashboardData = async (isInitial = false) => {
     try {
@@ -90,12 +93,9 @@ const Dashboard = () => {
 
   useEffect(() => {
     fetchDashboardData(true);
-    
-    // Auto-poll every 30 seconds for real-time feel
     const interval = setInterval(() => {
       fetchDashboardData(false);
     }, 30000);
-
     return () => clearInterval(interval);
   }, []);
 
@@ -112,7 +112,15 @@ const Dashboard = () => {
     { label: 'Total Patients', value: stats?.totalPatients?.toLocaleString() || '0', change: '+12.5%', up: true, icon: Users, color: 'teal' },
     { label: 'Surgery Bookings', value: stats?.surgeryBookings?.toLocaleString() || '0', change: 'Live', up: true, icon: CalendarIcon, color: 'indigo' },
     { label: 'Monthly Revenue', value: `£${stats?.totalRevenue?.toLocaleString() || '0'}`, change: '+8.2%', up: true, icon: Wallet, color: 'emerald' },
-    { label: 'Pending Reports', value: stats?.pendingReports?.toLocaleString() || '0', change: 'Urgent', up: false, icon: ClipboardCheck, color: 'amber' },
+    { 
+      label: 'Pending Reports', 
+      value: stats?.pendingReports?.toLocaleString() || '0', 
+      change: 'Urgent', 
+      up: false, 
+      icon: ClipboardCheck, 
+      color: 'amber',
+      onClick: () => setIsPendingModalOpen(true)
+    },
   ];
 
   return (
@@ -139,7 +147,14 @@ const Dashboard = () => {
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {statCards.map((stat) => (
-          <div key={stat.label} className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-xl hover:shadow-slate-200/50 transition-all group cursor-default">
+          <div 
+            key={stat.label} 
+            onClick={stat.onClick}
+            className={cn(
+              "bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-xl hover:shadow-slate-200/50 transition-all group cursor-default",
+              stat.onClick && "cursor-pointer ring-2 ring-transparent hover:ring-teal-500/20 active:scale-[0.98]"
+            )}
+          >
             <div className="flex items-center justify-between mb-6">
               <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110 duration-300", stat.color === 'teal' ? "bg-teal-50 text-teal-600" : stat.color === 'indigo' ? "bg-indigo-50 text-indigo-600" : stat.color === 'emerald' ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-600")}>
                 <stat.icon size={24} />
@@ -157,7 +172,6 @@ const Dashboard = () => {
 
       {/* Analytics Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Revenue Performance Area Chart */}
         <div className="md:col-span-2 lg:col-span-2 bg-white p-6 sm:p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
           <div className="flex items-center justify-between mb-8">
             <div>
@@ -178,37 +192,15 @@ const Dashboard = () => {
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis 
-                  dataKey="date" 
-                  axisLine={false} 
-                  tickLine={false} 
-                  tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 800 }}
-                  dy={10}
-                />
-                <YAxis 
-                  axisLine={false} 
-                  tickLine={false} 
-                  tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 800 }}
-                  tickFormatter={(value: number) => `£${value}`}
-                />
-                <Tooltip 
-                  cursor={{ stroke: '#0d9488', strokeWidth: 2 }}
-                  contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
-                />
-                <Area 
-                  type="monotone" 
-                  dataKey="amount" 
-                  stroke="#0d9488" 
-                  strokeWidth={4}
-                  fillOpacity={1} 
-                  fill="url(#colorRev)" 
-                />
+                <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 800 }} dy={10} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 800 }} tickFormatter={(value: number) => `£${value}`} />
+                <Tooltip cursor={{ stroke: '#0d9488', strokeWidth: 2 }} contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }} />
+                <Area type="monotone" dataKey="amount" stroke="#0d9488" strokeWidth={4} fillOpacity={1} fill="url(#colorRev)" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        {/* Clinical Distribution Pie Chart */}
         <div className="bg-white p-6 sm:p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
           <div className="flex items-center justify-between mb-8">
             <div>
@@ -222,33 +214,129 @@ const Dashboard = () => {
           <div className="h-[250px] sm:h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
-                <Pie
-                  data={stats?.clinicalDistribution}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={window.innerWidth < 640 ? 40 : 60}
-                  outerRadius={window.innerWidth < 640 ? 70 : 90}
-                  paddingAngle={8}
-                  dataKey="value"
-                >
+                <Pie data={stats?.clinicalDistribution} cx="50%" cy="50%" innerRadius={window.innerWidth < 640 ? 40 : 60} outerRadius={window.innerWidth < 640 ? 70 : 90} paddingAngle={8} dataKey="value">
                   {stats?.clinicalDistribution?.map((entry: any, index: number) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip 
-                  contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
-                />
-                <Legend 
-                  verticalAlign="bottom" 
-                  height={36} 
-                  iconType="circle"
-                  formatter={(value: string) => <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-2">{value}</span>}
-                />
+                <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }} />
+                <Legend verticalAlign="bottom" height={36} iconType="circle" formatter={(value: string) => <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-2">{value}</span>} />
               </PieChart>
             </ResponsiveContainer>
           </div>
         </div>
       </div>
+
+      {/* Pending Reports Detailed Modal */}
+      <AnimatePresence>
+        {isPendingModalOpen && stats?.pendingBreakdown && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsPendingModalOpen(false)} className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" />
+            <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }} className="relative bg-[#FBFBFE] rounded-[3rem] shadow-2xl w-full max-w-4xl overflow-hidden max-h-[85vh] flex flex-col">
+              <div className="p-8 sm:p-10 border-b border-slate-100 bg-white flex items-center justify-between shrink-0">
+                <div>
+                  <h2 className="text-3xl font-black text-slate-900 tracking-tight flex items-center gap-3">
+                    <ClipboardCheck className="text-amber-500" size={32} />
+                    Clinical Backlog
+                  </h2>
+                  <p className="text-slate-500 font-medium mt-1">Detailed breakdown of pending clinical tasks and bottlenecks.</p>
+                </div>
+                <button onClick={() => setIsPendingModalOpen(false)} className="bg-slate-100 text-slate-400 hover:text-slate-900 p-3 rounded-2xl transition-all">
+                  <X size={24} />
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-8 sm:p-10 custom-scrollbar space-y-10">
+                {/* 1. Missing Intakes */}
+                <section className="space-y-4">
+                  <div className="flex items-center gap-2 px-1">
+                    <AlertCircle className="text-amber-500" size={18} />
+                    <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">Missing Medical Assessments ({stats.pendingBreakdown.missingIntake.length})</h3>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {stats.pendingBreakdown.missingIntake.map((p: any) => (
+                      <div key={p.id} className="flex items-center justify-between p-4 bg-white border border-slate-100 rounded-2xl shadow-sm hover:border-teal-500/30 transition-all group">
+                        <span className="font-bold text-slate-700">{p.name}</span>
+                        <ChevronRight size={16} className="text-slate-300 group-hover:text-teal-500 transition-colors" />
+                      </div>
+                    ))}
+                  </div>
+                </section>
+
+                {/* 2. Compliance Gap */}
+                <section className="space-y-4">
+                  <div className="flex items-center gap-2 px-1">
+                    <PenTool className="text-indigo-500" size={18} />
+                    <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">Compliance Gap: Missing Contracts ({stats.pendingBreakdown.complianceGap.length})</h3>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {stats.pendingBreakdown.complianceGap.map((p: any) => (
+                      <div key={p.id} className="flex items-center justify-between p-4 bg-white border border-slate-100 rounded-2xl shadow-sm hover:border-indigo-500/30 transition-all group">
+                        <div>
+                          <p className="font-bold text-slate-700">{p.name}</p>
+                          <p className="text-[10px] text-slate-400 uppercase font-black">{p.service}</p>
+                        </div>
+                        <ChevronRight size={16} className="text-slate-300 group-hover:text-indigo-500 transition-colors" />
+                      </div>
+                    ))}
+                  </div>
+                </section>
+
+                {/* 3. Unpaid Balances */}
+                <section className="space-y-4">
+                  <div className="flex items-center gap-2 px-1">
+                    <DollarSign className="text-red-500" size={18} />
+                    <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">Unpaid Post-Op Balances ({stats.pendingBreakdown.unpaidBalances.length})</h3>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {stats.pendingBreakdown.unpaidBalances.map((p: any) => (
+                      <div key={p.id} className="flex items-center justify-between p-4 bg-red-50/30 border border-red-100 rounded-2xl shadow-sm hover:bg-red-50 transition-all group">
+                        <span className="font-bold text-slate-700">{p.name}</span>
+                        <span className="font-black text-red-600 text-sm">£{p.balance.toLocaleString()}</span>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+
+                {/* 4. Post-Op Follow-ups */}
+                <section className="space-y-4">
+                  <div className="flex items-center gap-2 px-1">
+                    <Activity className="text-teal-500" size={18} />
+                    <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">Recent Surgery Follow-ups ({stats.pendingBreakdown.postOpFollowups.length})</h3>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {stats.pendingBreakdown.postOpFollowups.map((p: any) => (
+                      <div key={p.id} className="flex items-center justify-between p-4 bg-teal-50/30 border border-teal-100 rounded-2xl shadow-sm hover:bg-teal-50 transition-all group">
+                        <div>
+                          <p className="font-bold text-slate-700">{p.name}</p>
+                          <p className="text-[10px] text-teal-600 uppercase font-black">{p.service} • {p.date}</p>
+                        </div>
+                        <UserCheck size={16} className="text-teal-500" />
+                      </div>
+                    ))}
+                  </div>
+                </section>
+
+                {/* 5. Booking Bottleneck */}
+                <section className="space-y-4">
+                  <div className="flex items-center gap-2 px-1">
+                    <Clock className="text-orange-500" size={18} />
+                    <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">Booking Bottleneck: Date Not Set ({stats.pendingBreakdown.bookingBottleneck.length})</h3>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {stats.pendingBreakdown.bookingBottleneck.map((p: any) => (
+                      <div key={p.id} className="flex items-center justify-between p-4 bg-white border border-slate-100 rounded-2xl shadow-sm hover:border-orange-500/30 transition-all group">
+                        <span className="font-bold text-slate-700">{p.name}</span>
+                        <ChevronRight size={16} className="text-slate-300 group-hover:text-orange-500 transition-colors" />
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
@@ -285,7 +373,6 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Live Clinic Activity Mini-Chart */}
         <div className="bg-white p-6 sm:p-8 rounded-[2.5rem] border border-slate-100 shadow-sm flex flex-col">
           <div className="mb-6">
             <h3 className="text-lg font-black text-slate-900 tracking-tight">Clinic Pulse</h3>
@@ -294,23 +381,9 @@ const Dashboard = () => {
           <div className="flex-1 min-h-[150px] sm:min-h-[200px]">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={stats?.activityAnalytics}>
-                <Tooltip 
-                  contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                />
-                <Line 
-                  type="stepAfter" 
-                  dataKey="patients" 
-                  stroke="#0d9488" 
-                  strokeWidth={3} 
-                  dot={false} 
-                />
-                <Line 
-                  type="stepAfter" 
-                  dataKey="bookings" 
-                  stroke="#6366f1" 
-                  strokeWidth={3} 
-                  dot={false} 
-                />
+                <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                <Line type="stepAfter" dataKey="patients" stroke="#0d9488" strokeWidth={3} dot={false} />
+                <Line type="stepAfter" dataKey="bookings" stroke="#6366f1" strokeWidth={3} dot={false} />
               </LineChart>
             </ResponsiveContainer>
           </div>
