@@ -190,6 +190,11 @@ export default function TreatmentPlan() {
                 {status}
               </span>
             </div>
+
+            <div className="flex items-center gap-2 mb-6 px-3 py-1.5 bg-white/5 rounded-xl border border-white/10">
+              <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Clinical Records Secured</span>
+            </div>
             
             <div className="space-y-4">
               <div className="flex justify-between text-slate-400 text-sm">
