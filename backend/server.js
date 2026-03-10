@@ -534,10 +534,6 @@ app.get('/api/dashboard/stats', async (req, res) => {
         res.status(500).json({ error: "Internal Server Error during analytics calculation", details: error.message });
     }
 });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
 
 // 12. Get Recent Appointments
 app.get('/api/dashboard/recent-appointments', async (req, res) => {
