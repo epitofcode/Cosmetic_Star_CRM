@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+// v1.1.0-ST-PROD-SYNC
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import DashboardLayout from './layouts/DashboardLayout';
 import Patients from './pages/Patients';
