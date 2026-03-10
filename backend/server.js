@@ -396,142 +396,100 @@ app.post('/api/transactions', upload.single('proof'), async (req, res) => {
 // 11. Get Dashboard Stats
 app.get('/api/dashboard/stats', async (req, res) => {
     try {
-        console.log("Fetching dashboard stats...");
+        console.log("Fetching dashboard stats (Sequential Mode)...");
         const now = new Date();
         const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
 
-        // 1. Total Patients
-        const { count: patientCount, error: pError } = await supabase.from('patients').select('*', { count: 'exact', head: true });
-        if (pError) console.error("Patient query error:", pError.message);
+        // 1. Fetch counts and basic data
+        const { count: patientCount } = await supabase.from('patients').select('*', { count: 'exact', head: true });
+        const { count: bookingCount } = await supabase.from('bookings').select('*', { count: 'exact', head: true });
+        const { data: monthlyTransactions } = await supabase.from('transactions').select('amount, date').gte('date', firstDayOfMonth);
+        const monthlyRevenue = monthlyTransactions?.reduce((sum, t) => sum + Number(t.amount || 0), 0) || 0;
+
+        // 2. Fetch all related tables for processing
+        const [{ data: patients }, { data: intakes }, { data: plans }, { data: contracts }, { data: bookings }, { data: allTransactions }] = await Promise.all([
+            supabase.from('patients').select('id, first_name, last_name'),
+            supabase.from('medical_intakes').select('patient_id'),
+            supabase.from('treatment_plans').select('patient_id, status, total_to_pay, service_name'),
+            supabase.from('contracts').select('patient_id'),
+            supabase.from('bookings').select('patient_id, date, service_type'),
+            supabase.from('transactions').select('patient_id, amount')
+        ]);
+
+        const pendingBreakdown = { missingIntake: [], complianceGap: [], unpaidBalances: [], postOpFollowups: [], bookingBottleneck: [] };
+        const distribution = { 'New Patients': 0, 'Treatment Plans': 0, 'Contracts Signed': 0, 'Completed': 0 };
         
-        // 2. Surgery Bookings
-        const { count: bookingCount, error: bError } = await supabase.from('bookings').select('*', { count: 'exact', head: true });
-        if (bError) console.error("Booking query error:", bError.message);
-        
-        // 3. Monthly Revenue
-        const { data: monthlyTransactions, error: tError } = await supabase
-            .from('transactions')
-            .select('amount, date')
-            .gte('date', firstDayOfMonth);
-        
-        if (tError) console.error("Transaction query error:", tError.message);
-        const monthlyRevenue = monthlyTransactions?.reduce((sum, t) => sum + Number(t.amount), 0) || 0;
-
-        // 4. Detailed Pending Breakdown
-        console.log("Processing pending breakdown...");
-        const { data: allData, error: breakdownError } = await supabase
-            .from('patients')
-            .select(`
-                id, first_name, last_name,
-                medical_intakes(id),
-                treatment_plans(id, status, total_to_pay, service_name),
-                contracts(id),
-                bookings(id, date, time_slot),
-                transactions(amount)
-            `);
-
-        if (breakdownError) {
-            console.error("Breakdown query error:", breakdownError.message);
-        }
-
-        const pendingBreakdown = {
-            missingIntake: [],
-            complianceGap: [],
-            unpaidBalances: [],
-            postOpFollowups: [],
-            bookingBottleneck: []
-        };
-
         const today = new Date();
         const sevenDaysAgo = new Date();
         sevenDaysAgo.setDate(today.getDate() - 7);
 
-        if (allData) {
-            allData.forEach(p => {
-                const fullName = `${p.first_name} ${p.last_name}`;
-                
-                if (!p.medical_intakes || p.medical_intakes.length === 0) {
-                    pendingBreakdown.missingIntake.push({ id: p.id, name: fullName });
-                }
+        // 3. Process Logic in Node.js (Stable & Traceable)
+        patients?.forEach(p => {
+            const fullName = `${p.first_name} ${p.last_name}`;
+            const hasIntake = intakes?.some(i => i.patient_id === p.id);
+            const patientPlan = plans?.find(pl => pl.patient_id === p.id);
+            const hasContract = contracts?.some(c => c.patient_id === p.id);
+            const patientBookings = bookings?.filter(b => b.patient_id === p.id) || [];
+            const patientTxns = allTransactions?.filter(t => t.patient_id === p.id) || [];
 
-                if ((p.treatment_plans?.length > 0) && (!p.contracts || p.contracts.length === 0)) {
-                    pendingBreakdown.complianceGap.push({ id: p.id, name: fullName, service: p.treatment_plans[0].service_name });
-                }
+            // Distribution Category
+            if (patientPlan?.status === 'Completed') distribution['Completed']++;
+            else if (hasContract) distribution['Contracts Signed']++;
+            else if (patientPlan) distribution['Treatment Plans']++;
+            else distribution['New Patients']++;
 
-                if (p.treatment_plans?.[0]?.status === 'Completed') {
-                    const totalPaid = p.transactions?.reduce((sum, t) => sum + Number(t.amount || 0), 0) || 0;
-                    const balance = Number(p.treatment_plans[0].total_to_pay || 0) - totalPaid;
-                    if (balance > 0) {
-                        pendingBreakdown.unpaidBalances.push({ id: p.id, name: fullName, balance });
-                    }
-                }
+            // a. Missing Intake
+            if (!hasIntake) pendingBreakdown.missingIntake.push({ id: p.id, name: fullName });
 
-                if (p.bookings) {
-                    p.bookings.forEach(b => {
-                        const bookingDate = new Date(b.date);
-                        if (bookingDate >= sevenDaysAgo && bookingDate < today) {
-                            pendingBreakdown.postOpFollowups.push({ id: p.id, name: fullName, date: b.date, service: p.treatment_plans?.[0]?.service_name || 'Surgery' });
-                        }
-                    });
-                }
+            // b. Compliance Gap
+            if (patientPlan && !hasContract) pendingBreakdown.complianceGap.push({ id: p.id, name: fullName, service: patientPlan.service_name });
 
-                if ((p.contracts?.length > 0) && (!p.bookings || p.bookings.length === 0)) {
-                    pendingBreakdown.bookingBottleneck.push({ id: p.id, name: fullName });
+            // c. Unpaid Balance
+            if (patientPlan?.status === 'Completed') {
+                const totalPaid = patientTxns.reduce((sum, t) => sum + Number(t.amount || 0), 0);
+                const balance = Number(patientPlan.total_to_pay || 0) - totalPaid;
+                if (balance > 0) pendingBreakdown.unpaidBalances.push({ id: p.id, name: fullName, balance });
+            }
+
+            // d. Post-Op Followups
+            patientBookings.forEach(b => {
+                const bDate = new Date(b.date);
+                if (bDate >= sevenDaysAgo && bDate < today) {
+                    pendingBreakdown.postOpFollowups.push({ id: p.id, name: fullName, date: b.date, service: b.service_type });
                 }
             });
-        }
 
-        const totalPendingCount = 
-            pendingBreakdown.missingIntake.length + 
-            pendingBreakdown.complianceGap.length + 
-            pendingBreakdown.unpaidBalances.length + 
-            pendingBreakdown.postOpFollowups.length + 
-            pendingBreakdown.bookingBottleneck.length;
+            // e. Booking Bottleneck
+            if (hasContract && patientBookings.length === 0) pendingBreakdown.bookingBottleneck.push({ id: p.id, name: fullName });
+        });
 
-        // 5. Analytics Charts
+        // 4. Final Formatting
         const last7Days = [...Array(7)].map((_, i) => {
             const d = new Date();
             d.setDate(d.getDate() - i);
             return d.toISOString().split('T')[0];
         }).reverse();
 
-        const revenueAnalytics = last7Days.map((date) => {
-            const dayTotal = monthlyTransactions?.filter(t => t.date === date).reduce((sum, t) => sum + Number(t.amount || 0), 0) || 0;
-            return {
-                date: new Date(date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }),
-                amount: dayTotal
-            };
-        });
-
-        // 6. Distribution Logic
-        const distribution = { 'New Patients': 0, 'Treatment Plans': 0, 'Contracts Signed': 0, 'Completed': 0 };
-        allData?.forEach(p => {
-            if (p.treatment_plans?.[0]?.status === 'Completed') distribution['Completed']++;
-            else if (p.contracts?.length > 0) distribution['Contracts Signed']++;
-            else if (p.treatment_plans?.length > 0) distribution['Treatment Plans']++;
-            else distribution['New Patients']++;
-        });
-
-        const clinicalDistribution = Object.entries(distribution).map(([name, value]) => ({ 
-            name, value: (value === 0 && (patientCount || 0) > 0) ? 0.1 : value 
+        const revenueAnalytics = last7Days.map(date => ({
+            date: new Date(date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }),
+            amount: monthlyTransactions?.filter(t => t.date === date).reduce((sum, t) => sum + Number(t.amount || 0), 0) || 0
         }));
 
-        const result = {
+        res.json({
             totalPatients: patientCount || 0,
             surgeryBookings: bookingCount || 0,
             totalRevenue: monthlyRevenue,
-            pendingReports: totalPendingCount,
+            pendingReports: Object.values(pendingBreakdown).flat().length,
             pendingBreakdown,
             revenueAnalytics,
-            activityAnalytics: [], // Placeholder for now to ensure stability
-            clinicalDistribution
-        };
-
-        console.log("Stats successfully calculated.");
-        res.json(result);
+            activityAnalytics: [], 
+            clinicalDistribution: Object.entries(distribution).map(([name, value]) => ({ 
+                name, value: (value === 0 && (patientCount || 0) > 0) ? 0.1 : value 
+            }))
+        });
     } catch (error) {
         console.error("DASHBOARD STATS CRASH:", error);
-        res.status(500).json({ error: "Internal Server Error during analytics calculation", details: error.message });
+        res.status(500).json({ error: "Internal Server Error during analytics calculation" });
     }
 });
 
