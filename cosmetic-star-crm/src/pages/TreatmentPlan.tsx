@@ -224,17 +224,17 @@ export default function TreatmentPlan() {
                     : "bg-teal-500 hover:bg-teal-400 text-slate-900 shadow-lg shadow-teal-500/20"
                 )}
               >
-                {isSaving ? 'Saving...' : status === 'Completed' ? 'Plan Finalized' : 'Save Treatment Plan'}
+                {isSaving ? 'Saving...' : status === 'Completed' ? 'Treatment Finalized' : 'Save & Finalize Plan'}
               </button>
 
               {isPlanExisting && status === 'Active' && (
                 <button 
                   onClick={() => handleSavePlan('Completed')}
                   disabled={isSaving}
-                  className="w-full py-3 rounded-xl font-bold border border-green-500/30 text-green-400 hover:bg-green-500/10 transition-all active:scale-95 flex items-center justify-center gap-2"
+                  className="w-full py-3 rounded-xl font-bold border-2 border-green-500/50 text-green-400 hover:bg-green-500/10 transition-all active:scale-95 flex items-center justify-center gap-2"
                 >
                   <CheckCircle2 size={18} />
-                  Mark as Completed
+                  Complete Treatment Journey
                 </button>
               )}
             </div>
