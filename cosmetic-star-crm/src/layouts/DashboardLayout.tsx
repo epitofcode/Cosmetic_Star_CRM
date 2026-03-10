@@ -144,9 +144,12 @@ export default function DashboardLayout({ children, isContractSigned }: { childr
         </nav>
 
         <div className="p-6 border-t border-slate-800 space-y-4">
-          <div className="flex items-center gap-3 text-slate-500 hover:text-white cursor-pointer transition-colors px-4 group">
-            <HelpCircle size={18} />
-            <span className="text-xs font-bold uppercase tracking-widest">Support Center</span>
+          <div className="flex items-center justify-between px-4">
+            <div className="flex items-center gap-3 text-slate-500 hover:text-white cursor-pointer transition-colors group">
+              <HelpCircle size={18} />
+              <span className="text-xs font-bold uppercase tracking-widest">Support</span>
+            </div>
+            <span className="text-[10px] font-black text-slate-700 uppercase tracking-widest">v1.1.0</span>
           </div>
         </div>
       </aside>
