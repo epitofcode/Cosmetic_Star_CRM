@@ -134,7 +134,6 @@ export default function TreatmentPlan() {
   };
 
   if (!selectedPatient) {
-// ... (rest of the component stays the same)
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
         <div className="bg-slate-100 p-6 rounded-full text-slate-400">
