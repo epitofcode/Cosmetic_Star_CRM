@@ -1,9 +1,0 @@
-cosmetic-star-crm/
-node_modules/
-backend/node_modules/
-.git/
-.vercel/
-dist/
-*.pdf
-README.md
-vercel.json
