@@ -194,7 +194,7 @@ export default function DashboardLayout({ children, isContractSigned }: { childr
                   KS
                 </div>
                 <div className="text-left hidden sm:block">
-                  <p className="text-xs font-black text-slate-900 uppercase tracking-tight">Dr. Kavya S.</p>
+                  <p className="text-xs font-black text-slate-900 uppercase tracking-tight">Kavya S.</p>
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Principal</p>
                 </div>
                 <ChevronDown size={14} className={cn("text-slate-400 transition-transform duration-300", isUserDropdownOpen && "rotate-180")} />

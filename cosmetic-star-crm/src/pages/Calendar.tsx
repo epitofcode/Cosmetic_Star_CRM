@@ -112,7 +112,7 @@ export default function CalendarPage() {
           to_email: selectedPatient.email,
           date: scheduledSessions.map(s => format(s.date, 'do MMM')).join(', '),
           time: 'Multiple Sessions Allocated',
-          practitioner: 'Dr. Kavya Sangameswara',
+          practitioner: 'Kavya Sangameswara',
           service: treatmentPlan.service_name
         });
         console.log("Email trigger successful.");

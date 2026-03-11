@@ -594,7 +594,7 @@ app.post('/api/email/send-confirmation', async (req, res) => {
                             <p style="margin: 8px 0;"><strong>Procedure:</strong> ${service}</p>
                             <p style="margin: 8px 0;"><strong>Date:</strong> ${date}</p>
                             <p style="margin: 8px 0;"><strong>Arrival Time:</strong> ${time}</p>
-                            <p style="margin: 8px 0;"><strong>Practitioner:</strong> Dr. Kavya Sangameswara</p>
+                            <p style="margin: 8px 0;"><strong>Practitioner:</strong> Kavya Sangameswara</p>
                         </div>
 
                         <p>If you need to reschedule or cancel, please contact the clinic at least 24 hours in advance.</p>

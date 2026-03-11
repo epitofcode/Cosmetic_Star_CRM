@@ -131,7 +131,7 @@ const Dashboard = () => {
             <h1 className="text-3xl font-black text-slate-900 tracking-tight">Executive Overview</h1>
             {isRefreshing && <Loader2 size={16} className="animate-spin text-teal-500" />}
           </div>
-          <p className="text-slate-500 font-medium">Welcome back, Dr. Kavya Sangameswara. Analytics synced in real-time.</p>
+          <p className="text-slate-500 font-medium">Welcome back, Kavya Sangameswara. Analytics synced in real-time.</p>
         </div>
         <div className="flex items-center gap-3">
           <div className="bg-white border border-slate-200 text-slate-400 px-4 py-2.5 rounded-2xl font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 shadow-sm">
