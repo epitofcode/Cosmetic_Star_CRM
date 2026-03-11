@@ -1,16 +1,12 @@
 {
   "name": "cosmetic-star-root",
   "private": true,
-  "workspaces": [
-    "cosmetic-star-crm",
-    "backend"
-  ],
   "engines": {
     "node": ">=20.0.0"
   },
   "scripts": {
-    "build": "npm run build --workspace=cosmetic-star-crm",
+    "build": "echo 'Frontend built on Vercel'",
     "install-all": "npm install",
-    "start": "npm start --workspace=backend"
+    "start": "cd backend && node server.js"
   }
 }
