@@ -125,6 +125,7 @@ export default function Financials() {
         data: {
           patientId: selectedPatient.id,
           patientName: `${selectedPatient.first_name} ${selectedPatient.last_name}`,
+          patientEmail: selectedPatient.email,
           serviceName: billingRecord.service_name,
           totalAmount: billingRecord.total_amount,
           amountPaid: Number(paymentAmount),
@@ -274,6 +275,7 @@ export default function Financials() {
                                 data: {
                                   patientId: selectedPatient.id,
           patientName: `${selectedPatient.first_name} ${selectedPatient.last_name}`,
+          patientEmail: selectedPatient.email,
                                   serviceName: billingRecord.service_name,
                                   totalAmount: billingRecord.total_amount,
                                   amountPaid: t.amount,
