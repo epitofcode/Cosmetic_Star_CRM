@@ -772,5 +772,5 @@ app.use((req, res) => {
 });
 
 app.listen(port, '0.0.0.0', () => {
-    console.log(`Server v1.0.9 is active on port ${port} (Network: 0.0.0.0)`);
+    console.log(`Server v1.1.0 is active on port ${port} (Network: 0.0.0.0)`);
 });
