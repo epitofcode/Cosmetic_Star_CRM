@@ -48,6 +48,7 @@ export default function CalendarPage() {
   const [bookedSlots, setBookedSlots] = useState<string[]>([]);
   const [scheduledSessions, setScheduledSessions] = useState<Session[]>([]);
   const [treatmentPlan, setTreatmentPlan] = useState<any>(null);
+  const [existingBookings, setExistingBookings] = useState<any[]>([]);
   const [isBookingConfirmed, setIsBookingConfirmed] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -62,9 +63,13 @@ export default function CalendarPage() {
   useEffect(() => {
     if (selectedPatient) {
       setLoading(true);
-      getTreatmentPlan(selectedPatient.id)
-        .then(setTreatmentPlan)
-        .finally(() => setLoading(false));
+      Promise.all([
+        getTreatmentPlan(selectedPatient.id),
+        getBooking(selectedPatient.id)
+      ]).then(([plan, bookings]) => {
+        setTreatmentPlan(plan);
+        setExistingBookings(bookings || []);
+      }).finally(() => setLoading(false));
     }
   }, [selectedPatient]);
 
@@ -89,12 +94,12 @@ export default function CalendarPage() {
   };
 
   const handleFinalConfirm = async () => {
-    if (!selectedPatient || scheduledSessions.length !== (treatmentPlan?.total_sessions || 1)) return;
+    if (!selectedPatient || (scheduledSessions.length + existingBookings.length) < (treatmentPlan?.total_sessions || 1)) return;
     try {
       setIsSaving(true);
       
-      // 1. Create all bookings in parallel
-      console.log("Creating bookings for sessions:", scheduledSessions);
+      // 1. Create all new bookings in parallel
+      console.log("Creating new bookings for sessions:", scheduledSessions);
       await Promise.all(scheduledSessions.map(s => 
         createBooking({
           patient_id: selectedPatient.id,
@@ -107,10 +112,15 @@ export default function CalendarPage() {
       // 2. Send combined confirmation email
       console.log("Triggering confirmation email...");
       try {
+        const allDates = [
+          ...existingBookings.map(b => format(new Date(b.date), 'do MMM')),
+          ...scheduledSessions.map(s => format(s.date, 'do MMM'))
+        ].join(', ');
+
         await sendBookingConfirmation({
           to_name: `${selectedPatient.first_name} ${selectedPatient.last_name}`,
           to_email: selectedPatient.email,
-          date: scheduledSessions.map(s => format(s.date, 'do MMM')).join(', '),
+          date: allDates,
           time: 'Multiple Sessions Allocated',
           practitioner: 'Kavya Sangameswara',
           service: treatmentPlan.service_name
@@ -118,7 +128,6 @@ export default function CalendarPage() {
         console.log("Email trigger successful.");
       } catch (emailErr) {
         console.error("Email service failed but bookings saved:", emailErr);
-        // We don't block the UI for email failures if the DB is updated
       }
 
       setIsBookingConfirmed(true);
@@ -133,8 +142,9 @@ export default function CalendarPage() {
   if (!selectedPatient) return <div className="py-20 text-center text-slate-500">Please select a patient first.</div>;
   if (loading) return <div className="py-20 text-center"><Loader2 className="animate-spin mx-auto text-teal-600" /></div>;
 
-  const needed = treatmentPlan?.total_sessions || 1;
-  const remaining = needed - scheduledSessions.length;
+  const totalSessionsNeeded = treatmentPlan?.total_sessions || 1;
+  const currentCount = existingBookings.length + scheduledSessions.length;
+  const remaining = Math.max(0, totalSessionsNeeded - currentCount);
 
   return (
     <div className="max-w-7xl mx-auto space-y-8 pb-12">
@@ -145,7 +155,7 @@ export default function CalendarPage() {
         </div>
         <div className={cn("px-6 py-3 rounded-2xl border-2 flex flex-col items-center", remaining === 0 ? "bg-green-50 border-green-200 text-green-700" : "bg-amber-50 border-amber-200 text-amber-700")}>
           <span className="text-[10px] font-black uppercase tracking-widest">Sessions Needed</span>
-          <span className="text-xl font-black">{scheduledSessions.length} / {needed}</span>
+          <span className="text-xl font-black">{currentCount} / {totalSessionsNeeded}</span>
         </div>
       </div>
 
@@ -164,11 +174,25 @@ export default function CalendarPage() {
               {days.map((day, idx) => {
                 const isSel = selectedDate && isSameDay(day, selectedDate);
                 const isAdded = scheduledSessions.some(s => isSameDay(s.date, day));
+                const isExisting = existingBookings.some(b => isSameDay(new Date(b.date), day));
                 const isPast = day < new Date() && !isToday(day);
+                
                 return (
-                  <button key={idx} disabled={isPast} onClick={() => setSelectedDate(day)} className={cn("h-16 flex flex-col items-center justify-center rounded-2xl border-2 transition-all relative", !isSameMonth(day, monthStart) ? "opacity-20" : "border-slate-50", isSel ? "bg-teal-600 border-teal-600 text-white scale-105 z-10" : isAdded ? "bg-teal-50 border-teal-200 text-teal-700" : "bg-white hover:border-teal-500")}>
+                  <button 
+                    key={idx} 
+                    disabled={isPast} 
+                    onClick={() => setSelectedDate(day)} 
+                    className={cn(
+                      "h-16 flex flex-col items-center justify-center rounded-2xl border-2 transition-all relative", 
+                      !isSameMonth(day, monthStart) ? "opacity-20" : "border-slate-50", 
+                      isSel ? "bg-teal-600 border-teal-600 text-white scale-105 z-10" : 
+                      isExisting ? "bg-slate-100 border-teal-500/30 text-teal-700" :
+                      isAdded ? "bg-teal-50 border-teal-200 text-teal-700" : 
+                      "bg-white hover:border-teal-500"
+                    )}
+                  >
                     <span className="font-black">{format(day, 'd')}</span>
-                    {isAdded && !isSel && <CheckCircle2 size={12} className="absolute top-1 right-1 text-teal-500" />}
+                    {(isAdded || isExisting) && !isSel && <CheckCircle2 size={12} className={cn("absolute top-1 right-1", isExisting ? "text-teal-600" : "text-teal-400")} />}
                   </button>
                 );
               })}
@@ -184,28 +208,80 @@ export default function CalendarPage() {
                     {TIME_SLOTS.map(slot => {
                       const isBooked = bookedSlots.includes(slot);
                       const isChosen = scheduledSessions.some(s => isSameDay(s.date, selectedDate!) && s.slot === slot);
+                      const isAlreadyMine = existingBookings.some(b => isSameDay(new Date(b.date), selectedDate!) && b.time_slot === slot);
+                      
                       return (
-                        <button key={slot} disabled={isBooked || isChosen} onClick={() => setSelectedSlot(slot)} className={cn("py-3 rounded-xl text-xs font-black border-2", selectedSlot === slot ? "bg-teal-600 border-teal-600 text-white" : (isBooked || isChosen) ? "opacity-30 bg-slate-100" : "hover:border-teal-500")}>{slot}</button>
+                        <button 
+                          key={slot} 
+                          disabled={isBooked || isChosen || isAlreadyMine} 
+                          onClick={() => setSelectedSlot(slot)} 
+                          className={cn(
+                            "py-3 rounded-xl text-xs font-black border-2", 
+                            selectedSlot === slot ? "bg-teal-600 border-teal-600 text-white" : 
+                            isAlreadyMine ? "bg-teal-50 border-teal-200 text-teal-700 opacity-100" :
+                            (isBooked || isChosen) ? "opacity-30 bg-slate-100" : 
+                            "hover:border-teal-500"
+                          )}
+                        >
+                          {slot}
+                          {isAlreadyMine && <span className="block text-[8px] uppercase">Booked</span>}
+                        </button>
                       );
                     })}
                   </div>
-                  {selectedSlot && <button onClick={addSession} disabled={scheduledSessions.length >= needed} className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest disabled:opacity-50">Add Session to Queue</button>}
+                  {selectedSlot && (
+                    <button 
+                      onClick={addSession} 
+                      disabled={currentCount >= totalSessionsNeeded} 
+                      className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest disabled:opacity-50"
+                    >
+                      Add Session to Queue
+                    </button>
+                  )}
                 </div>
               ) : <p className="text-center py-10 text-slate-400 text-xs font-bold uppercase tracking-widest">Select a date first</p>}
             </div>
 
             <div className="bg-slate-900 rounded-[2rem] p-6 text-white shadow-2xl space-y-6">
-              <h3 className="font-black flex items-center gap-2 text-teal-400 uppercase tracking-widest text-xs">Scheduled Sessions</h3>
+              <div className="flex justify-between items-center">
+                <h3 className="font-black flex items-center gap-2 text-teal-400 uppercase tracking-widest text-xs">Timeline Queue</h3>
+                <span className="text-[10px] bg-white/10 px-2 py-0.5 rounded-full text-slate-400">{scheduledSessions.length} new</span>
+              </div>
+              
               <div className="space-y-2">
+                {/* Existing Bookings (ReadOnly) */}
+                {existingBookings.map((b, i) => (
+                  <div key={`exist-${i}`} className="flex items-center justify-between p-3 bg-teal-500/10 rounded-xl border border-teal-500/20 text-[10px]">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 size={12} className="text-teal-400" />
+                      <span className="text-slate-300">{format(new Date(b.date), 'do MMM')} @ {b.time_slot}</span>
+                    </div>
+                    <span className="text-teal-400 font-black uppercase text-[8px]">Confirmed</span>
+                  </div>
+                ))}
+
+                {/* New Sessions */}
                 {scheduledSessions.map((s, i) => (
-                  <div key={i} className="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/10 text-xs">
+                  <div key={`new-${i}`} className="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/10 text-xs animate-pulse">
                     <span>{format(s.date, 'do MMM')} @ {s.slot}</span>
                     <button onClick={() => removeSession(i)} className="text-white/20 hover:text-red-400"><Trash2 size={14} /></button>
                   </div>
                 ))}
               </div>
-              {remaining === 0 ? <button onClick={handleFinalConfirm} disabled={isSaving} className="w-full bg-teal-500 hover:bg-teal-400 text-slate-900 py-4 rounded-2xl font-black text-sm uppercase tracking-widest shadow-lg shadow-teal-500/20">{isSaving ? 'Saving...' : 'Confirm All Sessions'}</button>
-              : <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-center gap-2 text-[10px] text-amber-200 uppercase font-black tracking-widest"><AlertCircle size={14} /> {remaining} More Sessions Needed</div>}
+
+              {remaining === 0 ? (
+                <button 
+                  onClick={handleFinalConfirm} 
+                  disabled={isSaving || scheduledSessions.length === 0} 
+                  className="w-full bg-teal-500 hover:bg-teal-400 text-slate-900 py-4 rounded-2xl font-black text-sm uppercase tracking-widest shadow-lg shadow-teal-500/20 disabled:bg-slate-700 disabled:text-slate-500"
+                >
+                  {isSaving ? 'Saving...' : scheduledSessions.length === 0 ? 'All Sessions Booked' : 'Confirm New Sessions'}
+                </button>
+              ) : (
+                <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-center gap-2 text-[10px] text-amber-200 uppercase font-black tracking-widest">
+                  <AlertCircle size={14} /> {remaining} More Sessions Needed
+                </div>
+              )}
             </div>
           </div>
         </div>
