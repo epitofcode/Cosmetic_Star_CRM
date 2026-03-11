@@ -36,10 +36,10 @@ const YesNoQuestion: React.FC<QuestionProps> = ({
   label, value, details, onChange, placeholder = "Provide relevant medical information...", detailLabel = "Please specify details" 
 }) => {
   return (
-    <div className="space-y-3 p-4 rounded-xl border border-slate-100 bg-slate-50/50 transition-all hover:bg-slate-50">
+    <div className="space-y-3 p-4 rounded-xl border border-slate-100 bg-slate-50/50 transition-all hover:bg-slate-50 text-left">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <p className="text-sm font-medium text-slate-700">{label}</p>
-        <div className="flex items-center gap-2 p-1 bg-slate-200/50 rounded-lg w-fit">
+        <div className="flex items-center gap-2 p-1 bg-slate-200/50 rounded-lg w-fit shrink-0">
           <button
             type="button"
             onClick={() => onChange(true, details)}
@@ -99,7 +99,7 @@ export default function HealthAssessment() {
       pacemaker: { value: null as boolean | null, details: '' },
       diabetes: { value: null as boolean | null, details: '' },
       hivHepatitis: { value: null as boolean | null, details: '' },
-      anesthesiaAllergy: { value: null as boolean | null, details: '' },
+      anaesthesiaAllergy: { value: null as boolean | null, details: '' },
       smoking: { value: null as boolean | null, details: '' },
       alcohol: { value: null as boolean | null, details: '' },
     }
@@ -142,7 +142,7 @@ export default function HealthAssessment() {
     try {
       setLoading(true);
       await saveAssessment(selectedPatient.id, formData);
-      alert('Assessment saved successfully!');
+      alert('Medical Assessment saved successfully!');
     } catch (error: any) {
       console.error('Save assessment error:', error);
       const message = error.response?.data?.error || error.message || 'Unknown error';
@@ -160,7 +160,7 @@ export default function HealthAssessment() {
         </div>
         <div>
           <h2 className="text-xl font-bold text-slate-900">No Patient Selected</h2>
-          <p className="text-slate-500 max-w-xs mx-auto">Please go to the Patients page and select a patient to start an assessment.</p>
+          <p className="text-slate-500 max-w-xs mx-auto text-sm">Please select a patient to start their clinical assessment.</p>
         </div>
       </div>
     );
@@ -170,7 +170,7 @@ export default function HealthAssessment() {
     return (
       <div className="flex flex-col items-center justify-center py-20">
         <Loader2 className="animate-spin text-teal-600 mb-4" size={40} />
-        <p className="text-slate-500 font-medium font-black uppercase tracking-widest text-xs">Accessing Medical Records...</p>
+        <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">Accessing Clinical Records...</p>
       </div>
     );
   }
@@ -183,10 +183,10 @@ export default function HealthAssessment() {
             <UserCheck size={14} />
             Patient: {selectedPatient.first_name} {selectedPatient.last_name}
           </div>
-          <h1 className="text-2xl font-bold text-slate-900">Health Assessment</h1>
-          <p className="text-slate-500">Comprehensive medical consultation form.</p>
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight text-left">Health Assessment</h1>
+          <p className="text-slate-500 text-left">Professional medical consultation and history.</p>
         </div>
-        <div className="flex items-center gap-2 text-sm text-slate-400">
+        <div className="hidden sm:flex items-center gap-2 text-sm text-slate-400">
           <span>Patients</span>
           <ChevronRight size={14} />
           <span className="text-slate-900 font-medium">New Assessment</span>
@@ -201,7 +201,7 @@ export default function HealthAssessment() {
             <h2 className="font-bold text-slate-900 text-lg">Section 1: General Information</h2>
           </div>
           <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
+            <div className="space-y-2 text-left">
               <label className="text-sm font-semibold text-slate-700">GP Name / Surgery</label>
               <div className="relative">
                 <Stethoscope className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
@@ -214,7 +214,7 @@ export default function HealthAssessment() {
                 />
               </div>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-2 text-left">
               <label className="text-sm font-semibold text-slate-700">Occupation</label>
               <input
                 type="text"
@@ -303,10 +303,10 @@ export default function HealthAssessment() {
               onChange={(v, d) => handleQuestionChange('hivHepatitis', v, d)}
             />
             <YesNoQuestion
-              label="Do you have any allergies to local anesthesia (Lidocaine)?"
-              value={formData.questions.anesthesiaAllergy.value}
-              details={formData.questions.anesthesiaAllergy.details}
-              onChange={(v, d) => handleQuestionChange('anesthesiaAllergy', v, d)}
+              label="Do you have any allergies to local anaesthesia (Lidocaine)?"
+              value={formData.questions.anaesthesiaAllergy.value}
+              details={formData.questions.anaesthesiaAllergy.details}
+              onChange={(v, d) => handleQuestionChange('anaesthesiaAllergy', v, d)}
             />
           </div>
         </section>
@@ -345,7 +345,7 @@ export default function HealthAssessment() {
               className="flex items-center justify-center gap-2 bg-teal-600 hover:bg-teal-700 text-white w-full sm:w-auto px-8 py-3 rounded-xl font-bold shadow-lg shadow-teal-500/20 transition-all active:scale-95"
             >
               <Save size={20} />
-              Save Assessment
+              Save Medical Assessment
             </button>
           </div>
         </div>
