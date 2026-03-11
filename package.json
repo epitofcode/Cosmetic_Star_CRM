@@ -1,6 +1,9 @@
 {
   "name": "cosmetic-star-root",
   "private": true,
+  "workspaces": [
+    "backend"
+  ],
   "engines": {
     "node": ">=20.0.0"
   },
