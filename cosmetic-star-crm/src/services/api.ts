@@ -17,23 +17,23 @@ export const createPatient = async (patientData: any) => {
     return response.data;
 };
 
-export const updatePatient = async (id: string, patientData: any) => {
+export const updatePatient = async (id: number | string, patientData: any) => {
     const response = await api.put(`/patients/${id}`, patientData);
     return response.data;
 };
 
-export const deletePatient = async (id: string) => {
+export const deletePatient = async (id: number | string) => {
     const response = await api.delete(`/patients/${id}`);
     return response.data;
 };
 
 // Assessments
-export const saveAssessment = async (patientId: string, assessmentData: any) => {
+export const saveAssessment = async (patientId: number | string, assessmentData: any) => {
     const response = await api.post('/assessment', { patient_id: patientId, data: assessmentData });
     return response.data;
 };
 
-export const getAssessment = async (patientId: string) => {
+export const getAssessment = async (patientId: number | string) => {
     const response = await api.get(`/assessment/${patientId}`);
     return response.data;
 };
@@ -44,15 +44,15 @@ export const saveTreatmentPlan = async (planData: any) => {
     return response.data;
 };
 
-export const getTreatmentPlan = async (patientId: string) => {
+export const getTreatmentPlan = async (patientId: number | string) => {
     const response = await api.get(`/treatment-plan/${patientId}`);
     return response.data;
 };
 
 // Contracts
-export const uploadSignature = async (patientId: string, signatureBlob: Blob) => {
+export const uploadSignature = async (patientId: number | string, signatureBlob: Blob) => {
     const formData = new FormData();
-    formData.append('patient_id', patientId);
+    formData.append('patient_id', patientId.toString());
     formData.append('signature', signatureBlob, 'signature.png');
 
     const response = await api.post('/contract', formData, {
@@ -61,7 +61,7 @@ export const uploadSignature = async (patientId: string, signatureBlob: Blob) =>
     return response.data;
 };
 
-export const checkContractStatus = async (patientId: string) => {
+export const checkContractStatus = async (patientId: number | string) => {
     const response = await api.get(`/contract/${patientId}`);
     return response.data;
 };
@@ -77,13 +77,13 @@ export const createBooking = async (bookingData: any) => {
     return response.data;
 };
 
-export const getBooking = async (patientId: string) => {
+export const getBooking = async (patientId: number | string) => {
     const response = await api.get(`/bookings/${patientId}`);
     return response.data;
 };
 
 // Financials
-export const getFinancials = async (patientId: string) => {
+export const getFinancials = async (patientId: number | string) => {
     const response = await api.get(`/financials/${patientId}`);
     return response.data;
 };
@@ -101,12 +101,12 @@ export const adminGetTableData = async (tableName: string) => {
     return response.data;
 };
 
-export const adminUpdateRow = async (tableName: string, id: string, data: any) => {
+export const adminUpdateRow = async (tableName: string, id: number | string, data: any) => {
     const response = await api.put(`/admin/tables/${tableName}/${id}`, data);
     return response.data;
 };
 
-export const adminDeleteRow = async (tableName: string, id: string) => {
+export const adminDeleteRow = async (tableName: string, id: number | string) => {
     const response = await api.delete(`/admin/tables/${tableName}/${id}`);
     return response.data;
 };
