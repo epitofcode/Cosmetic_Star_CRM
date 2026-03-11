@@ -605,6 +605,7 @@ app.post('/api/email/send-confirmation', async (req, res) => {
                         <p style="margin-top: 32px;">Warm regards,<br>The Cosmetic Star Team</p>
                     </div>
                     <div style="background-color: #f1f5f9; padding: 16px; text-align: center; font-size: 12px; color: #94a3b8;">
+                        <p style="margin: 0 0 8px 0;">This is an automated system message. Please do not reply directly to this email.</p>
                         &copy; 2026 Cosmetic Star UK Ltd. All rights reserved.
                     </div>
                 </div>
@@ -689,6 +690,7 @@ app.post('/api/email/send-payment-receipt', async (req, res) => {
                         
                         <p style="margin-top: 32px;">If you have any questions regarding your billing, please don't hesitate to contact us.</p>
                         <p style="margin-top: 32px;">Warm regards,<br>The Cosmetic Star Financial Team</p>
+                        <p style="margin-top: 48px; font-size: 10px; color: #94a3b8; text-align: center; border-top: 1px solid #e2e8f0; pt: 16px;">This is an automated system message. Please do not reply directly to this email.</p>
                     </div>
                 </div>
             `
