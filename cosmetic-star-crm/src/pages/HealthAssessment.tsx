@@ -11,7 +11,11 @@ import {
   Cigarette, 
   Wine, 
   UserCheck,
-  Loader2
+  Loader2,
+  Pill,
+  History,
+  ShieldAlert,
+  Thermometer
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -28,56 +32,25 @@ interface QuestionProps {
   details: string;
   onChange: (value: boolean, details: string) => void;
   placeholder?: string;
-  type?: 'text' | 'number';
   detailLabel?: string;
 }
 
 const YesNoQuestion: React.FC<QuestionProps> = ({ 
-  label, value, details, onChange, placeholder = "Provide relevant medical information...", detailLabel = "Please specify details" 
+  label, value, details, onChange, placeholder = "Provide details...", detailLabel = "Details" 
 }) => {
   return (
     <div className="space-y-3 p-4 rounded-xl border border-slate-100 bg-slate-50/50 transition-all hover:bg-slate-50 text-left">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <p className="text-sm font-medium text-slate-700">{label}</p>
         <div className="flex items-center gap-2 p-1 bg-slate-200/50 rounded-lg w-fit shrink-0">
-          <button
-            type="button"
-            onClick={() => onChange(true, details)}
-            className={cn(
-              "px-4 py-1.5 text-xs font-bold rounded-md transition-all",
-              value === true 
-                ? "bg-white text-teal-600 shadow-sm" 
-                : "text-slate-500 hover:text-slate-700"
-            )}
-          >
-            Yes
-          </button>
-          <button
-            type="button"
-            onClick={() => onChange(false, '')}
-            className={cn(
-              "px-4 py-1.5 text-xs font-bold rounded-md transition-all",
-              value === false 
-                ? "bg-white text-slate-600 shadow-sm" 
-                : "text-slate-500 hover:text-slate-700"
-            )}
-          >
-            No
-          </button>
+          <button type="button" onClick={() => onChange(true, details)} className={cn("px-4 py-1.5 text-xs font-bold rounded-md transition-all", value === true ? "bg-white text-teal-600 shadow-sm" : "text-slate-500 hover:text-slate-700")}>Yes</button>
+          <button type="button" onClick={() => onChange(false, '')} className={cn("px-4 py-1.5 text-xs font-bold rounded-md transition-all", value === false ? "bg-white text-slate-600 shadow-sm" : "text-slate-500 hover:text-slate-700")}>No</button>
         </div>
       </div>
-      
       {value === true && (
         <div className="animate-in slide-in-from-top-2 duration-200">
-          <label className="block text-xs font-semibold text-slate-500 mb-1.5 uppercase tracking-wider">
-            {detailLabel}
-          </label>
-          <textarea
-            value={details}
-            onChange={(e) => onChange(true, e.target.value)}
-            placeholder={placeholder}
-            className="w-full bg-white border border-slate-200 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 rounded-lg py-2 px-3 text-sm outline-none min-h-[80px] transition-all"
-          />
+          <label className="block text-[10px] font-black text-slate-400 mb-1.5 uppercase tracking-wider">{detailLabel}</label>
+          <textarea value={details} onChange={(e) => onChange(true, e.target.value)} placeholder={placeholder} className="w-full bg-white border border-slate-200 focus:border-teal-500 rounded-lg py-2 px-3 text-sm outline-none min-h-[60px] transition-all" />
         </div>
       )}
     </div>
@@ -90,6 +63,10 @@ export default function HealthAssessment() {
   const [formData, setFormData] = useState({
     gpName: '',
     occupation: '',
+    currentMedications: '',
+    pastSurgeries: '',
+    alopeciaGrade: 'N/A',
+    skinType: 'Type I',
     questions: {
       psoriasis: { value: null as boolean | null, details: '' },
       keloid: { value: null as boolean | null, details: '' },
@@ -100,254 +77,128 @@ export default function HealthAssessment() {
       diabetes: { value: null as boolean | null, details: '' },
       hivHepatitis: { value: null as boolean | null, details: '' },
       anaesthesiaAllergy: { value: null as boolean | null, details: '' },
+      covidHistory: { value: null as boolean | null, details: '' },
       smoking: { value: null as boolean | null, details: '' },
       alcohol: { value: null as boolean | null, details: '' },
     }
   });
 
-  useEffect(() => {
-    if (selectedPatient) {
-      loadAssessment();
-    }
-  }, [selectedPatient]);
+  useEffect(() => { if (selectedPatient) loadAssessment(); }, [selectedPatient]);
 
   const loadAssessment = async () => {
     try {
       setLoading(true);
       const data = await getAssessment(selectedPatient!.id);
-      if (data && data.data) {
-        setFormData(data.data);
-      }
-    } catch (error) {
-      console.error('Error loading assessment:', error);
-    } finally {
-      setLoading(false);
-    }
+      if (data && data.data) setFormData(data.data);
+    } catch (error) { console.error('Load error:', error); } finally { setLoading(false); }
   };
 
   const handleQuestionChange = (id: keyof typeof formData.questions, value: boolean, details: string) => {
-    setFormData(prev => ({
-      ...prev,
-      questions: {
-        ...prev.questions,
-        [id]: { value, details }
-      }
-    }));
+    setFormData(prev => ({ ...prev, questions: { ...prev.questions, [id]: { value, details } } }));
   };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedPatient) return;
-
     try {
       setLoading(true);
       await saveAssessment(selectedPatient.id, formData);
-      alert('Medical Assessment saved successfully!');
-    } catch (error: any) {
-      console.error('Save assessment error:', error);
-      const message = error.response?.data?.error || error.message || 'Unknown error';
-      alert(`Failed to save assessment: ${message}`);
-    } finally {
-      setLoading(false);
-    }
+      alert('Clinical Assessment Saved Successfully');
+    } catch (error: any) { alert('Save failed'); } finally { setLoading(false); }
   };
 
-  if (!selectedPatient) {
-    return (
-      <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
-        <div className="bg-slate-100 p-6 rounded-full text-slate-400">
-          <UserCircle2 size={48} />
-        </div>
-        <div>
-          <h2 className="text-xl font-bold text-slate-900">No Patient Selected</h2>
-          <p className="text-slate-500 max-w-xs mx-auto text-sm">Please select a patient to start their clinical assessment.</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center py-20">
-        <Loader2 className="animate-spin text-teal-600 mb-4" size={40} />
-        <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">Accessing Clinical Records...</p>
-      </div>
-    );
-  }
+  if (!selectedPatient) return <div className="py-20 text-center text-slate-500">Please select a patient first.</div>;
+  if (loading) return <div className="py-20 text-center"><Loader2 className="animate-spin mx-auto text-teal-600" /></div>;
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
+    <div className="max-w-4xl mx-auto space-y-8 pb-32">
       <div className="flex items-center justify-between">
-        <div className="space-y-1">
+        <div className="space-y-1 text-left">
           <div className="flex items-center gap-2 text-teal-600 bg-teal-50 w-fit px-2 py-1 rounded text-xs font-bold uppercase tracking-wider">
-            <UserCheck size={14} />
-            Patient: {selectedPatient.first_name} {selectedPatient.last_name}
+            <UserCheck size={14} /> Patient: {selectedPatient.first_name} {selectedPatient.last_name}
           </div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight text-left">Health Assessment</h1>
-          <p className="text-slate-500 text-left">Professional medical consultation and history.</p>
-        </div>
-        <div className="hidden sm:flex items-center gap-2 text-sm text-slate-400">
-          <span>Patients</span>
-          <ChevronRight size={14} />
-          <span className="text-slate-900 font-medium">New Assessment</span>
+          <h1 className="text-3xl font-black text-slate-900 tracking-tight">Clinical Assessment</h1>
+          <p className="text-slate-500 font-medium">Full medical history and diagnostic profile.</p>
         </div>
       </div>
 
-      <form onSubmit={handleSave} className="space-y-8 pb-24">
-        {/* Section 1: General Info */}
+      <form onSubmit={handleSave} className="space-y-8 text-left">
+        {/* Section 1: Clinical Identity */}
         <section className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
           <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex items-center gap-3">
-            <UserCircle2 className="text-teal-600" size={20} />
-            <h2 className="font-bold text-slate-900 text-lg">Section 1: General Information</h2>
+            <Stethoscope className="text-teal-600" size={20} /><h2 className="font-bold text-slate-900">1. Administrative Details</h2>
           </div>
           <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2 text-left">
-              <label className="text-sm font-semibold text-slate-700">GP Name / Surgery</label>
-              <div className="relative">
-                <Stethoscope className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                <input
-                  type="text"
-                  value={formData.gpName}
-                  onChange={(e) => setFormData({ ...formData, gpName: e.target.value })}
-                  placeholder="Enter GP details"
-                  className="w-full bg-slate-50 border border-slate-200 focus:bg-white focus:border-teal-500 rounded-lg py-2.5 pl-10 pr-4 text-sm outline-none transition-all"
-                />
-              </div>
+            <div className="space-y-2"><label className="text-xs font-black text-slate-400 uppercase">GP Name / Surgery</label>
+              <input type="text" value={formData.gpName} onChange={(e) => setFormData({...formData, gpName: e.target.value})} placeholder="e.g. Manchester Central Clinic" className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2.5 px-4 text-sm outline-none" />
             </div>
-            <div className="space-y-2 text-left">
-              <label className="text-sm font-semibold text-slate-700">Occupation</label>
-              <input
-                type="text"
-                value={formData.occupation}
-                onChange={(e) => setFormData({ ...formData, occupation: e.target.value })}
-                placeholder="Enter current occupation"
-                className="w-full bg-slate-50 border border-slate-200 focus:bg-white focus:border-teal-500 rounded-lg py-2.5 px-4 text-sm outline-none transition-all"
-              />
+            <div className="space-y-2"><label className="text-xs font-black text-slate-400 uppercase">Occupation</label>
+              <input type="text" value={formData.occupation} onChange={(e) => setFormData({...formData, occupation: e.target.value})} placeholder="Patient occupation" className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2.5 px-4 text-sm outline-none" />
             </div>
           </div>
         </section>
 
-        {/* Section 2: Dermatological */}
+        {/* Section 2: Clinical Diagnostics */}
         <section className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
           <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex items-center gap-3">
-            <Activity className="text-teal-600" size={20} />
-            <h2 className="font-bold text-slate-900 text-lg">Section 2: Dermatological</h2>
+            <ShieldAlert className="text-teal-600" size={20} /><h2 className="font-bold text-slate-900">2. Clinical Diagnostics</h2>
           </div>
-          <div className="p-6 space-y-4">
-            <YesNoQuestion
-              label="Do you suffer from Psoriasis or Eczema on the scalp?"
-              value={formData.questions.psoriasis.value}
-              details={formData.questions.psoriasis.details}
-              onChange={(v, d) => handleQuestionChange('psoriasis', v, d)}
-            />
-            <YesNoQuestion
-              label="Do you have a history of Keloid scarring?"
-              value={formData.questions.keloid.value}
-              details={formData.questions.keloid.details}
-              onChange={(v, d) => handleQuestionChange('keloid', v, d)}
-            />
-            <YesNoQuestion
-              label="Do you have an active scalp infection or folliculitis?"
-              value={formData.questions.infection.value}
-              details={formData.questions.infection.details}
-              onChange={(v, d) => handleQuestionChange('infection', v, d)}
-            />
+          <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2"><label className="text-xs font-black text-slate-400 uppercase">Alopecia Grade (Norwood/Ludwig)</label>
+              <select value={formData.alopeciaGrade} onChange={(e) => setFormData({...formData, alopeciaGrade: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2.5 px-4 text-sm outline-none">
+                <option value="N/A">N/A</option><option value="Grade I">Grade I</option><option value="Grade II">Grade II</option><option value="Grade III">Grade III</option><option value="Grade IV">Grade IV</option><option value="Grade V">Grade V</option>
+              </select>
+            </div>
+            <div className="space-y-2"><label className="text-xs font-black text-slate-400 uppercase">Fitzpatrick Skin Type</label>
+              <select value={formData.skinType} onChange={(e) => setFormData({...formData, skinType: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2.5 px-4 text-sm outline-none">
+                <option value="Type I">Type I (Very Fair)</option><option value="Type II">Type II (Fair)</option><option value="Type III">Type III (Medium)</option><option value="Type IV">Type IV (Olive)</option><option value="Type V">Type V (Brown)</option><option value="Type VI">Type VI (Black)</option>
+              </select>
+            </div>
           </div>
         </section>
 
-        {/* Section 3: Cardiovascular */}
+        {/* Section 3: Medications & History */}
         <section className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
           <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex items-center gap-3">
-            <Heart className="text-teal-600" size={20} />
-            <h2 className="font-bold text-slate-900 text-lg">Section 3: Cardiovascular</h2>
+            <Pill className="text-teal-600" size={20} /><h2 className="font-bold text-slate-900">3. Medications & Surgical History</h2>
           </div>
-          <div className="p-6 space-y-4">
-            <YesNoQuestion
-              label="Do you have high blood pressure?"
-              value={formData.questions.hypertension.value}
-              details={formData.questions.hypertension.details}
-              onChange={(v, d) => handleQuestionChange('hypertension', v, d)}
-            />
-            <YesNoQuestion
-              label="Are you taking any blood thinners (e.g., Aspirin, Warfarin)?"
-              value={formData.questions.bloodThinners.value}
-              details={formData.questions.bloodThinners.details}
-              onChange={(v, d) => handleQuestionChange('bloodThinners', v, d)}
-            />
-            <YesNoQuestion
-              label="Do you have a pacemaker?"
-              value={formData.questions.pacemaker.value}
-              details={formData.questions.pacemaker.details}
-              onChange={(v, d) => handleQuestionChange('pacemaker', v, d)}
-            />
+          <div className="p-6 space-y-6">
+            <div className="space-y-2"><label className="text-xs font-black text-slate-400 uppercase flex items-center gap-2"><Pill size={14}/> Current Medications</label>
+              <textarea value={formData.currentMedications} onChange={(e) => setFormData({...formData, currentMedications: e.target.value})} placeholder="List all current medications and dosages..." className="w-full bg-slate-50 border border-slate-200 rounded-lg py-3 px-4 text-sm outline-none min-h-[80px]" />
+            </div>
+            <div className="space-y-2"><label className="text-xs font-black text-slate-400 uppercase flex items-center gap-2"><History size={14}/> Past Surgeries</label>
+              <textarea value={formData.pastSurgeries} onChange={(e) => setFormData({...formData, pastSurgeries: e.target.value})} placeholder="List any previous major surgeries or aesthetic procedures..." className="w-full bg-slate-50 border border-slate-200 rounded-lg py-3 px-4 text-sm outline-none min-h-[80px]" />
+            </div>
           </div>
         </section>
 
-        {/* Section 4: General Health */}
+        {/* Section 4: Medical Questions */}
         <section className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
           <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex items-center gap-3">
-            <AlertCircle className="text-teal-600" size={20} />
-            <h2 className="font-bold text-slate-900 text-lg">Section 4: General Health</h2>
+            <AlertCircle className="text-teal-600" size={20} /><h2 className="font-bold text-slate-900">4. Medical Screening</h2>
           </div>
           <div className="p-6 space-y-4">
-            <YesNoQuestion
-              label="Do you have Diabetes (Type 1 or 2)?"
-              value={formData.questions.diabetes.value}
-              details={formData.questions.diabetes.details}
-              onChange={(v, d) => handleQuestionChange('diabetes', v, d)}
-            />
-            <YesNoQuestion
-              label="Have you tested positive for Hepatitis B/C or HIV?"
-              value={formData.questions.hivHepatitis.value}
-              details={formData.questions.hivHepatitis.details}
-              onChange={(v, d) => handleQuestionChange('hivHepatitis', v, d)}
-            />
-            <YesNoQuestion
-              label="Do you have any allergies to local anaesthesia (Lidocaine)?"
-              value={formData.questions.anaesthesiaAllergy.value}
-              details={formData.questions.anaesthesiaAllergy.details}
-              onChange={(v, d) => handleQuestionChange('anaesthesiaAllergy', v, d)}
-            />
+            <YesNoQuestion label="Psoriasis or Eczema on the scalp?" value={formData.questions.psoriasis.value} details={formData.questions.psoriasis.details} onChange={(v, d) => handleQuestionChange('psoriasis', v, d)} />
+            <YesNoQuestion label="History of Keloid scarring?" value={formData.questions.keloid.value} details={formData.questions.keloid.details} onChange={(v, d) => handleQuestionChange('keloid', v, d)} />
+            <YesNoQuestion label="Allergies to Local Anaesthesia (Lidocaine)?" value={formData.questions.anaesthesiaAllergy.value} details={formData.questions.anaesthesiaAllergy.details} onChange={(v, d) => handleQuestionChange('anaesthesiaAllergy', v, d)} />
+            <YesNoQuestion label="Diabetes (Type 1 or 2)?" value={formData.questions.diabetes.value} details={formData.questions.diabetes.details} onChange={(v, d) => handleQuestionChange('diabetes', v, d)} />
+            <YesNoQuestion label="Covid-19 History / Respiratory Issues?" value={formData.questions.covidHistory.value} details={formData.questions.covidHistory.details} onChange={(v, d) => handleQuestionChange('covidHistory', v, d)} />
           </div>
         </section>
 
         {/* Section 5: Lifestyle */}
         <section className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
           <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex items-center gap-3">
-            <Cigarette className="text-teal-600" size={20} />
-            <h2 className="font-bold text-slate-900 text-lg">Section 5: Lifestyle</h2>
+            <Cigarette className="text-teal-600" size={20} /><h2 className="font-bold text-slate-900">5. Lifestyle Habits</h2>
           </div>
           <div className="p-6 space-y-4">
-            <YesNoQuestion
-              label="Do you smoke?"
-              value={formData.questions.smoking.value}
-              details={formData.questions.smoking.details}
-              onChange={(v, d) => handleQuestionChange('smoking', v, d)}
-              detailLabel="How many per day?"
-              placeholder="e.g. 10 cigarettes per day"
-            />
-            <YesNoQuestion
-              label="Do you drink alcohol?"
-              value={formData.questions.alcohol.value}
-              details={formData.questions.alcohol.details}
-              onChange={(v, d) => handleQuestionChange('alcohol', v, d)}
-              detailLabel="Units per week?"
-              placeholder="e.g. 14 units per week"
-            />
+            <YesNoQuestion label="Do you smoke?" value={formData.questions.smoking.value} details={formData.questions.smoking.details} onChange={(v, d) => handleQuestionChange('smoking', v, d)} detailLabel="Frequency" placeholder="e.g. 10 per day" />
+            <YesNoQuestion label="Do you drink alcohol?" value={formData.questions.alcohol.value} details={formData.questions.alcohol.details} onChange={(v, d) => handleQuestionChange('alcohol', v, d)} detailLabel="Units" placeholder="e.g. 14 units/week" />
           </div>
         </section>
 
-        {/* Actions */}
         <div className="fixed bottom-0 left-0 right-0 lg:left-72 bg-white/80 backdrop-blur-md border-t border-slate-200 p-4 z-40">
-          <div className="max-w-4xl mx-auto flex justify-end px-4 sm:px-6">
-            <button
-              type="submit"
-              className="flex items-center justify-center gap-2 bg-teal-600 hover:bg-teal-700 text-white w-full sm:w-auto px-8 py-3 rounded-xl font-bold shadow-lg shadow-teal-500/20 transition-all active:scale-95"
-            >
-              <Save size={20} />
-              Save Medical Assessment
-            </button>
-          </div>
+          <div className="max-w-4xl mx-auto flex justify-end px-6"><button type="submit" className="bg-teal-600 hover:bg-teal-700 text-white px-10 py-3.5 rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl shadow-teal-600/20 transition-all active:scale-95">Save Clinical Assessment</button></div>
         </div>
       </form>
     </div>

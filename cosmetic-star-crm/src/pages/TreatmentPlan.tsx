@@ -9,7 +9,11 @@ import {
   UserCheck,
   UserCircle2,
   Loader2,
-  Clock
+  Clock,
+  Clipboard,
+  Scissors,
+  Locate,
+  Calendar
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -40,16 +44,16 @@ export default function TreatmentPlan() {
   const [cost, setCost] = useState<number>(0);
   const [discount, setDiscount] = useState<number>(0);
   const [totalSessions, setTotalSessions] = useState<number>(1);
+  const [graftCount, setGraftCount] = useState('');
+  const [treatmentArea, setTreatmentArea] = useState('');
+  const [notes, setNotes] = useState('');
+  const [nextPaymentDate, setNextPaymentDate] = useState('');
   const [status, setStatus] = useState('Active');
   const [isSaving, setIsSaving] = useState(false);
   const [loading, setLoading] = useState(false);
   const [isPlanExisting, setIsPlanExisting] = useState(false);
 
-  useEffect(() => {
-    if (selectedPatient) {
-      fetchExistingPlan();
-    }
-  }, [selectedPatient]);
+  useEffect(() => { if (selectedPatient) fetchExistingPlan(); }, [selectedPatient]);
 
   const fetchExistingPlan = async () => {
     try {
@@ -60,16 +64,14 @@ export default function TreatmentPlan() {
         setCost(Number(plan.base_cost));
         setDiscount(Number(plan.discount));
         setTotalSessions(plan.total_sessions || 1);
+        setGraftCount((plan as any).graft_count || '');
+        setTreatmentArea((plan as any).treatment_area || '');
+        setNotes((plan as any).notes || '');
+        setNextPaymentDate((plan as any).next_payment_due_date || '');
         setStatus(plan.status || 'Active');
         setIsPlanExisting(true);
-      } else {
-        setIsPlanExisting(false);
-      }
-    } catch (error) {
-      console.error('Error fetching plan:', error);
-    } finally {
-      setLoading(false);
-    }
+      } else { setIsPlanExisting(false); }
+    } catch (error) { console.error('Load error:', error); } finally { setLoading(false); }
   };
 
   const selectedService = SERVICES.find(s => s.id === selectedServiceId);
@@ -84,7 +86,6 @@ export default function TreatmentPlan() {
 
   const handleSavePlan = async (targetStatus = 'Active') => {
     if (!selectedPatient || !selectedService) return;
-
     try {
       setIsSaving(true);
       await saveTreatmentPlan({
@@ -95,70 +96,50 @@ export default function TreatmentPlan() {
         discount: discount,
         total_to_pay: totalToPay,
         total_sessions: totalSessions,
+        graft_count: graftCount,
+        treatment_area: treatmentArea,
+        notes: notes,
+        next_payment_due_date: nextPaymentDate,
         status: targetStatus
       });
-      
       setStatus(targetStatus);
       setIsPlanExisting(true);
-      alert(targetStatus === 'Completed' ? 'Treatment Marked Completed' : 'Plan Saved Successfully');
-    } catch (error: any) {
-      console.error('Save error:', error);
-      alert(`Failed: ${error.response?.data?.error || error.message}`);
-    } finally {
-      setIsSaving(false);
-    }
+      alert('Clinical Treatment Plan Finalised Successfully');
+    } catch (error: any) { alert('Save failed'); } finally { setIsSaving(false); }
   };
 
-  if (!selectedPatient) {
-    return (
-      <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
-        <div className="bg-slate-100 p-6 rounded-full text-slate-400"><UserCircle2 size={48} /></div>
-        <div><h2 className="text-xl font-bold text-slate-900">No Patient Selected</h2><p className="text-slate-500 max-w-xs mx-auto">Please select a patient first.</p></div>
-      </div>
-    );
-  }
-
-  if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center py-20">
-        <Loader2 className="animate-spin text-teal-600 mb-4" size={40} />
-        <p className="text-slate-500 font-bold uppercase tracking-widest text-xs text-center">Loading Clinical Plan...</p>
-      </div>
-    );
-  }
+  if (!selectedPatient) return <div className="py-20 text-center text-slate-500">Please select a patient first.</div>;
+  if (loading) return <div className="py-20 text-center"><Loader2 className="animate-spin mx-auto text-teal-600" /></div>;
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
+    <div className="max-w-5xl mx-auto space-y-8 pb-32">
       <div className="flex items-center justify-between">
-        <div className="space-y-1">
+        <div className="space-y-1 text-left">
           <div className="flex items-center gap-2 text-teal-600 bg-teal-50 w-fit px-2 py-1 rounded text-xs font-bold uppercase tracking-wider">
             <UserCheck size={14} /> Patient: {selectedPatient.first_name} {selectedPatient.last_name}
           </div>
-          <h1 className="text-2xl font-bold text-slate-900">Treatment Plan</h1>
+          <h1 className="text-3xl font-black text-slate-900 tracking-tight">Treatment Configuration</h1>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Summary Card */}
         <div className="lg:order-2 space-y-6">
           <div className="bg-slate-900 rounded-2xl p-6 text-white shadow-xl sticky top-24">
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-lg font-bold flex items-center gap-2"><ShieldCheck className="text-teal-400" size={20} />Summary</h3>
               <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest border border-teal-500/20 text-teal-400">{status}</span>
             </div>
-            
-            <div className="space-y-4">
+            <div className="space-y-4 text-left">
               <div className="flex justify-between text-slate-400 text-sm"><span>Base Cost</span><span>£{cost.toLocaleString()}</span></div>
               <div className="flex justify-between text-slate-400 text-sm"><span>Total Discount</span><span className="text-teal-400">- £{discount.toLocaleString()}</span></div>
-              <div className="flex justify-between text-slate-400 text-sm"><span>Sessions</span><span className="text-teal-400">{totalSessions} (1hr each)</span></div>
-              <div className="pt-4 border-t border-slate-800">
-                <div className="flex justify-between items-baseline"><span className="font-medium">Total to Pay</span><span className="text-2xl sm:text-3xl font-bold text-teal-400">£{totalToPay.toLocaleString()}</span></div>
+              <div className="pt-4 border-t border-slate-800 flex justify-between items-baseline">
+                <span className="font-medium text-slate-300">Total to Pay</span>
+                <span className="text-2xl font-bold text-teal-400">£{totalToPay.toLocaleString()}</span>
               </div>
             </div>
-
             <div className="space-y-3 mt-8">
-              <button onClick={() => handleSavePlan('Active')} disabled={!selectedService || isSaving || status === 'Completed'} className={cn("w-full py-3 rounded-xl font-bold transition-all active:scale-95", (!selectedService || isSaving || status === 'Completed') ? "bg-slate-800 text-slate-500" : "bg-teal-500 text-slate-900")}>
-                {isSaving ? 'Saving...' : status === 'Completed' ? 'Plan Finalized' : 'Save & Finalize Plan'}
+              <button onClick={() => handleSavePlan('Active')} disabled={!selectedService || isSaving || status === 'Completed'} className={cn("w-full py-3 rounded-xl font-bold transition-all active:scale-95", (!selectedService || isSaving || status === 'Completed') ? "bg-slate-800 text-slate-500" : "bg-teal-500 text-slate-900 shadow-lg shadow-teal-500/20")}>
+                {isSaving ? 'Processing...' : status === 'Completed' ? 'Plan Finalised' : 'Save & Finalise Plan'}
               </button>
               {isPlanExisting && status === 'Active' && (
                 <button onClick={() => handleSavePlan('Completed')} disabled={isSaving} className="w-full py-3 rounded-xl font-bold border-2 border-green-500/50 text-green-400 hover:bg-green-500/10 transition-all flex items-center justify-center gap-2">
@@ -169,52 +150,68 @@ export default function TreatmentPlan() {
           </div>
         </div>
 
-        {/* Input Form */}
-        <div className="lg:col-span-2 lg:order-1 space-y-6">
+        <div className="lg:col-span-2 lg:order-1 space-y-8 text-left">
+          {/* Procedure Configuration */}
           <section className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
             <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex items-center gap-3">
-              <Stethoscope className="text-teal-600" size={20} /><h2 className="font-bold text-slate-900 text-lg">Procedure Configuration</h2>
+              <Stethoscope className="text-teal-600" size={20} /><h2 className="font-bold text-slate-900">1. Service Selection</h2>
             </div>
             <div className="p-6 space-y-6">
               <div className="space-y-2">
-                <label className="text-sm font-semibold text-slate-700">Select Service</label>
-                <select value={selectedServiceId} onChange={(e) => setSelectedServiceId(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2.5 px-4 text-sm outline-none transition-all">
+                <label className="text-xs font-black text-slate-400 uppercase tracking-widest">Selected Procedure</label>
+                <select value={selectedServiceId} onChange={(e) => setSelectedServiceId(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2.5 px-4 text-sm outline-none">
                   <option value="" disabled>Choose a service...</option>
                   {SERVICES.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                 </select>
               </div>
-
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold text-slate-700">Cost (£)</label>
-                  <input type="number" value={cost} onChange={(e) => setCost(Number(e.target.value))} className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2.5 px-4 text-sm outline-none" />
+                <div className="space-y-2"><label className="text-xs font-black text-slate-400 uppercase">Graft Count (For Hair Procedures)</label>
+                  <div className="relative"><Scissors className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                    <input type="text" value={graftCount} onChange={(e) => setGraftCount(e.target.value)} placeholder="e.g. 2500 Grafts" className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2.5 pl-10 pr-4 text-sm outline-none" />
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold text-slate-700">Discount (£)</label>
-                  <input type="number" value={discount} onChange={(e) => setDiscount(Number(e.target.value))} className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2.5 px-4 text-sm outline-none" />
+                <div className="space-y-2"><label className="text-xs font-black text-slate-400 uppercase">Treatment Area</label>
+                  <div className="relative"><Locate className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                    <input type="text" value={treatmentArea} onChange={(e) => setTreatmentArea(e.target.value)} placeholder="e.g. Frontal Hairline / Crown" className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2.5 pl-10 pr-4 text-sm outline-none" />
+                  </div>
                 </div>
-              </div>
-
-              <div className="space-y-2 pt-4 border-t border-slate-100">
-                <label className="text-sm font-semibold text-slate-700 flex items-center gap-2"><Clock size={14} className="text-teal-600" /> Total Required Sessions</label>
-                <input type="number" min="1" max="50" value={totalSessions} onChange={(e) => setTotalSessions(Number(e.target.value))} className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2.5 px-4 text-sm outline-none focus:border-teal-500 transition-all" />
-                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Each session is allocated as a 1-hour surgery block.</p>
               </div>
             </div>
           </section>
 
-          {selectedService && (
-            <section className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden animate-in fade-in slide-in-from-top-4 duration-300">
-              <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex items-center gap-3">
-                <FileText className="text-teal-600" size={20} /><h2 className="font-bold text-slate-900 text-lg">Included in Package</h2>
+          {/* Financial Specifics */}
+          <section className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex items-center gap-3">
+              <PoundSterling className="text-teal-600" size={20} /><h2 className="font-bold text-slate-900">2. Financial Configuration</h2>
+            </div>
+            <div className="p-6 space-y-6">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="space-y-2"><label className="text-xs font-black text-slate-400 uppercase">Base Cost (£)</label>
+                  <input type="number" value={cost} onChange={(e) => setCost(Number(e.target.value))} className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2.5 px-4 text-sm outline-none" />
+                </div>
+                <div className="space-y-2"><label className="text-xs font-black text-slate-400 uppercase">Discount (£)</label>
+                  <input type="number" value={discount} onChange={(e) => setDiscount(Number(e.target.value))} className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2.5 px-4 text-sm outline-none" />
+                </div>
+                <div className="space-y-2"><label className="text-xs font-black text-slate-400 uppercase">Total Sessions</label>
+                  <input type="number" value={totalSessions} onChange={(e) => setTotalSessions(Number(e.target.value))} className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2.5 px-4 text-sm outline-none" />
+                </div>
               </div>
-              <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {selectedService.includedItems.map((item, idx) => (
-                  <div key={idx} className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100"><CheckCircle2 className="text-teal-500" size={18} /><span className="text-sm font-medium text-slate-700">{item}</span></div>
-                ))}
+              <div className="space-y-2 pt-4 border-t border-slate-100">
+                <label className="text-xs font-black text-slate-400 uppercase flex items-center gap-2"><Calendar size={14} className="text-teal-600" /> Next Balance Collection Date</label>
+                <input type="date" value={nextPaymentDate} onChange={(e) => setNextPaymentDate(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2.5 px-4 text-sm outline-none focus:border-teal-500 transition-all" />
               </div>
-            </section>
-          )}
+            </div>
+          </section>
+
+          {/* Consultant Notes */}
+          <section className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex items-center gap-3">
+              <Clipboard className="text-teal-600" size={20} /><h2 className="font-bold text-slate-900">3. Consultant Notes</h2>
+            </div>
+            <div className="p-6">
+              <textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Enter specific clinical instructions or consultant notes here..." className="w-full bg-slate-50 border border-slate-200 rounded-lg py-3 px-4 text-sm outline-none min-h-[120px]" />
+            </div>
+          </section>
         </div>
       </div>
     </div>

@@ -51,8 +51,13 @@ export default function Patients() {
     lastName: '',
     dob: '',
     gender: 'Other',
-    phone: '+44 ',
+    phone: '',
+    alternatePhone: '',
     email: '',
+    address: '',
+    city: '',
+    postcode: '',
+    leadSource: 'Google'
   });
 
   useEffect(() => {
@@ -88,7 +93,12 @@ export default function Patients() {
       dob: patient.dob || '',
       gender: patient.gender || 'Other',
       phone: patient.phone,
+      alternatePhone: (patient as any).alternate_phone || '',
       email: patient.email,
+      address: (patient as any).address || '',
+      city: (patient as any).city || '',
+      postcode: (patient as any).postcode || '',
+      leadSource: (patient as any).lead_source || 'Google'
     });
     setIsModalOpen(true);
   };
@@ -122,6 +132,11 @@ export default function Patients() {
         email: formData.email,
         dob: formData.dob,
         gender: formData.gender,
+        alternate_phone: formData.alternatePhone,
+        address: formData.address,
+        city: formData.city,
+        postcode: formData.postcode,
+        lead_source: formData.leadSource
       };
 
       if (editingPatientId) {
@@ -139,7 +154,7 @@ export default function Patients() {
       
       setIsModalOpen(false);
       setEditingPatientId(null);
-      setFormData({ firstName: '', lastName: '', dob: '', gender: 'Other', phone: '+44 ', email: '' });
+      setFormData({ firstName: '', lastName: '', dob: '', gender: 'Other', phone: '', alternatePhone: '', email: '', address: '', city: '', postcode: '', leadSource: 'Google' });
     } catch (error: any) {
       console.error('Save patient error:', error);
       const message = error.response?.data?.error || error.message || 'Unknown error';
@@ -149,7 +164,7 @@ export default function Patients() {
 
   const openNewPatientModal = () => {
     setEditingPatientId(null);
-    setFormData({ firstName: '', lastName: '', dob: '', gender: 'Other', phone: '+44 ', email: '' });
+    setFormData({ firstName: '', lastName: '', dob: '', gender: 'Other', phone: '', alternatePhone: '', email: '', address: '', city: '', postcode: '', leadSource: 'Google' });
     setIsModalOpen(true);
   };
 
@@ -356,74 +371,78 @@ export default function Patients() {
                   <X size={24} />
                 </button>
               </div>
-              <form onSubmit={handleSubmit} className="p-10 space-y-8 max-h-[70vh] overflow-y-auto custom-scrollbar">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
-                  <div className="space-y-2">
-                    <label className="text-xs font-black text-slate-400 uppercase tracking-widest px-1">First Name</label>
-                    <input
-                      required
-                      type="text"
-                      value={formData.firstName}
-                      onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                      className="w-full bg-white border-2 border-slate-100 focus:border-teal-500/20 focus:ring-4 focus:ring-teal-500/5 rounded-[1.25rem] py-3.5 px-5 text-sm font-bold outline-none transition-all shadow-sm"
-                      placeholder="e.g. Sarah"
-                    />
+              <form onSubmit={handleSubmit} className="p-10 space-y-10 max-h-[70vh] overflow-y-auto custom-scrollbar text-left">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                  {/* Left Column: Personal Identity */}
+                  <div className="space-y-6">
+                    <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Personal Identity</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-xs font-black text-slate-400 uppercase tracking-widest px-1">First Name</label>
+                        <input required type="text" value={formData.firstName} onChange={(e) => setFormData({...formData, firstName: e.target.value})} className="w-full bg-white border-2 border-slate-100 focus:border-teal-500/20 focus:ring-4 focus:ring-teal-500/5 rounded-[1.25rem] py-3.5 px-5 text-sm font-bold outline-none transition-all shadow-sm" placeholder="e.g. Sarah" />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-xs font-black text-slate-400 uppercase tracking-widest px-1">Last Name</label>
+                        <input required type="text" value={formData.lastName} onChange={(e) => setFormData({...formData, lastName: e.target.value})} className="w-full bg-white border-2 border-slate-100 focus:border-teal-500/20 focus:ring-4 focus:ring-teal-500/5 rounded-[1.25rem] py-3.5 px-5 text-sm font-bold outline-none transition-all shadow-sm" placeholder="e.g. Johnson" />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-xs font-black text-slate-400 uppercase tracking-widest px-1">Date of Birth</label>
+                        <input required type="date" value={formData.dob} onChange={(e) => setFormData({...formData, dob: e.target.value})} className="w-full bg-white border-2 border-slate-100 focus:border-teal-500/20 focus:ring-4 focus:ring-teal-500/5 rounded-[1.25rem] py-3.5 px-5 text-sm font-bold outline-none transition-all shadow-sm" />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-xs font-black text-slate-400 uppercase tracking-widest px-1">Biological Gender</label>
+                        <select value={formData.gender} onChange={(e) => setFormData({...formData, gender: e.target.value})} className="w-full bg-white border-2 border-slate-100 focus:border-teal-500/20 focus:ring-4 focus:ring-teal-500/5 rounded-[1.25rem] py-3.5 px-5 text-sm font-bold outline-none transition-all shadow-sm appearance-none cursor-pointer">
+                          <option value="Male">Male</option>
+                          <option value="Female">Female</option>
+                          <option value="Other">Other</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-black text-slate-400 uppercase tracking-widest px-1">Lead Source</label>
+                      <select value={formData.leadSource} onChange={(e) => setFormData({...formData, leadSource: e.target.value})} className="w-full bg-white border-2 border-slate-100 focus:border-teal-500/20 focus:ring-4 focus:ring-teal-500/5 rounded-[1.25rem] py-3.5 px-5 text-sm font-bold outline-none transition-all shadow-sm appearance-none cursor-pointer">
+                        <option value="Google">Google Search</option>
+                        <option value="Instagram">Instagram</option>
+                        <option value="Facebook">Facebook</option>
+                        <option value="Referral">Patient Referral</option>
+                        <option value="Walk-in">Walk-in</option>
+                      </select>
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-xs font-black text-slate-400 uppercase tracking-widest px-1">Last Name</label>
-                    <input
-                      required
-                      type="text"
-                      value={formData.lastName}
-                      onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                      className="w-full bg-white border-2 border-slate-100 focus:border-teal-500/20 focus:ring-4 focus:ring-teal-500/5 rounded-[1.25rem] py-3.5 px-5 text-sm font-bold outline-none transition-all shadow-sm"
-                      placeholder="e.g. Johnson"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-xs font-black text-slate-400 uppercase tracking-widest px-1">Date of Birth</label>
-                    <input
-                      required
-                      type="date"
-                      value={formData.dob}
-                      onChange={(e) => setFormData({ ...formData, dob: e.target.value })}
-                      className="w-full bg-white border-2 border-slate-100 focus:border-teal-500/20 focus:ring-4 focus:ring-teal-500/5 rounded-[1.25rem] py-3.5 px-5 text-sm font-bold outline-none transition-all shadow-sm"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-xs font-black text-slate-400 uppercase tracking-widest px-1">Biological Gender</label>
-                    <select
-                      value={formData.gender}
-                      onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
-                      className="w-full bg-white border-2 border-slate-100 focus:border-teal-500/20 focus:ring-4 focus:ring-teal-500/5 rounded-[1.25rem] py-3.5 px-5 text-sm font-bold outline-none transition-all shadow-sm appearance-none cursor-pointer"
-                    >
-                      <option value="Male">Male</option>
-                      <option value="Female">Female</option>
-                      <option value="Other">Other</option>
-                      <option value="Prefer not to say">Prefer not to say</option>
-                    </select>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-xs font-black text-slate-400 uppercase tracking-widest px-1">UK Phone Number</label>
-                    <input
-                      required
-                      type="tel"
-                      value={formData.phone}
-                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                      className="w-full bg-white border-2 border-slate-100 focus:border-teal-500/20 focus:ring-4 focus:ring-teal-500/5 rounded-[1.25rem] py-3.5 px-5 text-sm font-bold outline-none transition-all shadow-sm"
-                      placeholder="+44 7000 000000"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-xs font-black text-slate-400 uppercase tracking-widest px-1">Email Address</label>
-                    <input
-                      required
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      className="w-full bg-white border-2 border-slate-100 focus:border-teal-500/20 focus:ring-4 focus:ring-teal-500/5 rounded-[1.25rem] py-3.5 px-5 text-sm font-bold outline-none transition-all shadow-sm"
-                      placeholder="clinical@example.com"
-                    />
+
+                  {/* Right Column: Contact & Address */}
+                  <div className="space-y-6">
+                    <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Contact & Geography</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-xs font-black text-slate-400 uppercase tracking-widest px-1">Primary Phone</label>
+                        <input required type="tel" value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} className="w-full bg-white border-2 border-slate-100 focus:border-teal-500/20 focus:ring-4 focus:ring-teal-500/5 rounded-[1.25rem] py-3.5 px-5 text-sm font-bold outline-none transition-all shadow-sm" placeholder="+44" />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-xs font-black text-slate-400 uppercase tracking-widest px-1">Alt Phone</label>
+                        <input type="tel" value={formData.alternatePhone} onChange={(e) => setFormData({...formData, alternatePhone: e.target.value})} className="w-full bg-white border-2 border-slate-100 focus:border-teal-500/20 focus:ring-4 focus:ring-teal-500/5 rounded-[1.25rem] py-3.5 px-5 text-sm font-bold outline-none transition-all shadow-sm" placeholder="Optional" />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-black text-slate-400 uppercase tracking-widest px-1">Street Address</label>
+                      <input type="text" value={formData.address} onChange={(e) => setFormData({...formData, address: e.target.value})} className="w-full bg-white border-2 border-slate-100 focus:border-teal-500/20 focus:ring-4 focus:ring-teal-500/5 rounded-[1.25rem] py-3.5 px-5 text-sm font-bold outline-none transition-all shadow-sm" placeholder="Full street address" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-xs font-black text-slate-400 uppercase tracking-widest px-1">City</label>
+                        <input type="text" value={formData.city} onChange={(e) => setFormData({...formData, city: e.target.value})} className="w-full bg-white border-2 border-slate-100 focus:border-teal-500/20 focus:ring-4 focus:ring-teal-500/5 rounded-[1.25rem] py-3.5 px-5 text-sm font-bold outline-none transition-all shadow-sm" placeholder="City" />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-xs font-black text-slate-400 uppercase tracking-widest px-1">Postcode</label>
+                        <input type="text" value={formData.postcode} onChange={(e) => setFormData({...formData, postcode: e.target.value})} className="w-full bg-white border-2 border-slate-100 focus:border-teal-500/20 focus:ring-4 focus:ring-teal-500/5 rounded-[1.25rem] py-3.5 px-5 text-sm font-bold outline-none transition-all shadow-sm" placeholder="e.g. M1 2WD" />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-black text-slate-400 uppercase tracking-widest px-1">Email Address</label>
+                      <input required type="email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} className="w-full bg-white border-2 border-slate-100 focus:border-teal-500/20 focus:ring-4 focus:ring-teal-500/5 rounded-[1.25rem] py-3.5 px-5 text-sm font-bold outline-none transition-all shadow-sm" placeholder="clinical@example.com" />
+                    </div>
                   </div>
                 </div>
                 <div className="flex justify-end gap-4 pt-10 border-t border-slate-100">
