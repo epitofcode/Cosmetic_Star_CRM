@@ -123,6 +123,7 @@ export default function Financials() {
       setActiveReceipt({
         isOpen: true,
         data: {
+          patientId: selectedPatient.id,
           patientName: `${selectedPatient.first_name} ${selectedPatient.last_name}`,
           serviceName: billingRecord.service_name,
           totalAmount: billingRecord.total_amount,
@@ -271,7 +272,8 @@ export default function Financials() {
                               onClick={() => setActiveReceipt({
                                 isOpen: true,
                                 data: {
-                                  patientName: `${selectedPatient.first_name} ${selectedPatient.last_name}`,
+                                  patientId: selectedPatient.id,
+          patientName: `${selectedPatient.first_name} ${selectedPatient.last_name}`,
                                   serviceName: billingRecord.service_name,
                                   totalAmount: billingRecord.total_amount,
                                   amountPaid: t.amount,

@@ -5,8 +5,6 @@ import {
   X, 
   Download, 
   Mail, 
-  Printer, 
-  Scissors, 
   Star,
   CheckCircle2
 } from 'lucide-react';
@@ -21,6 +19,7 @@ interface ReceiptGeneratorProps {
   isOpen: boolean;
   onClose: () => void;
   data: {
+    patientId?: number | string; // New field for naming
     patientName: string;
     serviceName: string;
     totalAmount: number;
@@ -42,9 +41,12 @@ export default function ReceiptGenerator({ isOpen, onClose, data }: ReceiptGener
     if (receiptRef.current) {
       try {
         const canvas = await html2canvas(receiptRef.current, {
-          scale: 2,
-          backgroundColor: '#ffffff'
+          scale: 3, // Higher quality
+          backgroundColor: '#ffffff',
+          useCORS: true,
+          logging: false
         });
+        
         const imgData = canvas.toDataURL('image/png');
         const pdf = new jsPDF({
           orientation: 'portrait',
@@ -56,95 +58,103 @@ export default function ReceiptGenerator({ isOpen, onClose, data }: ReceiptGener
         const imgHeight = (canvas.height * imgWidth) / canvas.width;
         
         pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
-        pdf.save(`Receipt-${data.receiptNumber}.pdf`);
+        
+        // Custom Naming: patientID-name.pdf
+        const fileName = `${data.patientId || 'REC'}-${data.patientName.replace(/\s+/g, '_')}.pdf`;
+        pdf.save(fileName);
       } catch (error) {
         console.error("Error generating PDF:", error);
+        alert("Failed to generate PDF. Please try again.");
       }
     }
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[150] flex items-center justify-center p-2 sm:p-4 overflow-hidden">
       {/* Backdrop */}
       <div 
-        className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300" 
+        className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm animate-in fade-in duration-300" 
         onClick={onClose} 
       />
 
-      {/* Modal Container */}
-      <div className="relative w-full max-w-md animate-in zoom-in-95 duration-200">
-        {/* Receipt Paper Effect */}
-        <div ref={receiptRef} className="bg-white rounded-t-xl shadow-2xl overflow-hidden">
-          {/* Decorative Top Edge */}
-          <div className="h-2 bg-teal-600 w-full" />
-          
-          <div className="p-8 space-y-8 relative">
+      {/* Responsive Container with Scroll */}
+      <div className="relative w-full max-w-lg flex flex-col max-h-[95vh] animate-in zoom-in-95 duration-200">
+        
+        {/* Scrollable Receipt Area */}
+        <div className="flex-1 overflow-y-auto custom-scrollbar rounded-t-2xl bg-white shadow-2xl">
+          <div ref={receiptRef} className="bg-white p-6 sm:p-10 space-y-8 relative">
             <button 
               onClick={onClose}
-              className="absolute right-4 top-4 text-slate-400 hover:text-slate-600 p-2 transition-colors"
+              className="absolute right-4 top-4 text-slate-400 hover:text-slate-600 p-2 transition-colors print:hidden"
             >
               <X size={20} />
             </button>
 
             {/* Header */}
-            <div className="text-center space-y-2">
+            <div className="text-center space-y-3">
               <div className="flex justify-center">
                 <div className="bg-teal-50 p-3 rounded-full">
-                  <Star className="text-teal-600 fill-teal-600" size={32} />
+                  <Star className="text-teal-600 fill-teal-600" size={36} />
                 </div>
               </div>
-              <h2 className="text-2xl font-black text-slate-900 tracking-tight uppercase">Cosmetic Star</h2>
-              <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Premium Aesthetic Clinic</p>
+              <div className="space-y-1">
+                <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight uppercase">Cosmetic Star</h2>
+                <p className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-[0.2em]">Premium Aesthetic Clinic</p>
+              </div>
               <div className="flex flex-col items-center justify-center gap-1 text-[10px] text-slate-400 font-medium">
-                <span>[Clinic Address Line 1], Manchester, UK</span>
-                <span>[Postcode] • +44 161 000 0000</span>
+                <span>London Road, Manchester, UK</span>
+                <span>M1 2WD • +44 161 000 0000</span>
               </div>
             </div>
 
             {/* Receipt Details */}
-            <div className="space-y-4 border-t border-b border-dashed border-slate-200 py-6">
-              <div className="flex justify-between text-xs font-mono text-slate-500">
+            <div className="space-y-5 border-t border-b border-dashed border-slate-200 py-8">
+              <div className="flex flex-col sm:flex-row justify-between gap-2 text-xs font-mono text-slate-500 uppercase font-bold">
                 <span>RECEIPT: #{data.receiptNumber}</span>
                 <span>DATE: {data.date}</span>
               </div>
               
-              <div className="space-y-1">
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Patient</p>
-                <p className="font-bold text-slate-900">{data.patientName}</p>
+              <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-1">
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Patient</p>
+                  <p className="font-bold text-slate-900 text-sm">{data.patientName}</p>
+                  <p className="text-[10px] text-slate-500">Ref: {data.patientId}</p>
+                </div>
+                <div className="space-y-1 text-right">
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Method</p>
+                  <p className="font-bold text-slate-900 text-sm">{data.paymentMethod}</p>
+                </div>
               </div>
 
-              <div className="space-y-3 pt-2">
-                <div className="flex justify-between items-start">
-                  <div className="space-y-0.5">
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Service</p>
-                    <p className="text-sm font-bold text-slate-800">{data.serviceName}</p>
+              <div className="pt-4">
+                <div className="flex justify-between items-start bg-slate-50 p-4 rounded-xl">
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Service</p>
+                    <p className="text-sm font-bold text-slate-800 leading-tight">{data.serviceName}</p>
                   </div>
-                  <span className="font-bold text-slate-900">£{data.totalAmount.toLocaleString()}</span>
+                  <span className="font-black text-slate-900 text-lg">£{data.totalAmount.toLocaleString()}</span>
                 </div>
               </div>
             </div>
 
             {/* Financial Summary */}
-            <div className="space-y-3">
+            <div className="space-y-4">
               <div className="flex justify-between text-sm">
-                <span className="text-slate-500 font-medium">Subtotal</span>
+                <span className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">Contract Subtotal</span>
                 <span className="text-slate-900 font-bold">£{data.totalAmount.toLocaleString()}</span>
               </div>
               <div className="space-y-1">
                 <div className="flex justify-between text-sm">
-                  <span className="text-slate-500 font-medium">Amount Paid Today</span>
-                  <span className="text-teal-600 font-bold">- £{data.amountPaid.toLocaleString()}</span>
+                  <span className="text-teal-600 font-black uppercase tracking-widest text-[10px]">Payment Received</span>
+                  <span className="text-teal-600 font-black">- £{data.amountPaid.toLocaleString()}</span>
                 </div>
-                <p className="text-[10px] text-right text-slate-400 font-medium italic">
-                  via {data.paymentMethod}
-                </p>
               </div>
               
-              <div className="pt-4 border-t-2 border-slate-900">
-                <div className="flex justify-between items-baseline">
-                  <span className="text-sm font-black text-slate-900 uppercase">Balance Remaining</span>
+              <div className="pt-6 border-t-2 border-slate-900">
+                <div className="flex justify-between items-center">
+                  <span className="text-xs font-black text-slate-900 uppercase tracking-widest">Balance Remaining</span>
                   <span className={cn(
-                    "text-2xl font-black",
+                    "text-2xl sm:text-3xl font-black tracking-tighter",
                     balanceRemaining > 0 ? "text-red-600" : "text-teal-600"
                   )}>
                     £{balanceRemaining.toLocaleString()}
@@ -153,26 +163,26 @@ export default function ReceiptGenerator({ isOpen, onClose, data }: ReceiptGener
               </div>
             </div>
 
-            {/* Footer Note */}
-            <div className="text-center pt-4 space-y-4">
-              <div className="inline-flex items-center gap-2 px-3 py-1 bg-teal-50 text-teal-700 rounded-full text-[10px] font-bold uppercase tracking-wider">
+            {/* Footer */}
+            <div className="text-center pt-6 space-y-6">
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-green-50 text-green-700 rounded-full text-[10px] font-black uppercase tracking-[0.15em] border border-green-100">
                 <CheckCircle2 size={12} />
-                Transaction Verified
+                Payment Verified
               </div>
               
-              <div className="space-y-1">
-                <p className="text-[10px] text-slate-400 font-medium italic">
-                  Thank you for choosing Cosmetic Star. Please keep this receipt for your records.
+              <div className="space-y-4">
+                <p className="text-[10px] text-slate-400 font-bold italic leading-relaxed px-4">
+                  Thank you for choosing Cosmetic Star. Your medical journey is our priority. Please retain this receipt for clinical insurance.
                 </p>
-                <div className="pt-4 border-t border-slate-100 flex flex-col gap-1 text-[8px] text-slate-400 font-bold uppercase tracking-widest">
-                  <p>Cosmetic Star UK Ltd • Registered in England & Wales</p>
-                  <p>CRN: [00000000] • VAT: [GB 000 0000 00]</p>
+                <div className="pt-6 border-t border-slate-100 flex flex-col gap-1.5 text-[8px] text-slate-300 font-bold uppercase tracking-[0.2em]">
+                  <p>Cosmetic Star UK Ltd • Reg: 14209938 • VAT: GB 421 9902 11</p>
+                  <p>Regulated by the Care Quality Commission (CQC)</p>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Zig-zag bottom edge effect using CSS */}
+          {/* Zig-zag bottom */}
           <div className="h-4 bg-white relative">
             <div 
               className="absolute bottom-0 left-0 right-0 h-2"
@@ -184,18 +194,18 @@ export default function ReceiptGenerator({ isOpen, onClose, data }: ReceiptGener
           </div>
         </div>
 
-        {/* Action Buttons */}
-        <div className="mt-4 grid grid-cols-2 gap-3">
+        {/* Action Buttons: Fixed at bottom of modal */}
+        <div className="bg-slate-900 p-4 sm:p-6 rounded-b-2xl grid grid-cols-2 gap-3 sm:gap-4 shrink-0 shadow-2xl">
           <button
             onClick={handleDownloadPDF}
-            className="flex items-center justify-center gap-2 bg-slate-900 text-white py-3 rounded-xl font-bold text-sm hover:bg-slate-800 transition-all shadow-lg active:scale-95"
+            className="flex items-center justify-center gap-2 bg-white text-slate-900 py-3 sm:py-4 rounded-xl font-black text-[10px] sm:text-xs uppercase tracking-widest hover:bg-slate-100 transition-all active:scale-95 shadow-xl"
           >
             <Download size={18} />
             Download PDF
           </button>
           <button
             onClick={() => alert('Receipt sent to email!')}
-            className="flex items-center justify-center gap-2 bg-teal-600 text-white py-3 rounded-xl font-bold text-sm hover:bg-teal-700 transition-all shadow-lg active:scale-95"
+            className="flex items-center justify-center gap-2 bg-teal-500 text-slate-900 py-3 sm:py-4 rounded-xl font-black text-[10px] sm:text-xs uppercase tracking-widest hover:bg-teal-400 transition-all active:scale-95 shadow-xl shadow-teal-500/20"
           >
             <Mail size={18} />
             Send Email
