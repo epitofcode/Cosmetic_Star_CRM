@@ -27,7 +27,7 @@ import {
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { usePatient } from '../context/PatientContext';
-import { getBookedSlots, createBooking, getTreatmentPlan, getBooking } from '../services/api';
+import { getBookedSlots, createBooking, getTreatmentPlan, getBooking, deleteBooking } from '../services/api';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -91,6 +91,48 @@ export default function CalendarPage() {
 
   const removeSession = (idx: number) => {
     setScheduledSessions(scheduledSessions.filter((_, i) => i !== idx));
+  };
+
+  const handleCancelExisting = async (bookingId: string) => {
+    if (!confirm('Are you sure you want to cancel this confirmed session?')) return;
+    try {
+      setIsSaving(true);
+      await deleteBooking(bookingId);
+      
+      // Refresh data
+      const bookings = await getBooking(selectedPatient!.id);
+      setExistingBookings(bookings || []);
+      
+      // Update slots for the selected date if visible
+      if (selectedDate) {
+        const slots = await getBookedSlots(format(selectedDate, 'yyyy-MM-dd'));
+        setBookedSlots(slots);
+      }
+
+      // 2. Trigger updated email with remaining sessions
+      console.log("Triggering updated email after cancellation...");
+      try {
+        const allDates = (bookings || []).map((b: any) => format(new Date(b.date), 'do MMM')).join(', ');
+        
+        await sendBookingConfirmation({
+          to_name: `${selectedPatient!.first_name} ${selectedPatient!.last_name}`,
+          to_email: selectedPatient!.email,
+          date: allDates || 'No remaining sessions',
+          time: 'Schedule Updated',
+          practitioner: 'Kavya Sangameswara',
+          service: treatmentPlan.service_name
+        });
+      } catch (emailErr) {
+        console.error("Cancellation email failed:", emailErr);
+      }
+
+      alert('Session cancelled and schedule updated.');
+    } catch (error) {
+      console.error('Error cancelling booking:', error);
+      alert('Failed to cancel session.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleFinalConfirm = async () => {
@@ -256,7 +298,13 @@ export default function CalendarPage() {
                       <CheckCircle2 size={12} className="text-teal-400" />
                       <span className="text-slate-300">{format(new Date(b.date), 'do MMM')} @ {b.time_slot}</span>
                     </div>
-                    <span className="text-teal-400 font-black uppercase text-[8px]">Confirmed</span>
+                    <button 
+                      onClick={() => handleCancelExisting(b.id)}
+                      disabled={isSaving}
+                      className="text-white/20 hover:text-red-400 transition-colors"
+                    >
+                      <Trash2 size={12} />
+                    </button>
                   </div>
                 ))}
 

@@ -77,6 +77,11 @@ export const createBooking = async (bookingData: any) => {
     return response.data;
 };
 
+export const deleteBooking = async (id: string | number) => {
+    const response = await api.delete(`/bookings/${id}`);
+    return response.data;
+};
+
 export const getBooking = async (patientId: number | string) => {
     const response = await api.get(`/bookings/${patientId}`);
     return response.data;

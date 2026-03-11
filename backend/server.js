@@ -300,6 +300,18 @@ app.post('/api/bookings', async (req, res) => {
     res.status(201).json(data[0]);
 });
 
+// 10b. Delete Booking
+app.delete('/api/bookings/:id', async (req, res) => {
+    const { id } = req.params;
+    const { error } = await supabase
+        .from('bookings')
+        .delete()
+        .eq('id', id);
+
+    if (error) return res.status(400).json({ error: error.message });
+    res.json({ message: 'Booking cancelled successfully' });
+});
+
 // 8b. Get Treatment Plan
 app.get('/api/treatment-plan/:patientId', async (req, res) => {
     const { patientId } = req.params;
