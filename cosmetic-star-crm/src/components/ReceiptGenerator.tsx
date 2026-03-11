@@ -42,37 +42,41 @@ export default function ReceiptGenerator({ isOpen, onClose, data }: ReceiptGener
   const balanceRemaining = data.totalAmount - data.amountPaid;
 
   const handleDownloadPDF = async () => {
-    if (!receiptRef.current) return;
-    
     try {
       setIsGenerating(true);
+      const API_URL = import.meta.env.VITE_API_URL || '/api';
       
-      // Ensure element is visible and styled for capture
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
-      const canvas = await html2canvas(receiptRef.current, {
-        scale: 2,
-        backgroundColor: '#ffffff',
-        useCORS: true,
-        allowTaint: true,
-        logging: false,
-        windowWidth: 800, // Fixed width for consistent capture
+      const response = await fetch(`${API_URL}/generate-receipt-pdf`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          patientId: data.patientId,
+          patientName: data.patientName,
+          amount: data.amountPaid,
+          service_name: data.serviceName,
+          receipt_number: data.receiptNumber,
+          date: data.date,
+          paymentMethod: data.paymentMethod
+        })
       });
+
+      if (!response.ok) throw new Error('Backend failed');
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
       
-      const imgData = canvas.toDataURL('image/jpeg', 0.9);
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'px',
-        format: [canvas.width, canvas.height]
-      });
-      
-      pdf.addImage(imgData, 'JPEG', 0, 0, canvas.width, canvas.height);
-      
+      // Custom Naming: patientID-name.pdf
       const fileName = `${data.patientId}-${data.patientName.replace(/\s+/g, '_')}.pdf`;
-      pdf.save(fileName);
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
     } catch (error) {
-      console.error("PDF Capture Error:", error);
-      alert("Failed to generate PDF. Please try again on a desktop browser.");
+      console.error("PDF Download Error:", error);
+      alert("Failed to download PDF. Please check your internet connection.");
     } finally {
       setIsGenerating(false);
     }
