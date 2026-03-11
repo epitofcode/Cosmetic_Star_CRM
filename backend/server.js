@@ -287,7 +287,8 @@ app.get('/api/bookings/:patientId', async (req, res) => {
 app.post('/api/treatment-plan', async (req, res) => {
     const { 
         patient_id, service_id, service_name, base_cost, discount, 
-        total_to_pay, total_sessions = 1, status = 'Active' 
+        total_to_pay, total_sessions = 1, status = 'Active',
+        graft_count, treatment_area, notes 
     } = req.body;
     
     const { data, error } = await supabase
@@ -300,7 +301,10 @@ app.post('/api/treatment-plan', async (req, res) => {
             discount, 
             total_to_pay,
             total_sessions,
-            status
+            status,
+            graft_count,
+            treatment_area,
+            notes
         }], { onConflict: 'patient_id' })
         .select();
 
