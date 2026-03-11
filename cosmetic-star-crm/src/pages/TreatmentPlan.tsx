@@ -5,13 +5,11 @@ import {
   Tag, 
   CheckCircle2, 
   FileText,
-  ChevronRight,
   ShieldCheck,
   UserCheck,
   UserCircle2,
   Loader2,
-  Clock,
-  CalendarDays
+  Clock
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -30,30 +28,10 @@ interface Service {
 }
 
 const SERVICES: Service[] = [
-  { 
-    id: 'fue', 
-    name: 'FUE Hair Transplant', 
-    defaultPrice: 2500, 
-    includedItems: ['Medical Report', 'Surgery', 'Post-op Meds', '1 Year Follow-up', 'Hair Wash Set'] 
-  },
-  { 
-    id: 'prp', 
-    name: 'PRP Therapy', 
-    defaultPrice: 800, 
-    includedItems: ['Consultation', 'PRP Session', 'Post-treatment Care Kit'] 
-  },
-  { 
-    id: 'micro', 
-    name: 'Scalp Micropigmentation', 
-    defaultPrice: 1800, 
-    includedItems: ['Design Consultation', 'Full Session', 'Touch-up Session'] 
-  },
-  { 
-    id: 'botox', 
-    name: 'Anti-Wrinkle Treatment', 
-    defaultPrice: 300, 
-    includedItems: ['Consultation', 'Treatment', '2-week Review'] 
-  }
+  { id: 'fue', name: 'FUE Hair Transplant', defaultPrice: 2500, includedItems: ['Medical Report', 'Surgery', 'Post-op Meds', '1 Year Follow-up', 'Hair Wash Set'] },
+  { id: 'prp', name: 'PRP Therapy', defaultPrice: 800, includedItems: ['Consultation', 'PRP Session', 'Post-treatment Care Kit'] },
+  { id: 'micro', name: 'Scalp Micropigmentation', defaultPrice: 1800, includedItems: ['Design Consultation', 'Full Session', 'Touch-up Session'] },
+  { id: 'botox', name: 'Anti-Wrinkle Treatment', defaultPrice: 300, includedItems: ['Consultation', 'Treatment', '2-week Review'] }
 ];
 
 export default function TreatmentPlan() {
@@ -61,8 +39,7 @@ export default function TreatmentPlan() {
   const [selectedServiceId, setSelectedServiceId] = useState('');
   const [cost, setCost] = useState<number>(0);
   const [discount, setDiscount] = useState<number>(0);
-  const [totalDays, setTotalDays] = useState<number>(1);
-  const [hoursPerSession, setHoursPerSession] = useState<number>(1);
+  const [totalSessions, setTotalSessions] = useState<number>(1);
   const [status, setStatus] = useState('Active');
   const [isSaving, setIsSaving] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -82,8 +59,7 @@ export default function TreatmentPlan() {
         setSelectedServiceId(plan.service_id);
         setCost(Number(plan.base_cost));
         setDiscount(Number(plan.discount));
-        setTotalDays(plan.total_days || 1);
-        setHoursPerSession(plan.hours_per_session || 1);
+        setTotalSessions(plan.total_sessions || 1);
         setStatus(plan.status || 'Active');
         setIsPlanExisting(true);
       } else {
@@ -118,22 +94,16 @@ export default function TreatmentPlan() {
         base_cost: cost,
         discount: discount,
         total_to_pay: totalToPay,
-        total_days: totalDays,
-        hours_per_session: hoursPerSession,
+        total_sessions: totalSessions,
         status: targetStatus
       });
       
       setStatus(targetStatus);
       setIsPlanExisting(true);
-      
-      if (targetStatus === 'Completed') {
-        alert('Treatment journey marked as Completed.');
-      } else {
-        alert('Treatment plan saved! Next: Digital Contract.');
-      }
+      alert(targetStatus === 'Completed' ? 'Treatment Marked Completed' : 'Plan Saved Successfully');
     } catch (error: any) {
-      console.error('Error saving treatment plan:', error);
-      alert(`Failed to save: ${error.response?.data?.error || error.message}`);
+      console.error('Save error:', error);
+      alert(`Failed: ${error.response?.data?.error || error.message}`);
     } finally {
       setIsSaving(false);
     }
@@ -142,9 +112,7 @@ export default function TreatmentPlan() {
   if (!selectedPatient) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
-        <div className="bg-slate-100 p-6 rounded-full text-slate-400">
-          <UserCircle2 size={48} />
-        </div>
+        <div className="bg-slate-100 p-6 rounded-full text-slate-400"><UserCircle2 size={48} /></div>
         <div><h2 className="text-xl font-bold text-slate-900">No Patient Selected</h2><p className="text-slate-500 max-w-xs mx-auto">Please select a patient first.</p></div>
       </div>
     );
@@ -154,7 +122,7 @@ export default function TreatmentPlan() {
     return (
       <div className="flex flex-col items-center justify-center py-20">
         <Loader2 className="animate-spin text-teal-600 mb-4" size={40} />
-        <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">Loading Plan...</p>
+        <p className="text-slate-500 font-bold uppercase tracking-widest text-xs text-center">Loading Clinical Plan...</p>
       </div>
     );
   }
@@ -178,15 +146,11 @@ export default function TreatmentPlan() {
               <h3 className="text-lg font-bold flex items-center gap-2"><ShieldCheck className="text-teal-400" size={20} />Summary</h3>
               <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest border border-teal-500/20 text-teal-400">{status}</span>
             </div>
-
-            <div className="flex items-center gap-2 mb-6 px-3 py-1.5 bg-white/5 rounded-xl border border-white/10">
-              <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Clinical Records Secured</span>
-            </div>
             
             <div className="space-y-4">
               <div className="flex justify-between text-slate-400 text-sm"><span>Base Cost</span><span>£{cost.toLocaleString()}</span></div>
               <div className="flex justify-between text-slate-400 text-sm"><span>Total Discount</span><span className="text-teal-400">- £{discount.toLocaleString()}</span></div>
+              <div className="flex justify-between text-slate-400 text-sm"><span>Sessions</span><span className="text-teal-400">{totalSessions} (1hr each)</span></div>
               <div className="pt-4 border-t border-slate-800">
                 <div className="flex justify-between items-baseline"><span className="font-medium">Total to Pay</span><span className="text-2xl sm:text-3xl font-bold text-teal-400">£{totalToPay.toLocaleString()}</span></div>
               </div>
@@ -223,30 +187,18 @@ export default function TreatmentPlan() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-semibold text-slate-700">Cost (£)</label>
-                  <div className="relative">
-                    <PoundSterling className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-                    <input type="number" value={cost} onChange={(e) => setCost(Number(e.target.value))} className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2.5 pl-10 pr-4 text-sm outline-none" />
-                  </div>
+                  <input type="number" value={cost} onChange={(e) => setCost(Number(e.target.value))} className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2.5 px-4 text-sm outline-none" />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-semibold text-slate-700">Discount (£)</label>
-                  <div className="relative">
-                    <Tag className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-                    <input type="number" value={discount} onChange={(e) => setDiscount(Number(e.target.value))} className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2.5 pl-10 pr-4 text-sm outline-none" />
-                  </div>
+                  <input type="number" value={discount} onChange={(e) => setDiscount(Number(e.target.value))} className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2.5 px-4 text-sm outline-none" />
                 </div>
               </div>
 
-              {/* NEW TIMELINE FIELDS */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-slate-100">
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold text-slate-700 flex items-center gap-2"><CalendarDays size={14} className="text-teal-600" /> Number of Sessions (Days)</label>
-                  <input type="number" min="1" value={totalDays} onChange={(e) => setTotalDays(Number(e.target.value))} className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2.5 px-4 text-sm outline-none focus:border-teal-500 transition-all" />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold text-slate-700 flex items-center gap-2"><Clock size={14} className="text-teal-600" /> Duration per Session (Hours)</label>
-                  <input type="number" min="1" max="8" value={hoursPerSession} onChange={(e) => setHoursPerSession(Number(e.target.value))} className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2.5 px-4 text-sm outline-none focus:border-teal-500 transition-all" />
-                </div>
+              <div className="space-y-2 pt-4 border-t border-slate-100">
+                <label className="text-sm font-semibold text-slate-700 flex items-center gap-2"><Clock size={14} className="text-teal-600" /> Total Required Sessions</label>
+                <input type="number" min="1" max="50" value={totalSessions} onChange={(e) => setTotalSessions(Number(e.target.value))} className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2.5 px-4 text-sm outline-none focus:border-teal-500 transition-all" />
+                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Each session is allocated as a 1-hour surgery block.</p>
               </div>
             </div>
           </section>

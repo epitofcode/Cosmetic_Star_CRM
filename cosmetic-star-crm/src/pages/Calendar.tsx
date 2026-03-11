@@ -4,7 +4,6 @@ import {
   addDays, 
   startOfWeek, 
   addWeeks, 
-  subWeeks, 
   isSameDay, 
   isToday,
   startOfMonth,
@@ -19,7 +18,6 @@ import {
   Clock, 
   CheckCircle2, 
   Calendar as CalendarIcon,
-  ShieldCheck,
   UserCheck,
   UserCircle2,
   Loader2,
@@ -48,11 +46,8 @@ export default function CalendarPage() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
   const [bookedSlots, setBookedSlots] = useState<string[]>([]);
-  
-  // Multi-session state
   const [scheduledSessions, setScheduledSessions] = useState<Session[]>([]);
   const [treatmentPlan, setTreatmentPlan] = useState<any>(null);
-  
   const [isBookingConfirmed, setIsBookingConfirmed] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -62,53 +57,29 @@ export default function CalendarPage() {
   const monthEnd = endOfMonth(monthStart);
   const startDate = startOfWeek(monthStart, { weekStartsOn: 1 });
   const endDate = addDays(startOfWeek(addDays(monthEnd, 7), { weekStartsOn: 1 }), -1);
-
   const days = eachDayOfInterval({ start: startDate, end: endDate });
-
-  const handlePrevMonth = () => setCurrentDate(subWeeks(currentDate, 4));
-  const handleNextMonth = () => setCurrentDate(addWeeks(currentDate, 4));
 
   useEffect(() => {
     if (selectedPatient) {
-      fetchData();
+      setLoading(true);
+      getTreatmentPlan(selectedPatient.id)
+        .then(setTreatmentPlan)
+        .finally(() => setLoading(false));
     }
   }, [selectedPatient]);
 
-  const fetchData = async () => {
-    try {
-      setLoading(true);
-      const plan = await getTreatmentPlan(selectedPatient!.id);
-      setTreatmentPlan(plan);
-    } catch (error) {
-      console.error('Error fetching plan:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
     if (selectedDate) {
-      fetchSlots();
+      setIsLoadingSlots(true);
+      getBookedSlots(format(selectedDate, 'yyyy-MM-dd'))
+        .then(setBookedSlots)
+        .finally(() => setIsLoadingSlots(false));
     }
   }, [selectedDate]);
 
-  const fetchSlots = async () => {
-    if (!selectedDate) return;
-    try {
-      setIsLoadingSlots(true);
-      const slots = await getBookedSlots(format(selectedDate, 'yyyy-MM-dd'));
-      setBookedSlots(slots);
-    } catch (error) {
-      console.error('Error fetching slots:', error);
-    } finally {
-      setIsLoadingSlots(false);
-    }
-  };
-
-  const addSessionToQueue = () => {
+  const addSession = () => {
     if (selectedDate && selectedSlot) {
-      const newSession = { date: selectedDate, slot: selectedSlot };
-      setScheduledSessions([...scheduledSessions, newSession]);
+      setScheduledSessions([...scheduledSessions, { date: selectedDate, slot: selectedSlot }]);
       setSelectedSlot(null);
     }
   };
@@ -117,257 +88,118 @@ export default function CalendarPage() {
     setScheduledSessions(scheduledSessions.filter((_, i) => i !== idx));
   };
 
-  const handleConfirmAllBookings = async () => {
-    if (!selectedPatient || scheduledSessions.length !== (treatmentPlan?.total_days || 1)) return;
-
+  const handleFinalConfirm = async () => {
+    if (!selectedPatient || scheduledSessions.length !== (treatmentPlan?.total_sessions || 1)) return;
     try {
       setIsSaving(true);
-      
-      // 1. Create all bookings sequentially
-      for (const session of scheduledSessions) {
+      for (const s of scheduledSessions) {
         await createBooking({
           patient_id: selectedPatient.id,
-          service_type: treatmentPlan?.service_name || 'Treatment',
-          date: format(session.date, 'yyyy-MM-dd'),
-          time_slot: session.slot,
-          duration_hours: treatmentPlan?.hours_per_session || 1
+          service_type: treatmentPlan.service_name,
+          date: format(s.date, 'yyyy-MM-dd'),
+          time_slot: s.slot
         });
       }
-
-      // 2. Send one combined confirmation email
       await sendBookingConfirmation({
         to_name: `${selectedPatient.first_name} ${selectedPatient.last_name}`,
         to_email: selectedPatient.email,
         date: scheduledSessions.map(s => format(s.date, 'do MMM')).join(', '),
-        time: `${scheduledSessions[0].slot} (Multiple Sessions)`,
-        practitioner: 'Clinical Staff',
-        service: treatmentPlan?.service_name || 'Treatment'
+        time: 'Multiple Sessions',
+        practitioner: 'Clinical Team',
+        service: treatmentPlan.service_name
       });
-      
       setIsBookingConfirmed(true);
     } catch (error: any) {
-      console.error('Booking error:', error);
-      alert(error.response?.data?.error || 'Failed to complete scheduling.');
+      alert(error.response?.data?.error || 'Booking failed');
     } finally {
       setIsSaving(false);
     }
   };
 
-  if (!selectedPatient) {
-    return (
-      <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
-        <div className="bg-slate-100 p-6 rounded-full text-slate-400"><UserCircle2 size={48} /></div>
-        <div><h2 className="text-xl font-bold text-slate-900">No Patient Selected</h2><p className="text-slate-500 max-w-xs mx-auto">Please select a patient first.</p></div>
-      </div>
-    );
-  }
+  if (!selectedPatient) return <div className="py-20 text-center text-slate-500">Please select a patient first.</div>;
+  if (loading) return <div className="py-20 text-center"><Loader2 className="animate-spin mx-auto text-teal-600" /></div>;
 
-  if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center py-20">
-        <Loader2 className="animate-spin text-teal-600 mb-4" size={40} />
-        <p className="text-slate-500 font-bold uppercase tracking-widest text-xs text-center">Loading Clinical Schedule...</p>
-      </div>
-    );
-  }
-
-  const sessionsNeeded = treatmentPlan?.total_days || 1;
-  const sessionsRemaining = sessionsNeeded - scheduledSessions.length;
+  const needed = treatmentPlan?.total_sessions || 1;
+  const remaining = needed - scheduledSessions.length;
 
   return (
     <div className="max-w-7xl mx-auto space-y-8 pb-12">
-      {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2 text-teal-600 bg-teal-50 w-fit px-2 py-1 rounded text-xs font-bold uppercase tracking-wider">
-            <UserCheck size={14} /> Patient: {selectedPatient.first_name} {selectedPatient.last_name}
-          </div>
-          <h1 className="text-3xl font-black text-slate-900 tracking-tight">Timeline Scheduling</h1>
-          <p className="text-slate-500 font-medium">Procedure: <span className="text-slate-900 font-bold">{treatmentPlan?.service_name || 'Generic Treatment'}</span></p>
+        <div>
+          <h1 className="text-3xl font-black text-slate-900">Timeline Scheduling</h1>
+          <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px] mt-1">Procedure: {treatmentPlan?.service_name}</p>
         </div>
-        
-        <div className="flex items-center gap-4">
-          <div className={cn(
-            "px-6 py-3 rounded-2xl border-2 transition-all flex flex-col items-center",
-            sessionsRemaining === 0 ? "bg-green-50 border-green-200 text-green-700" : "bg-amber-50 border-amber-200 text-amber-700"
-          )}>
-            <span className="text-[10px] font-black uppercase tracking-widest leading-none mb-1">Booking Status</span>
-            <span className="text-xl font-black">{scheduledSessions.length} / {sessionsNeeded} Sessions Set</span>
-          </div>
+        <div className={cn("px-6 py-3 rounded-2xl border-2 flex flex-col items-center", remaining === 0 ? "bg-green-50 border-green-200 text-green-700" : "bg-amber-50 border-amber-200 text-amber-700")}>
+          <span className="text-[10px] font-black uppercase tracking-widest">Sessions Needed</span>
+          <span className="text-xl font-black">{scheduledSessions.length} / {needed}</span>
         </div>
       </div>
 
       {!isBookingConfirmed ? (
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
-          {/* Calendar Area */}
-          <div className="xl:col-span-8 space-y-6">
-            <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-200/40 overflow-hidden">
-              <div className="p-6 sm:p-8 flex items-center justify-between border-b border-slate-50">
-                <h2 className="text-xl font-black text-slate-900 tracking-tight">{format(currentDate, 'MMMM yyyy')}</h2>
-                <div className="flex gap-2">
-                  <button onClick={handlePrevMonth} className="p-2.5 hover:bg-slate-100 rounded-xl text-slate-600 transition-colors"><ChevronLeft size={20} /></button>
-                  <button onClick={handleNextMonth} className="p-2.5 hover:bg-slate-100 rounded-xl text-slate-600 transition-colors"><ChevronRight size={20} /></button>
-                </div>
+          <div className="xl:col-span-8 bg-white rounded-[2.5rem] border border-slate-100 shadow-xl p-8">
+            <div className="flex items-center justify-between mb-8">
+              <h2 className="text-xl font-black text-slate-900">{format(currentDate, 'MMMM yyyy')}</h2>
+              <div className="flex gap-2">
+                <button onClick={() => setCurrentDate(addWeeks(currentDate, -4))} className="p-2 hover:bg-slate-100 rounded-xl"><ChevronLeft /></button>
+                <button onClick={() => setCurrentDate(addWeeks(currentDate, 4))} className="p-2 hover:bg-slate-100 rounded-xl"><ChevronRight /></button>
               </div>
-
-              <div className="p-6 sm:p-8">
-                <div className="grid grid-cols-7 gap-2 mb-4">
-                  {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => (
-                    <div key={day} className="text-center text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] py-2">{day}</div>
-                  ))}
-                </div>
-                <div className="grid grid-cols-7 gap-2 sm:gap-3">
-                  {days.map((day, idx) => {
-                    const isSelected = selectedDate && isSameDay(day, selectedDate);
-                    const isSessionAdded = scheduledSessions.some(s => isSameDay(s.date, day));
-                    const isCurrentMonth = isSameMonth(day, monthStart);
-                    const isPast = day < new Date() && !isToday(day);
-
-                    return (
-                      <button
-                        key={idx}
-                        disabled={isPast}
-                        onClick={() => { setSelectedDate(day); setSelectedSlot(null); }}
-                        className={cn(
-                          "h-14 sm:h-20 flex flex-col items-center justify-center rounded-2xl transition-all border-2 relative",
-                          !isCurrentMonth ? "text-slate-200 border-transparent opacity-40" : "border-slate-50",
-                          isSelected ? "bg-teal-600 border-teal-600 text-white shadow-lg shadow-teal-500/20 scale-105 z-10" :
-                          isSessionAdded ? "bg-teal-50 border-teal-200 text-teal-700" :
-                          isPast ? "bg-slate-50 text-slate-200 cursor-not-allowed border-transparent" : "hover:border-teal-500 hover:text-teal-600 bg-white text-slate-700"
-                        )}
-                      >
-                        <span className="text-sm sm:text-lg font-black">{format(day, 'd')}</span>
-                        {isToday(day) && <span className={cn("absolute bottom-2 w-1.5 h-1.5 rounded-full", isSelected ? "bg-white" : "bg-teal-500")} />}
-                        {isSessionAdded && !isSelected && <CheckCircle2 size={14} className="absolute top-2 right-2 text-teal-500" />}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
+            </div>
+            <div className="grid grid-cols-7 gap-3">
+              {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(d => <div key={d} className="text-center text-[10px] font-black text-slate-400 uppercase py-2">{d}</div>)}
+              {days.map((day, idx) => {
+                const isSel = selectedDate && isSameDay(day, selectedDate);
+                const isAdded = scheduledSessions.some(s => isSameDay(s.date, day));
+                const isPast = day < new Date() && !isToday(day);
+                return (
+                  <button key={idx} disabled={isPast} onClick={() => setSelectedDate(day)} className={cn("h-16 flex flex-col items-center justify-center rounded-2xl border-2 transition-all relative", !isSameMonth(day, monthStart) ? "opacity-20" : "border-slate-50", isSel ? "bg-teal-600 border-teal-600 text-white scale-105 z-10" : isAdded ? "bg-teal-50 border-teal-200 text-teal-700" : "bg-white hover:border-teal-500")}>
+                    <span className="font-black">{format(day, 'd')}</span>
+                    {isAdded && !isSel && <CheckCircle2 size={12} className="absolute top-1 right-1 text-teal-500" />}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
-          {/* Sidebar / Queue */}
           <div className="xl:col-span-4 space-y-6">
-            {/* Slot Picker */}
-            <div className="bg-white rounded-[2rem] border border-slate-100 shadow-lg p-6 sm:p-8">
-              <h3 className="text-lg font-black text-slate-900 mb-6 flex items-center gap-3">
-                <Clock className="text-teal-600" size={24} /> Available Slots
-              </h3>
-              
+            <div className="bg-white rounded-[2rem] border border-slate-100 shadow-lg p-6">
+              <h3 className="text-lg font-black mb-6 flex items-center gap-2"><Clock className="text-teal-600" /> Select Time</h3>
               {selectedDate ? (
-                <div className="space-y-6">
-                  <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-2">
                     {TIME_SLOTS.map(slot => {
                       const isBooked = bookedSlots.includes(slot);
                       const isChosen = scheduledSessions.some(s => isSameDay(s.date, selectedDate!) && s.slot === slot);
-                      const isCurrentSelection = selectedSlot === slot;
-                      
                       return (
-                        <button
-                          key={slot}
-                          disabled={isBooked || isChosen}
-                          onClick={() => setSelectedSlot(slot)}
-                          className={cn(
-                            "py-3 rounded-xl text-xs font-black transition-all border-2 uppercase tracking-widest",
-                            isCurrentSelection ? "bg-teal-600 border-teal-600 text-white shadow-md" :
-                            (isBooked || isChosen) ? "bg-slate-50 border-slate-50 text-slate-300 cursor-not-allowed" :
-                            "bg-white border-slate-100 text-slate-600 hover:border-teal-500"
-                          )}
-                        >
-                          {slot}
-                        </button>
+                        <button key={slot} disabled={isBooked || isChosen} onClick={() => setSelectedSlot(slot)} className={cn("py-3 rounded-xl text-xs font-black border-2", selectedSlot === slot ? "bg-teal-600 border-teal-600 text-white" : (isBooked || isChosen) ? "opacity-30 bg-slate-100" : "hover:border-teal-500")}>{slot}</button>
                       );
                     })}
                   </div>
-                  
-                  {selectedSlot && (
-                    <button 
-                      onClick={addSessionToQueue}
-                      disabled={scheduledSessions.length >= sessionsNeeded}
-                      className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-800 transition-all shadow-xl active:scale-95 disabled:opacity-50"
-                    >
-                      Add Session to Queue
-                    </button>
-                  )}
+                  {selectedSlot && <button onClick={addSession} disabled={scheduledSessions.length >= needed} className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest disabled:opacity-50">Add Session to Queue</button>}
                 </div>
-              ) : (
-                <div className="text-center py-12 px-4 bg-slate-50 rounded-3xl border border-dashed border-slate-200">
-                  <CalendarIcon className="mx-auto text-slate-300 mb-4" size={32} />
-                  <p className="text-sm text-slate-500 font-bold leading-relaxed uppercase tracking-widest">Select a date to see times</p>
-                </div>
-              )}
+              ) : <p className="text-center py-10 text-slate-400 text-xs font-bold uppercase tracking-widest">Select a date first</p>}
             </div>
 
-            {/* Session Queue Summary */}
-            <div className="bg-slate-900 rounded-[2rem] p-6 sm:p-8 text-white shadow-2xl space-y-6">
-              <h3 className="font-black text-lg flex items-center gap-3 text-teal-400 uppercase tracking-tight">
-                <CheckCircle2 size={24} /> Scheduled Sessions
-              </h3>
-              
-              <div className="space-y-3">
-                {scheduledSessions.length > 0 ? scheduledSessions.map((s, i) => (
-                  <div key={i} className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/10 group">
-                    <div className="space-y-0.5">
-                      <p className="text-xs font-black uppercase tracking-widest text-teal-400">Session {i+1}</p>
-                      <p className="text-sm font-bold">{format(s.date, 'EEE, do MMM')} @ {s.slot}</p>
-                    </div>
-                    <button onClick={() => removeSession(i)} className="p-2 text-white/20 hover:text-red-400 transition-colors"><Trash2 size={18} /></button>
+            <div className="bg-slate-900 rounded-[2rem] p-6 text-white shadow-2xl space-y-6">
+              <h3 className="font-black flex items-center gap-2 text-teal-400 uppercase tracking-widest text-xs">Scheduled Sessions</h3>
+              <div className="space-y-2">
+                {scheduledSessions.map((s, i) => (
+                  <div key={i} className="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/10 text-xs">
+                    <span>{format(s.date, 'do MMM')} @ {s.slot}</span>
+                    <button onClick={() => removeSession(i)} className="text-white/20 hover:text-red-400"><Trash2 size={14} /></button>
                   </div>
-                )) : (
-                  <p className="text-slate-500 italic text-sm text-center py-4">No sessions scheduled yet.</p>
-                )}
+                ))}
               </div>
-
-              {scheduledSessions.length === sessionsNeeded ? (
-                <div className="pt-4 space-y-4">
-                  <div className="p-4 bg-teal-500/10 border border-teal-500/20 rounded-2xl flex items-start gap-3">
-                    <AlertCircle className="text-teal-400 shrink-0" size={18} />
-                    <p className="text-[10px] text-teal-100 font-bold leading-relaxed uppercase tracking-wide">
-                      All {sessionsNeeded} sessions required for this {treatmentPlan.hours_per_session}-hour procedure have been allocated.
-                    </p>
-                  </div>
-                  <button
-                    onClick={handleConfirmAllBookings}
-                    disabled={isSaving}
-                    className="w-full bg-teal-500 hover:bg-teal-400 text-slate-900 py-4 rounded-2xl font-black text-sm uppercase tracking-[0.2em] transition-all active:scale-95 shadow-lg shadow-teal-500/20 disabled:opacity-50"
-                  >
-                    {isSaving ? 'Finalizing...' : 'Confirm Full Timeline'}
-                  </button>
-                </div>
-              ) : (
-                <div className="pt-4">
-                  <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl flex items-start gap-3">
-                    <AlertCircle className="text-amber-400 shrink-0" size={18} />
-                    <p className="text-[10px] text-amber-100 font-bold leading-relaxed uppercase tracking-wide">
-                      Awaiting {sessionsRemaining} more sessions to complete the clinical timeline.
-                    </p>
-                  </div>
-                </div>
-              )}
+              {remaining === 0 ? <button onClick={handleFinalConfirm} disabled={isSaving} className="w-full bg-teal-500 hover:bg-teal-400 text-slate-900 py-4 rounded-2xl font-black text-sm uppercase tracking-widest shadow-lg shadow-teal-500/20">{isSaving ? 'Saving...' : 'Confirm All Sessions'}</button>
+              : <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-center gap-2 text-[10px] text-amber-200 uppercase font-black tracking-widest"><AlertCircle size={14} /> {remaining} More Sessions Needed</div>}
             </div>
           </div>
         </div>
       ) : (
-        <div className="bg-white rounded-[3rem] border border-slate-100 shadow-2xl p-12 text-center space-y-8 max-w-3xl mx-auto animate-in zoom-in-95 duration-500">
-          <div className="w-24 h-24 bg-teal-100 text-teal-600 rounded-[2rem] flex items-center justify-center mx-auto shadow-inner"><CheckCircle2 size={56} /></div>
-          <div className="space-y-3">
-            <h2 className="text-4xl font-black text-slate-900 tracking-tight">Timeline Verified!</h2>
-            <p className="text-slate-500 text-lg font-medium max-w-lg mx-auto leading-relaxed">
-              All treatment sessions have been synchronized. The patient has been notified of their full clinical schedule.
-            </p>
-          </div>
-          
-          <div className="bg-slate-50 rounded-[2rem] p-8 border border-slate-100 text-left space-y-6">
-            {scheduledSessions.map((s, i) => (
-              <div key={i} className="flex justify-between items-center pb-4 border-b border-slate-200 last:border-0 last:pb-0">
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Session {i+1}</span>
-                <span className="font-black text-slate-900">{format(s.date, 'PPPP')} at {s.slot}</span>
-              </div>
-            ))}
-          </div>
-
-          <button onClick={() => window.location.href = '/'} className="bg-slate-900 text-white px-10 py-4 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-800 transition-all shadow-xl">Return to Dashboard</button>
+        <div className="bg-white rounded-[3rem] shadow-2xl p-12 text-center max-w-2xl mx-auto space-y-6">
+          <div className="w-20 h-20 bg-teal-100 text-teal-600 rounded-3xl flex items-center justify-center mx-auto"><CheckCircle2 size={40} /></div>
+          <h2 className="text-3xl font-black">Booking Confirmed!</h2>
+          <button onClick={() => window.location.href = '/'} className="bg-slate-900 text-white px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest">Return Home</button>
         </div>
       )}
     </div>

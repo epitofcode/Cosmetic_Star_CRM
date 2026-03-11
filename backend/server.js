@@ -287,7 +287,7 @@ app.get('/api/bookings/:patientId', async (req, res) => {
 app.post('/api/treatment-plan', async (req, res) => {
     const { 
         patient_id, service_id, service_name, base_cost, discount, 
-        total_to_pay, total_days = 1, hours_per_session = 1, status = 'Active' 
+        total_to_pay, total_sessions = 1, status = 'Active' 
     } = req.body;
     
     const { data, error } = await supabase
@@ -299,8 +299,7 @@ app.post('/api/treatment-plan', async (req, res) => {
             base_cost, 
             discount, 
             total_to_pay,
-            total_days,
-            hours_per_session,
+            total_sessions,
             status
         }], { onConflict: 'patient_id' })
         .select();
@@ -309,35 +308,17 @@ app.post('/api/treatment-plan', async (req, res) => {
     res.status(201).json(data[0]);
 });
 
-// 9. Get Booked Slots for a Date (Duration-Aware)
+// 9. Get Booked Slots for a Date (Simple 1-Hour Slots)
 app.get('/api/slots', async (req, res) => {
     const { date } = req.query;
     try {
         const { data, error } = await supabase
             .from('bookings')
-            .select('time_slot, duration_hours')
+            .select('time_slot')
             .eq('date', date);
 
         if (error) throw error;
-
-        // Smart Blocking: If a 4-hour procedure starts at 09:00, 
-        // block 09:00, 10:00, 11:00, and 12:00.
-        const bookedSlots = new Set();
-        const ALL_TIME_SLOTS = ['09:00', '10:00', '11:00', '12:00', '14:00', '15:00', '16:00', '17:00'];
-
-        data?.forEach(booking => {
-            const startIndex = ALL_TIME_SLOTS.indexOf(booking.time_slot);
-            if (startIndex !== -1) {
-                const duration = booking.duration_hours || 1;
-                for (let i = 0; i < duration; i++) {
-                    if (startIndex + i < ALL_TIME_SLOTS.length) {
-                        bookedSlots.add(ALL_TIME_SLOTS[startIndex + i]);
-                    }
-                }
-            }
-        });
-
-        res.json(Array.from(bookedSlots));
+        res.json(data.map(b => b.time_slot));
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -345,21 +326,8 @@ app.get('/api/slots', async (req, res) => {
 
 // 10. Create Booking (Session-based)
 app.post('/api/bookings', async (req, res) => {
-    const { patient_id, service_type, date, time_slot, duration_hours = 1 } = req.body;
+    const { patient_id, service_type, date, time_slot } = req.body;
     
-    // Check if slot is taken (including overlaps)
-    const { data: existing } = await supabase.from('bookings').select('*').eq('date', date);
-    const ALL_TIME_SLOTS = ['09:00', '10:00', '11:00', '12:00', '14:00', '15:00', '16:00', '17:00'];
-    const newStartIndex = ALL_TIME_SLOTS.indexOf(time_slot);
-    
-    const isConflict = existing?.some(b => {
-        const start = ALL_TIME_SLOTS.indexOf(b.time_slot);
-        const end = start + (b.duration_hours || 1);
-        return newStartIndex >= start && newStartIndex < end;
-    });
-
-    if (isConflict) return res.status(409).json({ error: 'This time block overlaps with another booking.' });
-
     const { data, error } = await supabase
         .from('bookings')
         .insert([{ 
@@ -367,12 +335,14 @@ app.post('/api/bookings', async (req, res) => {
             service_type, 
             date, 
             time_slot,
-            duration_hours,
             status: 'Confirmed' 
         }])
         .select();
 
-    if (error) return res.status(400).json({ error: error.message });
+    if (error) {
+        if (error.code === '23505') return res.status(400).json({ error: 'This time slot is no longer available.' });
+        return res.status(400).json({ error: error.message });
+    }
     res.status(201).json(data[0]);
 });
 
