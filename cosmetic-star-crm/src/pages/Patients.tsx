@@ -93,7 +93,7 @@ export default function Patients() {
     setIsModalOpen(true);
   };
 
-  const handleDeleteClick = async (e: React.MouseEvent, patientId: string) => {
+  const handleDeleteClick = async (e: React.MouseEvent, patientId: number) => {
     e.stopPropagation();
     if (!window.confirm('Are you sure you want to delete this patient record? This action cannot be undone.')) {
       return;

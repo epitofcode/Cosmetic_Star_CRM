@@ -92,7 +92,7 @@ export default function Financials() {
     try {
       setIsSaving(true);
       const formData = new FormData();
-      formData.append('patient_id', selectedPatient.id);
+      formData.append('patient_id', selectedPatient.id.toString());
       formData.append('amount', paymentAmount);
       formData.append('type', isCashPayment ? 'Cash' : 'Installment');
       if (proofFile) {
