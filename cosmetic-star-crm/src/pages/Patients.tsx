@@ -28,7 +28,7 @@ function cn(...inputs: ClassValue[]) {
 }
 
 interface Patient {
-  id: string;
+  id: number;
   first_name: string;
   last_name: string;
   phone: string;
@@ -45,7 +45,7 @@ export default function Patients() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingPatientId, setEditingPatientId] = useState<string | null>(null);
+  const [editingPatientId, setEditingPatientId] = useState<number | null>(null);
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -244,7 +244,7 @@ export default function Patients() {
                             </div>
                           )}
                         </div>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5 truncate">ID: {patient.id.slice(0, 8)}</p>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5 truncate">ID: {patient.id}</p>
                       </div>
                     </div>
                   </td>
