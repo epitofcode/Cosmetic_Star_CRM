@@ -39,7 +39,8 @@ CREATE TABLE bookings (
     date DATE NOT NULL,
     time_slot TEXT NOT NULL,
     status TEXT DEFAULT 'Confirmed',
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(date, time_slot)
 );
 
 -- Treatment Plans Table

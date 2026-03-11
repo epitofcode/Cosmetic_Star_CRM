@@ -92,25 +92,39 @@ export default function CalendarPage() {
     if (!selectedPatient || scheduledSessions.length !== (treatmentPlan?.total_sessions || 1)) return;
     try {
       setIsSaving(true);
-      for (const s of scheduledSessions) {
-        await createBooking({
+      
+      // 1. Create all bookings in parallel
+      console.log("Creating bookings for sessions:", scheduledSessions);
+      await Promise.all(scheduledSessions.map(s => 
+        createBooking({
           patient_id: selectedPatient.id,
           service_type: treatmentPlan.service_name,
           date: format(s.date, 'yyyy-MM-dd'),
           time_slot: s.slot
+        })
+      ));
+
+      // 2. Send combined confirmation email
+      console.log("Triggering confirmation email...");
+      try {
+        await sendBookingConfirmation({
+          to_name: `${selectedPatient.first_name} ${selectedPatient.last_name}`,
+          to_email: selectedPatient.email,
+          date: scheduledSessions.map(s => format(s.date, 'do MMM')).join(', '),
+          time: 'Multiple Sessions Allocated',
+          practitioner: 'Dr. Kavya Sangameswara',
+          service: treatmentPlan.service_name
         });
+        console.log("Email trigger successful.");
+      } catch (emailErr) {
+        console.error("Email service failed but bookings saved:", emailErr);
+        // We don't block the UI for email failures if the DB is updated
       }
-      await sendBookingConfirmation({
-        to_name: `${selectedPatient.first_name} ${selectedPatient.last_name}`,
-        to_email: selectedPatient.email,
-        date: scheduledSessions.map(s => format(s.date, 'do MMM')).join(', '),
-        time: 'Multiple Sessions',
-        practitioner: 'Clinical Team',
-        service: treatmentPlan.service_name
-      });
+
       setIsBookingConfirmed(true);
     } catch (error: any) {
-      alert(error.response?.data?.error || 'Booking failed');
+      console.error("Final booking confirmation error:", error);
+      alert(error.response?.data?.error || 'Booking process failed. Please check slot availability.');
     } finally {
       setIsSaving(false);
     }

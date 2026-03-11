@@ -220,67 +220,16 @@ app.get('/api/contract/:patientId', async (req, res) => {
     res.json({ signed: !!data, contract: data || null });
 });
 
-// 6. Get Booked Slots for a Date
-app.get('/api/slots', async (req, res) => {
-    const { date } = req.query;
-    const { data, error } = await supabase
-        .from('bookings')
-        .select('time_slot')
-        .eq('date', date);
-
-    if (error) return res.status(400).json({ error: error.message });
-    res.json(data.map(b => b.time_slot));
-});
-
-// 7. Create Booking (Requires Contract & Slot Check)
-app.post('/api/bookings', async (req, res) => {
-    const { patient_id, service_type, date, time_slot } = req.body;
-
-    // 1. Check if patient has a contract
-    const { data: contract } = await supabase
-        .from('contracts')
-        .select('id')
-        .eq('patient_id', patient_id)
-        .maybeSingle();
-
-    if (!contract) return res.status(403).json({ error: 'Patient must sign a contract before booking.' });
-
-    // 2. Check if the slot is already taken by ANOTHER patient
-    const { data: existingBooking } = await supabase
-        .from('bookings')
-        .select('id')
-        .eq('date', date)
-        .eq('time_slot', time_slot)
-        .neq('patient_id', patient_id) // Allow patient to reschedule their own slot
-        .maybeSingle();
-
-    if (existingBooking) {
-        return res.status(409).json({ 
-            error: 'This time slot has been blocked by another clinical appointment. Please select a different time.',
-            code: 'SLOT_BLOCKED'
-        });
-    }
-
-    const { data, error } = await supabase
-        .from('bookings')
-        .upsert([{ patient_id, service_type, date, time_slot }], { onConflict: 'patient_id' })
-        .select();
-
-    if (error) return res.status(400).json({ error: error.message });
-    res.status(201).json(data[0]);
-});
-
 // 7b. Get Booking for a Patient
 app.get('/api/bookings/:patientId', async (req, res) => {
     const { patientId } = req.params;
     const { data, error } = await supabase
         .from('bookings')
         .select('*')
-        .eq('patient_id', patientId)
-        .maybeSingle();
+        .eq('patient_id', patientId); // Changed to allow multiple sessions
 
     if (error) return res.status(400).json({ error: error.message });
-    res.json(data || null);
+    res.json(data || []);
 });
 
 // 8. Create or Update Treatment Plan
@@ -344,6 +293,7 @@ app.post('/api/bookings', async (req, res) => {
         .select();
 
     if (error) {
+        // Handle unique constraint violation (date, time_slot)
         if (error.code === '23505') return res.status(400).json({ error: 'This time slot is no longer available.' });
         return res.status(400).json({ error: error.message });
     }
