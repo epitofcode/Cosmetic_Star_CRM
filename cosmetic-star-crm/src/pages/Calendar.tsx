@@ -27,7 +27,7 @@ import {
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { usePatient } from '../context/PatientContext';
-import { getBookedSlots, createBooking, getTreatmentPlan } from '../services/api';
+import { getBookedSlots, createBooking, getTreatmentPlan, getBooking } from '../services/api';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
