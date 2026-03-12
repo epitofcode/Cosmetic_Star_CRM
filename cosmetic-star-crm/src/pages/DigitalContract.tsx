@@ -98,11 +98,11 @@ export default function DigitalContract({ onSign }: DigitalContractProps) {
         {/* Dynamic Procedure Spec Box */}
         {treatmentPlan && (
           <div className="bg-slate-900 rounded-2xl p-6 text-white shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6 border-l-4 border-teal-500">
-            <div className="space-y-1">
+            <div className="space-y-1 min-w-0">
               <p className="text-[10px] font-black text-teal-400 uppercase tracking-[0.2em]">Procedure Specification</p>
-              <h2 className="text-xl font-bold">{treatmentPlan.service_name}</h2>
+              <h2 className="text-xl font-bold leading-tight break-words">{treatmentPlan.service_name}</h2>
             </div>
-            <div className="flex gap-8">
+            <div className="flex flex-wrap gap-8 shrink-0">
               {treatmentPlan.graft_count && (
                 <div className="space-y-1">
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Graft Count</p>
@@ -124,7 +124,7 @@ export default function DigitalContract({ onSign }: DigitalContractProps) {
             <ShieldCheck className="text-teal-600" size={20} />
             <h2 className="font-bold text-slate-900 text-lg">Terms of Clinical Agreement</h2>
           </div>
-          <div className="p-8 prose prose-slate max-w-none h-[400px] overflow-y-auto bg-white text-slate-600 text-sm leading-relaxed space-y-6">
+          <div className="p-8 prose prose-slate max-w-none min-h-[20rem] max-h-[50vh] overflow-y-auto bg-white text-slate-600 text-sm leading-relaxed space-y-6">
             <div>
               <h3 className="text-slate-900 font-black uppercase tracking-widest text-[10px] mb-2">1. Informed Consent</h3>
               <p>I hereby authorize the clinical team at Cosmetic Star to perform the procedure: <strong>{treatmentPlan?.service_name || 'Selected Treatment'}</strong>. I acknowledge that I have been fully briefed on the intended benefits and clinical steps.</p>
@@ -153,9 +153,9 @@ export default function DigitalContract({ onSign }: DigitalContractProps) {
           <div className="p-6 text-center">
             <div className="border-2 border-dashed border-slate-200 rounded-xl bg-slate-50 overflow-hidden min-h-[12rem] flex items-center justify-center">
               {existingSignature ? (
-                <img src={existingSignature} alt="Verified Signature" className="max-h-48 object-contain" />
+                <img src={existingSignature} alt="Verified Signature" className="max-h-48 object-contain p-4" />
               ) : (
-                <SignatureCanvas ref={sigCanvas} penColor="#0f172a" canvasProps={{ className: "w-full h-48 cursor-crosshair" }} />
+                <SignatureCanvas ref={sigCanvas} penColor="#0f172a" canvasProps={{ className: "w-full min-h-[12rem] cursor-crosshair" }} />
               )}
             </div>
             <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4">

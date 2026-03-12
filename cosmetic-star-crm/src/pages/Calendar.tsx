@@ -190,12 +190,12 @@ export default function CalendarPage() {
 
   return (
     <div className="max-w-7xl mx-auto space-y-8 pb-12">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div>
-          <h1 className="text-3xl font-black text-slate-900">Timeline Scheduling</h1>
-          <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px] mt-1">Procedure: {treatmentPlan?.service_name}</p>
+      <div className="flex flex-wrap items-center justify-between gap-6">
+        <div className="min-w-0">
+          <h1 className="text-3xl font-black text-slate-900 tracking-tight leading-tight">Timeline Scheduling</h1>
+          <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px] mt-1 break-words">Procedure: {treatmentPlan?.service_name}</p>
         </div>
-        <div className={cn("px-6 py-3 rounded-2xl border-2 flex flex-col items-center", remaining === 0 ? "bg-green-50 border-green-200 text-green-700" : "bg-amber-50 border-amber-200 text-amber-700")}>
+        <div className={cn("px-6 py-3 rounded-2xl border-2 flex flex-col items-center min-w-[140px] shrink-0", remaining === 0 ? "bg-green-50 border-green-200 text-green-700" : "bg-amber-50 border-amber-200 text-amber-700")}>
           <span className="text-[10px] font-black uppercase tracking-widest">Sessions Needed</span>
           <span className="text-xl font-black">{currentCount} / {totalSessionsNeeded}</span>
         </div>
@@ -225,7 +225,7 @@ export default function CalendarPage() {
                     disabled={isPast} 
                     onClick={() => setSelectedDate(day)} 
                     className={cn(
-                      "h-16 flex flex-col items-center justify-center rounded-2xl border-2 transition-all relative", 
+                      "min-h-[4rem] flex flex-col items-center justify-center rounded-2xl border-2 transition-all relative p-2", 
                       !isSameMonth(day, monthStart) ? "opacity-20" : "border-slate-50", 
                       isSel ? "bg-teal-600 border-teal-600 text-white scale-105 z-10" : 
                       isExisting ? "bg-slate-100 border-teal-500/30 text-teal-700" :

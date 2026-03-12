@@ -153,15 +153,15 @@ export default function TreatmentPlan() {
                 <div className="w-20 h-20 bg-teal-50 rounded-3xl flex items-center justify-center text-teal-600 font-black text-2xl shadow-inner">
                   {selectedPatient.first_name[0]}{selectedPatient.last_name[0]}
                 </div>
-                <div>
-                  <div className="flex items-center gap-3 mb-1">
-                    <h1 className="text-3xl font-black text-slate-900">{selectedPatient.first_name} {selectedPatient.last_name}</h1>
-                    <span className="bg-teal-500 text-white text-[10px] font-black px-2 py-1 rounded-lg uppercase tracking-widest">Active</span>
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-3 mb-1">
+                    <h1 className="text-3xl font-black text-slate-900 break-words">{selectedPatient.first_name} {selectedPatient.last_name}</h1>
+                    <span className="bg-teal-500 text-white text-[10px] font-black px-2 py-1 rounded-lg uppercase tracking-widest whitespace-nowrap">Active</span>
                   </div>
-                  <div className="flex items-center gap-4 text-slate-400 text-sm font-bold uppercase tracking-widest">
-                    <span className="flex items-center gap-1.5"><UserCircle2 size={14} className="text-teal-500" /> ID: {selectedPatient.id}</span>
-                    <span className="w-1 h-1 bg-slate-200 rounded-full" />
-                    <span className="flex items-center gap-1.5"><Clock size={14} className="text-teal-500" /> Clinical Session</span>
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-slate-400 text-sm font-bold uppercase tracking-widest">
+                    <span className="flex items-center gap-1.5 whitespace-nowrap"><UserCircle2 size={14} className="text-teal-500" /> ID: {selectedPatient.id}</span>
+                    <span className="hidden sm:block w-1 h-1 bg-slate-200 rounded-full" />
+                    <span className="flex items-center gap-1.5 whitespace-nowrap"><Clock size={14} className="text-teal-500" /> Clinical Session</span>
                   </div>
                 </div>
               </div>

@@ -184,17 +184,17 @@ export default function Patients() {
               ) : filteredPatients.map(p => (
                 <tr key={p.id} onClick={() => setSelectedPatient({id: p.id, first_name: p.first_name, last_name: p.last_name, email: p.email, dob: p.dob || ''})} className={cn("hover:bg-slate-50 cursor-pointer transition-all", selectedPatient?.id === p.id && "bg-teal-50/50")}>
                   <td className="px-8 py-6">
-                    <div className="flex items-center gap-4">
-                      <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center font-black text-sm", selectedPatient?.id === p.id ? "bg-teal-600 text-white shadow-lg" : "bg-slate-100 text-slate-400")}>{p.first_name[0]}{p.last_name[0]}</div>
-                      <div className="text-left">
-                        <p className="font-black text-slate-900">{p.first_name} {p.last_name}</p>
+                    <div className="flex items-center gap-4 min-w-0">
+                      <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center font-black text-sm shrink-0", selectedPatient?.id === p.id ? "bg-teal-600 text-white shadow-lg" : "bg-slate-100 text-slate-400")}>{p.first_name[0]}{p.last_name[0]}</div>
+                      <div className="text-left min-w-0">
+                        <p className="font-black text-slate-900 break-words">{p.first_name} {p.last_name}</p>
                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">ID: {p.id}</p>
                       </div>
                     </div>
                   </td>
-                  <td className="px-8 py-6 hidden md:table-cell text-left">
-                    <p className="text-sm font-bold text-slate-600">{p.phone}</p>
-                    <p className="text-xs text-slate-400">{p.email}</p>
+                  <td className="px-8 py-6 hidden md:table-cell text-left min-w-[200px]">
+                    <p className="text-sm font-bold text-slate-600 whitespace-nowrap">{p.phone}</p>
+                    <p className="text-xs text-slate-400 break-all">{p.email}</p>
                   </td>
                   <td className="px-8 py-6 text-right">
                     <div className="flex justify-end gap-2">

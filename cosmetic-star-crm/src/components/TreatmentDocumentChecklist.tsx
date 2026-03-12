@@ -117,15 +117,15 @@ export default function TreatmentDocumentChecklist() {
           <div 
             key={doc.id}
             className={cn(
-              "group bg-white rounded-[2rem] border-2 p-6 transition-all duration-300 flex items-center justify-between",
+              "group bg-white rounded-[2rem] border-2 p-6 transition-all duration-300 flex flex-col sm:flex-row sm:items-center justify-between gap-6",
               doc.status === 'Completed' 
                 ? "border-teal-50 shadow-sm opacity-80" 
                 : "border-slate-100 shadow-xl hover:border-teal-500/20 shadow-slate-200/50"
             )}
           >
-            <div className="flex items-center gap-6">
+            <div className="flex items-center gap-6 min-w-0">
               {/* Chronological Connector Line Logic (Simplified for CSS) */}
-              <div className="relative">
+              <div className="relative shrink-0">
                 <div className={cn(
                   "w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-500",
                   doc.status === 'Completed' ? "bg-teal-500 text-white" : "bg-slate-100 text-slate-400 group-hover:bg-slate-200"
@@ -137,31 +137,31 @@ export default function TreatmentDocumentChecklist() {
                 )}
               </div>
 
-              <div>
+              <div className="min-w-0">
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-[8px] font-black uppercase tracking-[0.2em] text-slate-400">{doc.type}</span>
                   <div className="w-1 h-1 bg-slate-200 rounded-full" />
                   <span className="text-[8px] font-black uppercase tracking-[0.2em] text-slate-400">Step {idx + 1}</span>
                 </div>
-                <h3 className="text-lg font-black text-slate-900 group-hover:text-teal-600 transition-colors">{doc.title}</h3>
+                <h3 className="text-lg font-black text-slate-900 group-hover:text-teal-600 transition-colors break-words">{doc.title}</h3>
               </div>
             </div>
 
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-4 shrink-0">
               {doc.status === 'Completed' ? (
-                <div className="flex items-center gap-2 px-4 py-2 bg-teal-50 text-teal-600 rounded-xl font-black text-[10px] uppercase tracking-widest border border-teal-100">
+                <div className="flex items-center gap-2 px-4 py-2 bg-teal-50 text-teal-600 rounded-xl font-black text-[10px] uppercase tracking-widest border border-teal-100 whitespace-nowrap">
                   <CheckCircle2 size={14} />
                   Completed
                 </div>
               ) : (
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-2 px-4 py-2 bg-amber-50 text-amber-600 rounded-xl font-black text-[10px] uppercase tracking-widest border border-amber-100">
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="flex items-center gap-2 px-4 py-2 bg-amber-50 text-amber-600 rounded-xl font-black text-[10px] uppercase tracking-widest border border-amber-100 whitespace-nowrap">
                     <Clock size={14} />
                     Pending
                   </div>
                   <button 
                     onClick={() => handleFillForm(doc)}
-                    className="flex items-center gap-2 bg-slate-900 hover:bg-teal-600 text-white px-5 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 shadow-lg shadow-slate-200"
+                    className="flex items-center gap-2 bg-slate-900 hover:bg-teal-600 text-white px-5 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 shadow-lg shadow-slate-200 whitespace-nowrap"
                   >
                     Fill Form
                     <ArrowRight size={14} />

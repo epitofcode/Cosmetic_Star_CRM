@@ -192,13 +192,13 @@ export default function Financials() {
           <div className="xl:col-span-2 space-y-6">
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
               <div className="p-6 sm:p-8 bg-slate-900 text-white">
-                <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-8">
-                  <div>
+                <div className="flex flex-wrap justify-between items-start gap-4 mb-8">
+                  <div className="min-w-0">
                     <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">Treatment Plan</p>
-                    <h2 className="text-xl sm:text-2xl font-bold">{billingRecord.service_name}</h2>
+                    <h2 className="text-xl sm:text-2xl font-bold break-words leading-tight">{billingRecord.service_name}</h2>
                   </div>
                   <span className={cn(
-                    "px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border",
+                    "px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border shrink-0",
                     billingRecord.status === 'Payment Done' 
                       ? "bg-green-500/10 border-green-500/20 text-green-400" 
                       : "bg-amber-500/10 border-amber-500/20 text-amber-400"
@@ -208,15 +208,15 @@ export default function Financials() {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8">
-                  <div>
+                  <div className="min-w-[120px]">
                     <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">Total Contract</p>
                     <p className="text-xl sm:text-2xl font-black">£{billingRecord.total_amount.toLocaleString()}</p>
                   </div>
-                  <div>
+                  <div className="min-w-[120px]">
                     <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">Amount Paid</p>
                     <p className="text-xl sm:text-2xl font-black text-teal-400">£{billingRecord.amount_paid.toLocaleString()}</p>
                   </div>
-                  <div>
+                  <div className="min-w-[120px]">
                     <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">Remaining</p>
                     <p className="text-xl sm:text-2xl font-black text-red-400">£{(billingRecord.total_amount - billingRecord.amount_paid).toLocaleString()}</p>
                   </div>

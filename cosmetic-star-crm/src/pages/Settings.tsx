@@ -127,14 +127,14 @@ export default function Settings() {
 
   return (
     <div className="space-y-8 pb-20">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-        <div>
+      <div className="flex flex-wrap items-end justify-between gap-6">
+        <div className="min-w-0">
           <div className="flex items-center gap-2 text-slate-400 bg-slate-100 w-fit px-2 py-1 rounded text-[10px] font-black uppercase tracking-widest mb-2">
             <Database size={12} />
             System Administration
           </div>
-          <h1 className="text-3xl font-black text-slate-900 tracking-tight">Database Explorer</h1>
-          <p className="text-slate-500 font-medium mt-1">Direct access to raw clinical and financial data tables.</p>
+          <h1 className="text-3xl font-black text-slate-900 tracking-tight leading-tight">Database Explorer</h1>
+          <p className="text-slate-500 font-medium mt-1 break-words">Direct access to raw clinical and financial data tables.</p>
         </div>
         
         <div className="flex items-center gap-3">

@@ -120,8 +120,8 @@ function SortableField({ field, onRemove, onUpdate }: SortableFieldProps) {
           <GripVertical size={20} />
         </div>
         
-        <div className="flex-1 space-y-4">
-          <div className="flex items-center justify-between">
+        <div className="flex-1 space-y-4 min-w-0">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <span className="text-[10px] font-black uppercase tracking-widest text-teal-600 bg-teal-50 px-2 py-0.5 rounded">
               {field.type}
             </span>
@@ -138,33 +138,33 @@ function SortableField({ field, onRemove, onUpdate }: SortableFieldProps) {
               type="text"
               value={field.label}
               onChange={(e) => onUpdate(field.id, { label: e.target.value })}
-              className="w-full text-lg font-bold text-slate-900 border-none p-0 focus:ring-0 placeholder:text-slate-300"
+              className="w-full text-lg font-bold text-slate-900 border-none p-0 focus:ring-0 placeholder:text-slate-300 break-words"
               placeholder="Enter Field Question/Label..."
             />
             
             {field.type === 'Short Text' && (
-              <div className="h-12 border-2 border-dashed border-slate-100 rounded-xl bg-slate-50/50 flex items-center px-4 text-slate-300 text-sm">
+              <div className="min-h-[3rem] border-2 border-dashed border-slate-100 rounded-xl bg-slate-50/50 flex items-center px-4 py-2 text-slate-300 text-sm">
                 Short response text placeholder
               </div>
             )}
             
             {field.type === 'Long Text' && (
-              <div className="h-24 border-2 border-dashed border-slate-100 rounded-xl bg-slate-50/50 flex items-center px-4 text-slate-300 text-sm">
+              <div className="min-h-[6rem] border-2 border-dashed border-slate-100 rounded-xl bg-slate-50/50 flex items-center px-4 py-3 text-slate-300 text-sm">
                 Long response text placeholder
               </div>
             )}
 
             {field.type === 'Checkbox' && (
-              <div className="flex items-center gap-2 text-slate-400">
-                <div className="w-5 h-5 border-2 border-slate-200 rounded" />
-                <span className="text-sm italic">User will check this box</span>
+              <div className="flex items-center gap-2 text-slate-400 p-1">
+                <div className="w-5 h-5 border-2 border-slate-200 rounded shrink-0" />
+                <span className="text-sm italic break-words">User will check this box</span>
               </div>
             )}
 
             {field.type === 'Signature Pad' && (
-              <div className="h-32 border-2 border-dashed border-slate-100 rounded-xl bg-slate-50/50 flex flex-col items-center justify-center text-slate-300 gap-2">
+              <div className="min-h-[8rem] border-2 border-dashed border-slate-100 rounded-xl bg-slate-50/50 flex flex-col items-center justify-center p-6 text-slate-300 gap-2 text-center">
                 <PenTool size={24} />
-                <span className="text-xs font-bold uppercase tracking-widest">Digital Signature Area</span>
+                <span className="text-xs font-bold uppercase tracking-widest text-balance">Digital Signature Area</span>
               </div>
             )}
           </div>
@@ -261,14 +261,14 @@ export default function FormBuilder() {
 
   return (
     <div className="max-w-[1400px] mx-auto">
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-black text-slate-900">Dynamic Form Builder</h1>
+      <div className="flex flex-wrap items-center justify-between gap-6 mb-8">
+        <div className="min-w-0">
+          <h1 className="text-3xl font-black text-slate-900 tracking-tight leading-tight">Dynamic Form Builder</h1>
           <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px] mt-1">Design clinical intakes & consent forms</p>
         </div>
         <button
           onClick={saveForm}
-          className="flex items-center gap-2 bg-slate-900 text-white px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-teal-600 transition-all shadow-xl shadow-slate-200 active:scale-95"
+          className="flex items-center gap-2 bg-slate-900 text-white px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-teal-600 transition-all shadow-xl shadow-slate-200 active:scale-95 whitespace-nowrap"
         >
           <Save size={18} />
           Save Form Template

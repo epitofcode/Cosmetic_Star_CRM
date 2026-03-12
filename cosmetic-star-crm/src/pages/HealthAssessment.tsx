@@ -41,7 +41,7 @@ const YesNoQuestion: React.FC<QuestionProps> = ({
   return (
     <div className="space-y-3 p-4 rounded-xl border border-slate-100 bg-slate-50/50 transition-all hover:bg-slate-50 text-left">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <p className="text-sm font-medium text-slate-700">{label}</p>
+        <p className="text-sm font-medium text-slate-700 min-w-0 break-words">{label}</p>
         <div className="flex items-center gap-2 p-1 bg-slate-200/50 rounded-lg w-fit shrink-0">
           <button type="button" onClick={() => onChange(true, details)} className={cn("px-4 py-1.5 text-xs font-bold rounded-md transition-all", value === true ? "bg-white text-teal-600 shadow-sm" : "text-slate-500 hover:text-slate-700")}>Yes</button>
           <button type="button" onClick={() => onChange(false, '')} className={cn("px-4 py-1.5 text-xs font-bold rounded-md transition-all", value === false ? "bg-white text-slate-600 shadow-sm" : "text-slate-500 hover:text-slate-700")}>No</button>

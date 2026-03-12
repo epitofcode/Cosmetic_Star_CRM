@@ -145,25 +145,25 @@ export default function ReceiptGenerator({ isOpen, onClose, data }: ReceiptGener
                 <span>DATE: {data.date}</span>
               </div>
               
-              <div className="grid grid-cols-2 gap-6 text-left">
-                <div className="space-y-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 text-left">
+                <div className="space-y-1 min-w-0">
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Patient</p>
-                  <p className="font-bold text-slate-900 text-sm truncate">{data.patientName}</p>
+                  <p className="font-bold text-slate-900 text-sm break-words">{data.patientName}</p>
                   <p className="text-[10px] text-slate-500 font-bold">ID: {data.patientId}</p>
                 </div>
-                <div className="space-y-1 text-right">
+                <div className="space-y-1 sm:text-right">
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Method</p>
                   <p className="font-bold text-slate-900 text-sm">{data.paymentMethod}</p>
                 </div>
               </div>
 
               <div className="pt-4">
-                <div className="flex justify-between items-start bg-slate-50 p-4 rounded-xl">
-                  <div className="space-y-1">
+                <div className="flex flex-col sm:flex-row justify-between items-start gap-4 bg-slate-50 p-4 rounded-xl">
+                  <div className="space-y-1 min-w-0">
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-left">Treatment</p>
-                    <p className="text-sm font-bold text-slate-800 leading-tight text-left">{data.serviceName}</p>
+                    <p className="text-sm font-bold text-slate-800 leading-tight text-left break-words">{data.serviceName}</p>
                   </div>
-                  <span className="font-black text-slate-900 text-lg">£{data.totalAmount.toLocaleString()}</span>
+                  <span className="font-black text-slate-900 text-lg whitespace-nowrap">£{data.totalAmount.toLocaleString()}</span>
                 </div>
               </div>
             </div>

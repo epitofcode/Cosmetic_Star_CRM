@@ -114,8 +114,8 @@ export default function DynamicFormRenderer({
             <CheckCircle2 size={14} />
             Clinical Verification System
           </div>
-          <h2 className="text-3xl font-black tracking-tight">{title}</h2>
-          <p className="text-slate-400 text-sm font-medium max-w-md">{description}</p>
+          <h2 className="text-3xl font-black tracking-tight leading-tight">{title}</h2>
+          <p className="text-slate-400 text-sm font-medium max-w-2xl text-balance">{description}</p>
         </div>
         {/* Abstract background element */}
         <div className="absolute top-0 right-0 w-64 h-64 bg-teal-500/10 rounded-full -mr-20 -mt-20 blur-3xl" />
@@ -129,13 +129,13 @@ export default function DynamicFormRenderer({
             className="space-y-3 animate-in fade-in slide-in-from-bottom-4 duration-500"
             style={{ animationDelay: `${idx * 100}ms` }}
           >
-            <div className="flex items-center justify-between">
-              <label className="block text-sm font-black text-slate-700 uppercase tracking-wider">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <label className="block text-sm font-black text-slate-700 uppercase tracking-wider break-words max-w-[80%]">
                 {field.label}
                 {field.required && <span className="text-red-500 ml-1">*</span>}
               </label>
               {errors[field.label] && (
-                <span className="flex items-center gap-1 text-[10px] font-bold text-red-500 uppercase tracking-widest bg-red-50 px-2 py-1 rounded-lg">
+                <span className="flex items-center gap-1 text-[10px] font-bold text-red-500 uppercase tracking-widest bg-red-50 px-2 py-1 rounded-lg shrink-0">
                   <AlertCircle size={12} />
                   Missing
                 </span>
@@ -198,7 +198,7 @@ export default function DynamicFormRenderer({
                     }}
                     penColor="#0f172a"
                     canvasProps={{
-                      className: "w-full h-48 cursor-crosshair"
+                      className: "w-full min-h-[12rem] cursor-crosshair"
                     }}
                     onEnd={() => handleInputChange(field.label, 'captured')}
                   />
