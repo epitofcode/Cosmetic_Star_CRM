@@ -140,14 +140,14 @@ export default function TreatmentPlan() {
   if (loading) return <div className="py-20 text-center"><Loader2 className="animate-spin mx-auto text-teal-600" /></div>;
 
   return (
-    <div className="max-w-[1600px] mx-auto space-y-8 pb-32 px-4 sm:px-6">
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start text-left">
+    <div className="space-y-10 pb-32">
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start text-left">
         
         {/* Left Column: Main Workspace */}
-        <div className="lg:col-span-8 space-y-8">
+        <div className="xl:col-span-8 space-y-10 min-w-0">
           
           {/* 1. Patient Header Card */}
-          <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-xl shadow-slate-200/40 relative overflow-hidden">
+          <div className="bg-white rounded-[2.5rem] p-6 sm:p-10 border border-slate-100 shadow-xl shadow-slate-200/40 relative overflow-hidden">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
               <div className="flex items-center gap-6">
                 <div className="w-20 h-20 bg-teal-50 rounded-3xl flex items-center justify-center text-teal-600 font-black text-2xl shadow-inner">
@@ -273,13 +273,13 @@ export default function TreatmentPlan() {
           </section>
 
           {/* 4. Clinical Media Gallery */}
-          <section className="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-200/40 p-8 overflow-hidden">
+          <section className="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-200/40 p-6 sm:p-10 overflow-hidden">
             <ClinicalPhotoManager patientId={selectedPatient.id} />
           </section>
         </div>
 
         {/* Right Column: Compliance Sidebar (Sticky) */}
-        <div className="lg:col-span-4 space-y-8 lg:sticky lg:top-8">
+        <div className="xl:col-span-4 space-y-10 xl:sticky xl:top-[104px] pb-10">
           <div className="bg-slate-900 rounded-[2.5rem] p-8 text-white shadow-2xl relative overflow-hidden group">
             <div className="flex justify-between items-center mb-8 relative z-10">
               <h3 className="text-lg font-black uppercase tracking-tight flex items-center gap-2 text-teal-400">

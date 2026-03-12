@@ -234,15 +234,17 @@ export default function DashboardLayout({ children, isContractSigned }: { childr
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-auto p-6 lg:p-10 bg-[#FBFBFE] custom-scrollbar">
-          <motion.div
-            key={location.pathname}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, ease: "easeOut" }}
-          >
-            {children}
-          </motion.div>
+        <main className="flex-1 overflow-x-hidden overflow-y-auto p-4 sm:p-6 lg:p-10 bg-[#FBFBFE] custom-scrollbar">
+          <div className="max-w-[1600px] mx-auto">
+            <motion.div
+              key={location.pathname}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
+            >
+              {children}
+            </motion.div>
+          </div>
         </main>
       </div>
 
