@@ -9,6 +9,7 @@ import DigitalContract from './pages/DigitalContract';
 import CalendarPage from './pages/Calendar';
 import Financials from './pages/Financials';
 import Settings from './pages/Settings';
+import FormBuilder from './components/FormBuilder';
 import { PatientProvider, usePatient } from './context/PatientContext';
 import { checkContractStatus, getDashboardStats, getRecentAppointments } from './services/api';
 
@@ -429,6 +430,7 @@ function AppContent() {
           <Route path="/calendar" element={isContractSigned ? <CalendarPage /> : <Navigate to="/contract" replace />} />
           <Route path="/financials" element={<Financials />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/form-builder" element={<FormBuilder />} />
         </Routes>
       </DashboardLayout>
     </Router>
