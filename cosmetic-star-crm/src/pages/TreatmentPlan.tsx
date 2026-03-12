@@ -20,7 +20,7 @@ import {
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { usePatient } from '../context/PatientContext';
-import { getTreatmentPlan, saveTreatmentPlan, getBooking } from '../services/api';
+import { getTreatmentPlan, saveTreatmentPlan, getBooking, getFormsForService } from '../services/api';
 import TreatmentDocumentChecklist from '../components/TreatmentDocumentChecklist';
 import ClinicalPhotoManager from '../components/ClinicalPhotoManager';
 import { format } from 'date-fns';
@@ -57,6 +57,7 @@ export default function TreatmentPlan() {
   const [loading, setLoading] = useState(false);
   const [isPlanExisting, setIsPlanExisting] = useState(false);
   const [nextAppointment, setNextAppointment] = useState<any>(null);
+  const [dynamicForms, setDynamicForms] = useState<any[]>([]);
 
   useEffect(() => { 
     if (selectedPatient) {
@@ -64,6 +65,23 @@ export default function TreatmentPlan() {
       fetchNextAppointment();
     }
   }, [selectedPatient]);
+
+  useEffect(() => {
+    if (selectedServiceId) {
+      fetchDynamicForms(selectedServiceId);
+    } else {
+      setDynamicForms([]);
+    }
+  }, [selectedServiceId]);
+
+  const fetchDynamicForms = async (serviceId: string) => {
+    try {
+      const forms = await getFormsForService(serviceId);
+      setDynamicForms(forms || []);
+    } catch (err) {
+      console.error('Error fetching forms:', err);
+    }
+  };
 
   const fetchExistingPlan = async () => {
     try {
@@ -314,7 +332,7 @@ export default function TreatmentPlan() {
           </div>
 
           <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-200/40 p-2 overflow-hidden">
-            <TreatmentDocumentChecklist />
+            <TreatmentDocumentChecklist dynamicForms={dynamicForms} patientId={selectedPatient.id} />
           </div>
         </div>
       </div>

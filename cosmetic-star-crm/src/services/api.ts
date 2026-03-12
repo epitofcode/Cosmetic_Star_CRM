@@ -49,6 +49,11 @@ export const getTreatmentPlan = async (patientId: number | string) => {
     return response.data;
 };
 
+export const getFormsForService = async (serviceId: string) => {
+    const response = await api.get(`/form-templates/${serviceId}`);
+    return response.data;
+};
+
 // Contracts
 export const uploadSignature = async (patientId: number | string, signatureBlob: Blob) => {
     const formData = new FormData();

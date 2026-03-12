@@ -325,6 +325,18 @@ app.get('/api/treatment-plan/:patientId', async (req, res) => {
     res.json(data || null);
 });
 
+// 11. Get Form Templates for a Service
+app.get('/api/form-templates/:serviceId', async (req, res) => {
+    const { serviceId } = req.params;
+    const { data, error } = await supabase
+        .from('form_templates')
+        .select('*')
+        .eq('service_id', serviceId);
+
+    if (error) return res.status(400).json({ error: error.message });
+    res.json(data || []);
+});
+
 // 9. Get Financials for a Patient
 app.get('/api/financials/:patientId', async (req, res) => {
     const { patientId } = req.params;

@@ -1,15 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   FileText, 
   CheckCircle2, 
   Clock, 
-  ChevronRight, 
   ArrowRight,
   ClipboardList,
   ShieldCheck,
   Stethoscope,
   X,
-  FileCheck
+  FileCheck,
+  Loader2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { clsx, type ClassValue } from 'clsx';
@@ -24,61 +24,31 @@ function cn(...inputs: ClassValue[]) {
 interface DocumentItem {
   id: string;
   title: string;
-  type: string;
+  form_type: string;
+  form_schema: any;
   status: 'Completed' | 'Pending';
-  icon: React.ElementType;
-  schema?: any; // To be passed to DynamicFormRenderer
 }
 
-// --- Mock Data for Visual Representation ---
-const MOCK_DOCUMENTS: DocumentItem[] = [
-  { 
-    id: '1', 
-    title: 'Medical Questionnaire', 
-    type: 'Intake', 
-    status: 'Completed', 
-    icon: Stethoscope 
-  },
-  { 
-    id: '2', 
-    title: 'Stage 1 Consent', 
-    type: 'Legal', 
-    status: 'Pending', 
-    icon: ShieldCheck,
-    schema: {
-      version: '1.0',
-      fields: [
-        { type: 'Checkbox', label: 'I understand the risks of the procedure.', required: true },
-        { type: 'Signature Pad', label: 'Patient Signature', required: true }
-      ]
-    }
-  },
-  { 
-    id: '3', 
-    title: 'Pre-Op Checklist', 
-    type: 'Clinical', 
-    status: 'Pending', 
-    icon: ClipboardList 
-  },
-  { 
-    id: '4', 
-    title: 'Treatment Record', 
-    type: 'Clinical', 
-    status: 'Pending', 
-    icon: FileText 
-  },
-  { 
-    id: '5', 
-    title: 'Discharge Summary', 
-    type: 'Clinical', 
-    status: 'Pending', 
-    icon: FileCheck 
-  }
-];
+interface TreatmentDocumentChecklistProps {
+  dynamicForms: any[];
+  patientId: number | string;
+}
 
-export default function TreatmentDocumentChecklist() {
-  const [documents, setDocuments] = useState<DocumentItem[]>(MOCK_DOCUMENTS);
+export default function TreatmentDocumentChecklist({ dynamicForms, patientId }: TreatmentDocumentChecklistProps) {
+  const [documents, setDocuments] = useState<DocumentItem[]>([]);
   const [activeForm, setActiveForm] = useState<DocumentItem | null>(null);
+
+  useEffect(() => {
+    // Transform the raw dynamicForms from DB into the UI DocumentItem structure
+    const docs: DocumentItem[] = dynamicForms.map(f => ({
+      id: f.id,
+      title: f.title,
+      form_type: f.form_type,
+      form_schema: f.form_schema,
+      status: 'Pending' // Initial state, logic can be added to check completion
+    }));
+    setDocuments(docs);
+  }, [dynamicForms]);
 
   const handleFillForm = (doc: DocumentItem) => {
     setActiveForm(doc);
@@ -94,123 +64,138 @@ export default function TreatmentDocumentChecklist() {
       ));
     }
     
-    // Close modal
     setActiveForm(null);
-    alert(`${activeForm?.title} marked as Completed.`);
+    alert(`${activeForm?.title} processed successfully.`);
   };
+
+  // Helper to get icon based on form type
+  const getIcon = (type: string) => {
+    switch (type?.toLowerCase()) {
+      case 'medical questionnaire': return Stethoscope;
+      case 'consent form': return ShieldCheck;
+      case 'pre-op checklist': return ClipboardList;
+      case 'discharge summary': return FileCheck;
+      default: return FileText;
+    }
+  };
+
+  if (dynamicForms.length === 0) {
+    return (
+      <div className="p-8 text-center bg-slate-50 rounded-[2rem] border border-dashed border-slate-200">
+        <p className="text-slate-400 text-xs font-black uppercase tracking-widest leading-relaxed">
+          No automated documents linked to this service yet.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto">
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h2 className="text-2xl font-black text-slate-900 tracking-tight">Clinical Document Lifecycle</h2>
-          <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px] mt-1">Procedure Chronology & Compliance</p>
+      <div className="flex items-center justify-between mb-8 px-2">
+        <div className="text-left">
+          <h2 className="text-xl font-black text-slate-900 tracking-tight leading-tight">Compliance Lifecycle</h2>
+          <p className="text-slate-500 font-bold uppercase tracking-widest text-[8px] mt-1 italic">Service-Specific Protocols</p>
         </div>
-        <div className="bg-teal-50 px-4 py-2 rounded-xl border border-teal-100 flex items-center gap-2">
-          <div className="w-2 h-2 bg-teal-500 rounded-full animate-pulse" />
-          <span className="text-[10px] font-black text-teal-700 uppercase tracking-widest">In Progress</span>
+        <div className="bg-teal-50 px-3 py-1.5 rounded-lg border border-teal-100 flex items-center gap-2 shrink-0">
+          <div className="w-1.5 h-1.5 bg-teal-500 rounded-full animate-pulse" />
+          <span className="text-[8px] font-black text-teal-700 uppercase tracking-widest">Active Check</span>
         </div>
       </div>
 
-      <div className="space-y-4">
-        {documents.map((doc, idx) => (
-          <div 
-            key={doc.id}
-            className={cn(
-              "group bg-white rounded-[2rem] border-2 p-6 transition-all duration-300 flex flex-col sm:flex-row sm:items-center justify-between gap-6",
-              doc.status === 'Completed' 
-                ? "border-teal-50 shadow-sm opacity-80" 
-                : "border-slate-100 shadow-xl hover:border-teal-500/20 shadow-slate-200/50"
-            )}
-          >
-            <div className="flex items-center gap-6 min-w-0">
-              {/* Chronological Connector Line Logic (Simplified for CSS) */}
-              <div className="relative shrink-0">
-                <div className={cn(
-                  "w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-500",
-                  doc.status === 'Completed' ? "bg-teal-500 text-white" : "bg-slate-100 text-slate-400 group-hover:bg-slate-200"
-                )}>
-                  {doc.status === 'Completed' ? <CheckCircle2 size={24} /> : <doc.icon size={24} />}
+      <div className="space-y-3">
+        {documents.map((doc, idx) => {
+          const IconComp = getIcon(doc.form_type);
+          
+          return (
+            <div 
+              key={doc.id}
+              className={cn(
+                "group bg-white rounded-[2rem] border-2 p-5 transition-all duration-300 flex flex-col sm:flex-row sm:items-center justify-between gap-4",
+                doc.status === 'Completed' 
+                  ? "border-teal-50 shadow-sm opacity-80" 
+                  : "border-slate-100 shadow-lg hover:border-teal-500/20 shadow-slate-200/30"
+              )}
+            >
+              <div className="flex items-center gap-4 min-w-0">
+                <div className="relative shrink-0">
+                  <div className={cn(
+                    "w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-500",
+                    doc.status === 'Completed' ? "bg-teal-500 text-white" : "bg-slate-100 text-slate-400 group-hover:bg-slate-200"
+                  )}>
+                    {doc.status === 'Completed' ? <CheckCircle2 size={20} /> : <IconComp size={20} />}
+                  </div>
+                  {idx < documents.length - 1 && (
+                    <div className="absolute top-12 left-1/2 -translate-x-1/2 w-[2px] h-4 bg-slate-100" />
+                  )}
                 </div>
-                {idx < documents.length - 1 && (
-                  <div className="absolute top-14 left-1/2 -translate-x-1/2 w-[2px] h-6 bg-slate-100" />
+
+                <div className="min-w-0 text-left">
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <span className="text-[7px] font-black uppercase tracking-[0.2em] text-slate-400">{doc.form_type}</span>
+                  </div>
+                  <h3 className="text-sm font-black text-slate-900 group-hover:text-teal-600 transition-colors break-words leading-snug">{doc.title}</h3>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-3 shrink-0">
+                {doc.status === 'Completed' ? (
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 bg-teal-50 text-teal-600 rounded-lg font-black text-[8px] uppercase tracking-widest border border-teal-100 whitespace-nowrap">
+                    <CheckCircle2 size={12} />
+                    Verified
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 text-amber-600 rounded-lg font-black text-[8px] uppercase tracking-widest border border-amber-100 whitespace-nowrap">
+                      <Clock size={12} />
+                      Pending
+                    </div>
+                    <button 
+                      onClick={() => handleFillForm(doc)}
+                      className="flex items-center gap-2 bg-slate-900 hover:bg-teal-600 text-white px-4 py-2 rounded-lg font-black text-[8px] uppercase tracking-widest transition-all active:scale-95 shadow-md whitespace-nowrap"
+                    >
+                      Fill Form
+                      <ArrowRight size={12} />
+                    </button>
+                  </div>
                 )}
               </div>
-
-              <div className="min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-[8px] font-black uppercase tracking-[0.2em] text-slate-400">{doc.type}</span>
-                  <div className="w-1 h-1 bg-slate-200 rounded-full" />
-                  <span className="text-[8px] font-black uppercase tracking-[0.2em] text-slate-400">Step {idx + 1}</span>
-                </div>
-                <h3 className="text-lg font-black text-slate-900 group-hover:text-teal-600 transition-colors break-words">{doc.title}</h3>
-              </div>
             </div>
-
-            <div className="flex flex-wrap items-center gap-4 shrink-0">
-              {doc.status === 'Completed' ? (
-                <div className="flex items-center gap-2 px-4 py-2 bg-teal-50 text-teal-600 rounded-xl font-black text-[10px] uppercase tracking-widest border border-teal-100 whitespace-nowrap">
-                  <CheckCircle2 size={14} />
-                  Completed
-                </div>
-              ) : (
-                <div className="flex flex-wrap items-center gap-3">
-                  <div className="flex items-center gap-2 px-4 py-2 bg-amber-50 text-amber-600 rounded-xl font-black text-[10px] uppercase tracking-widest border border-amber-100 whitespace-nowrap">
-                    <Clock size={14} />
-                    Pending
-                  </div>
-                  <button 
-                    onClick={() => handleFillForm(doc)}
-                    className="flex items-center gap-2 bg-slate-900 hover:bg-teal-600 text-white px-5 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 shadow-lg shadow-slate-200 whitespace-nowrap"
-                  >
-                    Fill Form
-                    <ArrowRight size={14} />
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Dynamic Form Modal */}
       <AnimatePresence>
         {activeForm && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
+          <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 sm:p-6 overflow-hidden">
             <motion.div 
               initial={{ opacity: 0 }} 
               animate={{ opacity: 1 }} 
               exit={{ opacity: 0 }} 
               onClick={() => setActiveForm(null)} 
-              className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" 
+              className="absolute inset-0 bg-slate-900/80 backdrop-blur-md" 
             />
             <motion.div 
               initial={{ opacity: 0, scale: 0.95, y: 20 }} 
               animate={{ opacity: 1, scale: 1, y: 0 }} 
               exit={{ opacity: 0, scale: 0.95, y: 20 }} 
-              className="relative w-full max-w-4xl max-h-[90vh] overflow-y-auto custom-scrollbar"
+              className="relative w-full max-w-4xl max-h-[90vh] overflow-y-auto custom-scrollbar bg-transparent"
             >
               <button 
                 onClick={() => setActiveForm(null)}
-                className="absolute top-6 right-6 z-[110] p-2 bg-white/10 hover:bg-white/20 text-white rounded-xl backdrop-blur-md transition-all"
+                className="absolute top-6 right-6 z-[160] p-3 bg-white/10 hover:bg-white/20 text-white rounded-2xl backdrop-blur-md transition-all border border-white/10 shadow-xl"
               >
-                <X size={24} />
+                <X size={20} />
               </button>
               
-              <DynamicFormRenderer 
-                formSchema={activeForm.schema || {
-                  version: '1.0',
-                  fields: [
-                    { type: 'Short Text', label: 'Patient Verification ID', required: true },
-                    { type: 'Long Text', label: 'Clinical Observations', required: false },
-                    { type: 'Checkbox', label: 'Safe to Proceed', required: true }
-                  ],
-                  createdAt: new Date().toISOString()
-                }}
-                title={activeForm.title}
-                description={`Finalizing clinical documentation for: ${activeForm.title}`}
-                onSubmit={handleFormSubmit}
-              />
+              <div className="py-10 px-2 sm:px-6">
+                <DynamicFormRenderer 
+                  formSchema={activeForm.form_schema}
+                  title={activeForm.title}
+                  description={`Regulatory requirement for: ${activeForm.form_type}`}
+                  onSubmit={handleFormSubmit}
+                />
+              </div>
             </motion.div>
           </div>
         )}
