@@ -5,6 +5,7 @@ interface Patient {
   first_name: string;
   last_name: string;
   email: string;
+  dob: string;
 }
 
 interface PatientContextType {

@@ -22,6 +22,7 @@ import { twMerge } from 'tailwind-merge';
 import { usePatient } from '../context/PatientContext';
 import { getTreatmentPlan, saveTreatmentPlan, getBooking } from '../services/api';
 import TreatmentDocumentChecklist from '../components/TreatmentDocumentChecklist';
+import ClinicalPhotoManager from '../components/ClinicalPhotoManager';
 import { format } from 'date-fns';
 
 function cn(...inputs: ClassValue[]) {
@@ -140,7 +141,6 @@ export default function TreatmentPlan() {
 
   return (
     <div className="max-w-[1600px] mx-auto space-y-8 pb-32 px-4 sm:px-6">
-      {/* Dynamic Grid Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start text-left">
         
         {/* Left Column: Main Workspace */}
@@ -161,7 +161,7 @@ export default function TreatmentPlan() {
                   <div className="flex items-center gap-4 text-slate-400 text-sm font-bold uppercase tracking-widest">
                     <span className="flex items-center gap-1.5"><UserCircle2 size={14} className="text-teal-500" /> ID: {selectedPatient.id}</span>
                     <span className="w-1 h-1 bg-slate-200 rounded-full" />
-                    <span className="flex items-center gap-1.5"><Clock size={14} className="text-teal-500" /> DOB: {format(new Date(selectedPatient.dob), 'dd/MM/yyyy')}</span>
+                    <span className="flex items-center gap-1.5"><Clock size={14} className="text-teal-500" /> Clinical Session</span>
                   </div>
                 </div>
               </div>
@@ -170,13 +170,11 @@ export default function TreatmentPlan() {
                 <div className="text-xs font-black text-teal-600 bg-teal-50 px-4 py-2 rounded-xl border border-teal-100 uppercase tracking-widest animate-pulse">Live Synchronization</div>
               </div>
             </div>
-            {/* Background Accent */}
             <div className="absolute top-0 right-0 w-64 h-64 bg-teal-500/5 rounded-full -mr-32 -mt-32 blur-3xl" />
           </div>
 
           {/* 2. Procedure & Appointment Details */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
-            {/* Procedure Card */}
             <section className="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-200/40 overflow-hidden">
               <div className="px-8 py-5 border-b border-slate-50 bg-slate-50/50 flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -206,7 +204,6 @@ export default function TreatmentPlan() {
               </div>
             </section>
 
-            {/* Appointment Card */}
             <section className="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-200/40 overflow-hidden">
               <div className="px-8 py-5 border-b border-slate-50 bg-slate-50/50 flex items-center gap-3">
                 <CalendarIcon className="text-teal-600" size={20} />
@@ -276,15 +273,13 @@ export default function TreatmentPlan() {
           </section>
 
           {/* 4. Clinical Media Gallery */}
-          <section className="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-200/40 p-8">
+          <section className="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-200/40 p-8 overflow-hidden">
             <ClinicalPhotoManager patientId={selectedPatient.id} />
           </section>
         </div>
 
         {/* Right Column: Compliance Sidebar (Sticky) */}
         <div className="lg:col-span-4 space-y-8 lg:sticky lg:top-8">
-          
-          {/* Summary Mini-Card */}
           <div className="bg-slate-900 rounded-[2.5rem] p-8 text-white shadow-2xl relative overflow-hidden group">
             <div className="flex justify-between items-center mb-8 relative z-10">
               <h3 className="text-lg font-black uppercase tracking-tight flex items-center gap-2 text-teal-400">
@@ -315,15 +310,12 @@ export default function TreatmentPlan() {
                 )}
               </div>
             </div>
-            {/* Background Texture */}
             <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-teal-500/10 rounded-full blur-3xl" />
           </div>
 
-          {/* Compliance Checklist */}
           <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-200/40 p-2 overflow-hidden">
             <TreatmentDocumentChecklist />
           </div>
-
         </div>
       </div>
     </div>

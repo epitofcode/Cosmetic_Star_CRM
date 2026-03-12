@@ -193,7 +193,9 @@ export default function DynamicFormRenderer({
               )}>
                 <div className="bg-white rounded-[1.5rem] overflow-hidden shadow-inner border border-slate-100 relative group">
                   <SignatureCanvas
-                    ref={(ref) => (sigCanvasRefs.current[field.label] = ref)}
+                    ref={(ref) => {
+                      if (ref) sigCanvasRefs.current[field.label] = ref;
+                    }}
                     penColor="#0f172a"
                     canvasProps={{
                       className: "w-full h-48 cursor-crosshair"

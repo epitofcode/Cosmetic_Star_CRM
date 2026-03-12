@@ -182,7 +182,7 @@ export default function Patients() {
               {loading ? (
                 <tr><td colSpan={3} className="py-20 text-center"><Loader2 className="animate-spin mx-auto text-teal-600" /></td></tr>
               ) : filteredPatients.map(p => (
-                <tr key={p.id} onClick={() => setSelectedPatient({id: p.id, first_name: p.first_name, last_name: p.last_name, email: p.email})} className={cn("hover:bg-slate-50 cursor-pointer transition-all", selectedPatient?.id === p.id && "bg-teal-50/50")}>
+                <tr key={p.id} onClick={() => setSelectedPatient({id: p.id, first_name: p.first_name, last_name: p.last_name, email: p.email, dob: p.dob || ''})} className={cn("hover:bg-slate-50 cursor-pointer transition-all", selectedPatient?.id === p.id && "bg-teal-50/50")}>
                   <td className="px-8 py-6">
                     <div className="flex items-center gap-4">
                       <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center font-black text-sm", selectedPatient?.id === p.id ? "bg-teal-600 text-white shadow-lg" : "bg-slate-100 text-slate-400")}>{p.first_name[0]}{p.last_name[0]}</div>
