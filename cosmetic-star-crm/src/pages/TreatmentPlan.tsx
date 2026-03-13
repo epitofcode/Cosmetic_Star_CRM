@@ -158,41 +158,42 @@ export default function TreatmentPlan() {
   if (loading) return <div className="py-20 text-center"><Loader2 className="animate-spin mx-auto text-teal-600" /></div>;
 
   return (
-    <div className="space-y-10 pb-32">
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start text-left">
-        
-        {/* Left Column: Main Workspace */}
-        <div className="xl:col-span-8 space-y-10 min-w-0">
-          
-          {/* 1. Patient Header Card */}
-          <div className="bg-white rounded-[2.5rem] p-6 sm:p-10 border border-slate-100 shadow-xl shadow-slate-200/40 relative overflow-hidden">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
-              <div className="flex items-center gap-6">
-                <div className="w-20 h-20 bg-teal-50 rounded-3xl flex items-center justify-center text-teal-600 font-black text-2xl shadow-inner">
-                  {selectedPatient.first_name[0]}{selectedPatient.last_name[0]}
-                </div>
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-3 mb-1">
-                    <h1 className="text-3xl font-black text-slate-900 break-words">{selectedPatient.first_name} {selectedPatient.last_name}</h1>
-                    <span className="bg-teal-500 text-white text-[10px] font-black px-2 py-1 rounded-lg uppercase tracking-widest whitespace-nowrap">Active</span>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-slate-400 text-sm font-bold uppercase tracking-widest">
-                    <span className="flex items-center gap-1.5 whitespace-nowrap"><UserCircle2 size={14} className="text-teal-500" /> ID: {selectedPatient.id}</span>
-                    <span className="hidden sm:block w-1 h-1 bg-slate-200 rounded-full" />
-                    <span className="flex items-center gap-1.5 whitespace-nowrap"><Clock size={14} className="text-teal-500" /> Clinical Session</span>
-                  </div>
-                </div>
+    <div className="max-w-[1600px] mx-auto space-y-10 pb-32">
+      
+      {/* 1. FULL WIDTH Patient Header */}
+      <div className="bg-white rounded-[2.5rem] p-6 sm:p-10 border border-slate-100 shadow-xl shadow-slate-200/40 relative overflow-hidden text-left w-full">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
+          <div className="flex items-center gap-6 min-w-0">
+            <div className="w-20 h-20 bg-teal-50 rounded-3xl flex items-center justify-center text-teal-600 font-black text-2xl shadow-inner shrink-0">
+              {selectedPatient.first_name[0]}{selectedPatient.last_name[0]}
+            </div>
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-3 mb-1">
+                <h1 className="text-3xl font-black text-slate-900 break-words">{selectedPatient.first_name} {selectedPatient.last_name}</h1>
+                <span className="bg-teal-500 text-white text-[10px] font-black px-2 py-1 rounded-lg uppercase tracking-widest whitespace-nowrap">Active</span>
               </div>
-              <div className="flex flex-col items-end">
-                <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1 text-right">System Status</div>
-                <div className="text-xs font-black text-teal-600 bg-teal-50 px-4 py-2 rounded-xl border border-teal-100 uppercase tracking-widest animate-pulse">Live Synchronization</div>
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-slate-400 text-sm font-bold uppercase tracking-widest">
+                <span className="flex items-center gap-1.5 whitespace-nowrap"><UserCircle2 size={14} className="text-teal-500" /> ID: {selectedPatient.id}</span>
+                <span className="hidden sm:block w-1 h-1 bg-slate-200 rounded-full" />
+                <span className="flex items-center gap-1.5 whitespace-nowrap"><Clock size={14} className="text-teal-500" /> Clinical Session</span>
               </div>
             </div>
-            <div className="absolute top-0 right-0 w-64 h-64 bg-teal-500/5 rounded-full -mr-32 -mt-32 blur-3xl" />
           </div>
+          <div className="flex flex-col md:items-end">
+            <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">System Status</div>
+            <div className="text-xs font-black text-teal-600 bg-teal-50 px-4 py-2 rounded-xl border border-teal-100 uppercase tracking-widest animate-pulse whitespace-nowrap">Live Synchronization</div>
+          </div>
+        </div>
+        <div className="absolute top-0 right-0 w-64 h-64 bg-teal-500/5 rounded-full -mr-32 -mt-32 blur-3xl" />
+      </div>
 
-          {/* 2. Procedure & Appointment Details */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
+      {/* 2. Main Workspace Split (Notes & Compliance) */}
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start text-left">
+        
+        {/* Left: Observations & Setup */}
+        <div className="xl:col-span-8 space-y-10 min-w-0">
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <section className="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-200/40 overflow-hidden">
               <div className="px-8 py-5 border-b border-slate-50 bg-slate-50/50 flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -231,26 +232,26 @@ export default function TreatmentPlan() {
                 {nextAppointment ? (
                   <div className="space-y-6">
                     <div className="flex items-center gap-4">
-                      <div className="w-14 h-14 bg-teal-600 rounded-2xl flex flex-col items-center justify-center text-white shadow-lg shadow-teal-600/20">
+                      <div className="w-14 h-14 bg-teal-600 rounded-2xl flex flex-col items-center justify-center text-white shadow-lg shadow-teal-600/20 shrink-0">
                         <span className="text-[10px] font-black uppercase">{format(new Date(nextAppointment.date), 'MMM')}</span>
                         <span className="text-xl font-black">{format(new Date(nextAppointment.date), 'dd')}</span>
                       </div>
-                      <div>
-                        <p className="text-sm font-black text-slate-900">{nextAppointment.time_slot}</p>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Main Clinic • Room 04</p>
+                      <div className="min-w-0">
+                        <p className="text-sm font-black text-slate-900 truncate">{nextAppointment.time_slot}</p>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Clinic • Room 04</p>
                       </div>
                     </div>
                     <div className="pt-6 border-t border-slate-50 flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center text-slate-400"><UserCheck size={14} /></div>
-                        <span className="text-xs font-bold text-slate-600">Kavya Sangameswara</span>
+                        <div className="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center text-slate-400 shrink-0"><UserCheck size={14} /></div>
+                        <span className="text-xs font-bold text-slate-600">Kavya S.</span>
                       </div>
-                      <button onClick={() => window.location.href = '/calendar'} className="text-[10px] font-black text-teal-600 uppercase tracking-widest hover:text-teal-700 transition-colors">Reschedule</button>
+                      <button onClick={() => window.location.href = '/calendar'} className="text-[10px] font-black text-teal-600 uppercase tracking-widest hover:text-teal-700">Reschedule</button>
                     </div>
                   </div>
                 ) : (
                   <div className="py-8 text-center space-y-4">
-                    <p className="text-slate-400 text-xs font-bold uppercase tracking-widest italic">No sessions booked yet</p>
+                    <p className="text-slate-400 text-xs font-bold uppercase tracking-widest italic">No sessions booked</p>
                     <button onClick={() => window.location.href = '/calendar'} className="bg-slate-900 text-white px-6 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-teal-600 transition-all">Schedule Now</button>
                   </div>
                 )}
@@ -258,24 +259,23 @@ export default function TreatmentPlan() {
             </section>
           </div>
 
-          {/* 3. Clinical Observations Workspace */}
           <section className="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-200/40 overflow-hidden min-h-[400px]">
-            <div className="px-8 py-6 border-b border-slate-50 flex items-center justify-between">
+            <div className="px-8 py-6 border-b border-slate-50 flex items-center justify-between flex-wrap gap-4">
               <div className="flex items-center gap-3">
                 <Clipboard className="text-teal-600" size={20} />
                 <h2 className="font-black text-slate-900 uppercase tracking-widest text-xs">Clinical Observations & Consultant Instructions</h2>
               </div>
-              <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100">
+              <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100 shrink-0">
                 <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
-                Draft Mode
+                Active Draft
               </div>
             </div>
             <div className="p-8">
               <textarea 
                 value={notes} 
                 onChange={(e) => setNotes(e.target.value)} 
-                placeholder="Start typing clinical observations, procedure notes, or specific post-operative instructions for the discharge summary..." 
-                className="w-full bg-slate-50/50 border-2 border-transparent focus:border-teal-500/10 focus:bg-white rounded-[2rem] p-8 text-slate-700 font-medium leading-relaxed outline-none min-h-[300px] resize-none transition-all placeholder:text-slate-300 shadow-inner" 
+                placeholder="Start typing clinical observations..." 
+                className="w-full bg-slate-50/50 border-2 border-transparent focus:border-teal-500/10 focus:bg-white rounded-[2rem] p-8 text-slate-700 font-medium leading-relaxed outline-none min-h-[350px] resize-none transition-all placeholder:text-slate-300 shadow-inner" 
               />
               <div className="mt-6 flex justify-end">
                 <button 
@@ -284,19 +284,14 @@ export default function TreatmentPlan() {
                   className="bg-slate-900 hover:bg-teal-600 text-white px-10 py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-xl shadow-slate-200 active:scale-95 flex items-center gap-2"
                 >
                   <Save size={18} />
-                  {isSaving ? 'Synchronizing...' : 'Save Notes'}
+                  {isSaving ? 'Syncing...' : 'Save Observations'}
                 </button>
               </div>
             </div>
           </section>
-
-          {/* 4. Clinical Media Gallery */}
-          <section className="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-200/40 p-6 sm:p-10 overflow-hidden">
-            <ClinicalPhotoManager patientId={selectedPatient.id} />
-          </section>
         </div>
 
-        {/* Right Column: Compliance Sidebar (Sticky) */}
+        {/* Right: Sticky Sidebar */}
         <div className="xl:col-span-4 space-y-10 xl:sticky xl:top-[104px] pb-10">
           <div className="bg-slate-900 rounded-[2.5rem] p-8 text-white shadow-2xl relative overflow-hidden group">
             <div className="flex justify-between items-center mb-8 relative z-10">
@@ -304,7 +299,7 @@ export default function TreatmentPlan() {
                 <ShieldCheck size={20} />
                 Billing
               </h3>
-              <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border border-teal-500/20 bg-teal-500/10 text-teal-400">{status}</span>
+              <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border border-teal-500/20 bg-teal-500/10 text-teal-400 shrink-0">{status}</span>
             </div>
             <div className="space-y-4 text-left relative z-10">
               <div className="flex justify-between text-slate-400 text-xs font-bold uppercase tracking-wider"><span>Balance Due</span><span className="text-white text-base">£{totalToPay.toLocaleString()}</span></div>
@@ -316,14 +311,14 @@ export default function TreatmentPlan() {
                   disabled={!selectedService || isSaving || status === 'Completed'} 
                   className={cn(
                     "w-full py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all active:scale-95 shadow-xl", 
-                    (!selectedService || isSaving || status === 'Completed') ? "bg-slate-800 text-slate-500" : "bg-teal-500 text-slate-900 hover:bg-teal-400"
+                    (!selectedService || isSaving || status === 'Completed') ? "bg-slate-800 text-slate-500" : "bg-teal-50 text-slate-900 hover:bg-teal-400"
                   )}
                 >
-                  {isSaving ? 'Processing...' : status === 'Completed' ? 'Plan Finalised' : 'Save & Finalise Plan'}
+                  {isSaving ? 'Syncing...' : status === 'Completed' ? 'Plan Finalised' : 'Save & Finalise'}
                 </button>
                 {isPlanExisting && status === 'Active' && (
-                  <button onClick={() => handleSavePlan('Completed')} disabled={isSaving} className="w-full py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] border-2 border-green-500/50 text-green-400 hover:bg-green-500/10 transition-all flex items-center justify-center gap-2 group-hover:scale-[1.02]">
-                    <CheckCircle2 size={16} /> Finalise Patient Exit
+                  <button onClick={() => handleSavePlan('Completed')} disabled={isSaving} className="w-full py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] border-2 border-green-500/50 text-green-400 hover:bg-green-500/10 transition-all flex items-center justify-center gap-2">
+                    <CheckCircle2 size={16} /> Finalise Exit
                   </button>
                 )}
               </div>
@@ -336,6 +331,12 @@ export default function TreatmentPlan() {
           </div>
         </div>
       </div>
+
+      {/* 3. FULL WIDTH Clinical Media Gallery */}
+      <section className="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-200/40 p-6 sm:p-10 overflow-hidden text-left">
+        <ClinicalPhotoManager patientId={selectedPatient.id} />
+      </section>
+
     </div>
   );
 }
