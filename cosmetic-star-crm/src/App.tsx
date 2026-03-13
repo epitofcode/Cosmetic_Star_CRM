@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-// v1.1.2-ST-BUILD-OPT-SYNC
+// v1.2.1-ST-RBAC-SYNC
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import DashboardLayout from './layouts/DashboardLayout';
 import Patients from './pages/Patients';
@@ -12,7 +12,9 @@ import Settings from './pages/Settings';
 import FormBuilder from './components/FormBuilder';
 import AdminTreatments from './pages/AdminTreatments';
 import AdminFormBuilder from './pages/AdminFormBuilder';
+import Login from './pages/Login';
 import { PatientProvider, usePatient } from './context/PatientContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import { checkContractStatus, getDashboardStats, getRecentAppointments } from './services/api';
 
 import { 
@@ -56,14 +58,6 @@ import { twMerge } from 'tailwind-merge';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
-}
-
-function StarIcon({ className, size }: { className?: string, size?: number }) {
-  return (
-    <svg width={size || 24} height={size || 24} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-    </svg>
-  );
 }
 
 const COLORS = ['#0d9488', '#6366f1', '#10b981', '#f59e0b'];
@@ -128,20 +122,20 @@ const Dashboard = () => {
 
   return (
     <div className="space-y-10 pb-12">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 text-left">
         <div className="relative">
           <div className="flex items-center gap-3 mb-1">
             <h1 className="text-3xl font-black text-slate-900 tracking-tight">Executive Overview</h1>
             {isRefreshing && <Loader2 size={16} className="animate-spin text-teal-500" />}
           </div>
-          <p className="text-slate-500 font-medium">Welcome back, Kavya Sangameswara. Analytics synced in real-time.</p>
+          <p className="text-slate-500 font-medium text-balance">Clinical analytics synchronized in real-time.</p>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="bg-white border border-slate-200 text-slate-400 px-4 py-2.5 rounded-2xl font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 shadow-sm">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="bg-white border border-slate-200 text-slate-400 px-4 py-2.5 rounded-2xl font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 shadow-sm shrink-0">
             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
             Live Cloud Data
           </div>
-          <button onClick={() => window.location.href = '/patients'} className="bg-teal-600 text-white px-6 py-2.5 rounded-2xl font-bold text-sm hover:bg-teal-700 transition-all shadow-lg shadow-teal-600/20 flex items-center gap-2">
+          <button onClick={() => window.location.href = '/patients'} className="bg-teal-600 text-white px-6 py-2.5 rounded-2xl font-bold text-sm hover:bg-teal-700 transition-all shadow-lg shadow-teal-600/20 flex items-center gap-2 whitespace-nowrap">
             <Plus size={18} />
             Add Patient
           </button>
@@ -154,12 +148,12 @@ const Dashboard = () => {
             key={stat.label} 
             onClick={stat.onClick}
             className={cn(
-              "bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-xl hover:shadow-slate-200/50 transition-all group cursor-default",
+              "bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-xl hover:shadow-slate-200/50 transition-all group cursor-default text-left",
               stat.onClick && "cursor-pointer ring-2 ring-transparent hover:ring-teal-500/20 active:scale-[0.98]"
             )}
           >
             <div className="flex items-center justify-between mb-6">
-              <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110 duration-300", stat.color === 'teal' ? "bg-teal-50 text-teal-600" : stat.color === 'indigo' ? "bg-indigo-50 text-indigo-600" : stat.color === 'emerald' ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-600")}>
+              <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110 duration-300 shrink-0", stat.color === 'teal' ? "bg-teal-50 text-teal-600" : stat.color === 'indigo' ? "bg-indigo-50 text-indigo-600" : stat.color === 'emerald' ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-600")}>
                 <stat.icon size={24} />
               </div>
               <div className={cn("flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider", stat.up ? "bg-green-50 text-green-600" : "bg-red-50 text-red-600")}>
@@ -167,7 +161,7 @@ const Dashboard = () => {
                 {stat.change}
               </div>
             </div>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{stat.label}</p>
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest break-words">{stat.label}</p>
             <h2 className="text-3xl font-black text-slate-900 mt-1">{stat.value}</h2>
           </div>
         ))}
@@ -175,13 +169,13 @@ const Dashboard = () => {
 
       {/* Analytics Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="md:col-span-2 lg:col-span-2 bg-white p-6 sm:p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
-          <div className="flex items-center justify-between mb-8">
-            <div>
+        <div className="md:col-span-2 lg:col-span-2 bg-white p-6 sm:p-8 rounded-[2.5rem] border border-slate-100 shadow-sm text-left">
+          <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
+            <div className="min-w-0">
               <h3 className="text-lg font-black text-slate-900 tracking-tight">Financial Stream</h3>
               <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">7-Day Revenue Trend</p>
             </div>
-            <div className="bg-teal-50 p-2.5 rounded-xl text-teal-600">
+            <div className="bg-teal-50 p-2.5 rounded-xl text-teal-600 shrink-0">
               <TrendingUp size={20} />
             </div>
           </div>
@@ -204,17 +198,17 @@ const Dashboard = () => {
           </div>
         </div>
 
-        <div className="bg-white p-6 sm:p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
-          <div className="flex items-center justify-between mb-8">
-            <div>
+        <div className="bg-white p-6 sm:p-8 rounded-[2.5rem] border border-slate-100 shadow-sm text-left">
+          <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
+            <div className="min-w-0">
               <h3 className="text-lg font-black text-slate-900 tracking-tight">Patient Pipeline</h3>
               <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">Lifecycle breakdown</p>
             </div>
-            <div className="bg-indigo-50 p-2.5 rounded-xl text-indigo-600">
+            <div className="bg-indigo-50 p-2.5 rounded-xl text-indigo-600 shrink-0">
               <Activity size={20} />
             </div>
           </div>
-          <div className="h-[250px] sm:h-[300px] w-full">
+          <div className="min-h-[250px] sm:min-h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie data={stats?.clinicalDistribution} cx="50%" cy="50%" innerRadius={window.innerWidth < 640 ? 40 : 60} outerRadius={window.innerWidth < 640 ? 70 : 90} paddingAngle={8} dataKey="value">
@@ -233,34 +227,34 @@ const Dashboard = () => {
       {/* Pending Reports Detailed Modal */}
       <AnimatePresence>
         {isPendingModalOpen && stats?.pendingBreakdown && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 overflow-hidden">
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsPendingModalOpen(false)} className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" />
             <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }} className="relative bg-[#FBFBFE] rounded-[3rem] shadow-2xl w-full max-w-4xl overflow-hidden max-h-[85vh] flex flex-col">
-              <div className="p-8 sm:p-10 border-b border-slate-100 bg-white flex items-center justify-between shrink-0">
-                <div>
-                  <h2 className="text-3xl font-black text-slate-900 tracking-tight flex items-center gap-3">
-                    <ClipboardCheck className="text-amber-500" size={32} />
+              <div className="p-8 sm:p-10 border-b border-slate-100 bg-white flex flex-wrap items-center justify-between gap-6 shrink-0 text-left">
+                <div className="min-w-0">
+                  <h2 className="text-3xl font-black text-slate-900 tracking-tight flex items-center gap-3 leading-tight break-words">
+                    <ClipboardCheck className="text-amber-500 shrink-0" size={32} />
                     Clinical Backlog
                   </h2>
-                  <p className="text-slate-500 font-medium mt-1">Detailed breakdown of pending clinical tasks and bottlenecks.</p>
+                  <p className="text-slate-500 font-medium mt-1 break-words">Detailed breakdown of pending clinical tasks and bottlenecks.</p>
                 </div>
-                <button onClick={() => setIsPendingModalOpen(false)} className="bg-slate-100 text-slate-400 hover:text-slate-900 p-3 rounded-2xl transition-all">
+                <button onClick={() => setIsPendingModalOpen(false)} className="bg-slate-100 text-slate-400 hover:text-slate-900 p-3 rounded-2xl transition-all shrink-0">
                   <X size={24} />
                 </button>
               </div>
 
-              <div className="flex-1 overflow-y-auto p-8 sm:p-10 custom-scrollbar space-y-10">
+              <div className="flex-1 overflow-y-auto p-8 sm:p-10 custom-scrollbar space-y-10 text-left">
                 {/* 1. Missing Intakes */}
                 <section className="space-y-4">
                   <div className="flex items-center gap-2 px-1">
-                    <AlertCircle className="text-amber-500" size={18} />
-                    <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">Missing Medical Assessments ({stats.pendingBreakdown.missingIntake.length})</h3>
+                    <AlertCircle className="text-amber-500 shrink-0" size={18} />
+                    <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest break-words">Missing Medical Assessments ({stats.pendingBreakdown.missingIntake.length})</h3>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {stats.pendingBreakdown.missingIntake.map((p: any) => (
-                      <div key={p.id} className="flex items-center justify-between p-4 bg-white border border-slate-100 rounded-2xl shadow-sm hover:border-teal-500/30 transition-all group">
-                        <span className="font-bold text-slate-700">{p.name}</span>
-                        <ChevronRight size={16} className="text-slate-300 group-hover:text-teal-500 transition-colors" />
+                      <div key={p.id} className="flex items-center justify-between p-4 bg-white border border-slate-100 rounded-2xl shadow-sm hover:border-teal-500/30 transition-all group gap-4">
+                        <span className="font-bold text-slate-700 break-words min-w-0">{p.name}</span>
+                        <ChevronRight size={16} className="text-slate-300 group-hover:text-teal-500 transition-colors shrink-0" />
                       </div>
                     ))}
                   </div>
@@ -269,17 +263,17 @@ const Dashboard = () => {
                 {/* 2. Compliance Gap */}
                 <section className="space-y-4">
                   <div className="flex items-center gap-2 px-1">
-                    <PenTool className="text-indigo-500" size={18} />
-                    <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">Compliance Gap: Missing Contracts ({stats.pendingBreakdown.complianceGap.length})</h3>
+                    <PenTool className="text-indigo-500 shrink-0" size={18} />
+                    <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest break-words">Compliance Gap: Missing Contracts ({stats.pendingBreakdown.complianceGap.length})</h3>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {stats.pendingBreakdown.complianceGap.map((p: any) => (
-                      <div key={p.id} className="flex items-center justify-between p-4 bg-white border border-slate-100 rounded-2xl shadow-sm hover:border-indigo-500/30 transition-all group">
-                        <div>
-                          <p className="font-bold text-slate-700">{p.name}</p>
-                          <p className="text-[10px] text-slate-400 uppercase font-black">{p.service}</p>
+                      <div key={p.id} className="flex items-center justify-between p-4 bg-white border border-slate-100 rounded-2xl shadow-sm hover:border-indigo-500/30 transition-all group gap-4">
+                        <div className="min-w-0">
+                          <p className="font-bold text-slate-700 break-words">{p.name}</p>
+                          <p className="text-[10px] text-slate-400 uppercase font-black break-words">{p.service}</p>
                         </div>
-                        <ChevronRight size={16} className="text-slate-300 group-hover:text-indigo-500 transition-colors" />
+                        <ChevronRight size={16} className="text-slate-300 group-hover:text-indigo-500 transition-colors shrink-0" />
                       </div>
                     ))}
                   </div>
@@ -288,14 +282,14 @@ const Dashboard = () => {
                 {/* 3. Unpaid Balances */}
                 <section className="space-y-4">
                   <div className="flex items-center gap-2 px-1">
-                    <DollarSign className="text-red-500" size={18} />
-                    <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">Unpaid Post-Op Balances ({stats.pendingBreakdown.unpaidBalances.length})</h3>
+                    <DollarSign className="text-red-500 shrink-0" size={18} />
+                    <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest break-words">Unpaid Post-Op Balances ({stats.pendingBreakdown.unpaidBalances.length})</h3>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {stats.pendingBreakdown.unpaidBalances.map((p: any) => (
-                      <div key={p.id} className="flex items-center justify-between p-4 bg-red-50/30 border border-red-100 rounded-2xl shadow-sm hover:bg-red-50 transition-all group">
-                        <span className="font-bold text-slate-700">{p.name}</span>
-                        <span className="font-black text-red-600 text-sm">£{p.balance.toLocaleString()}</span>
+                      <div key={p.id} className="flex items-center justify-between p-4 bg-red-50/30 border border-red-100 rounded-2xl shadow-sm hover:bg-red-50 transition-all group gap-4">
+                        <span className="font-bold text-slate-700 break-words min-w-0">{p.name}</span>
+                        <span className="font-black text-red-600 text-sm whitespace-nowrap">£{p.balance.toLocaleString()}</span>
                       </div>
                     ))}
                   </div>
@@ -304,17 +298,17 @@ const Dashboard = () => {
                 {/* 4. Post-Op Follow-ups */}
                 <section className="space-y-4">
                   <div className="flex items-center gap-2 px-1">
-                    <Activity className="text-teal-500" size={18} />
-                    <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">Recent Surgery Follow-ups ({stats.pendingBreakdown.postOpFollowups.length})</h3>
+                    <Activity className="text-teal-500 shrink-0" size={18} />
+                    <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest break-words">Recent Surgery Follow-ups ({stats.pendingBreakdown.postOpFollowups.length})</h3>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {stats.pendingBreakdown.postOpFollowups.map((p: any) => (
-                      <div key={p.id} className="flex items-center justify-between p-4 bg-teal-50/30 border border-teal-100 rounded-2xl shadow-sm hover:bg-teal-50 transition-all group">
-                        <div>
-                          <p className="font-bold text-slate-700">{p.name}</p>
-                          <p className="text-[10px] text-teal-600 uppercase font-black">{p.service} • {p.date}</p>
+                      <div key={p.id} className="flex items-center justify-between p-4 bg-teal-50/30 border border-teal-100 rounded-2xl shadow-sm hover:bg-teal-50 transition-all group gap-4">
+                        <div className="min-w-0">
+                          <p className="font-bold text-slate-700 break-words">{p.name}</p>
+                          <p className="text-[10px] text-teal-600 uppercase font-black break-words">{p.service} • {p.date}</p>
                         </div>
-                        <UserCheck size={16} className="text-teal-500" />
+                        <UserCheck size={16} className="text-teal-500 shrink-0" />
                       </div>
                     ))}
                   </div>
@@ -323,14 +317,14 @@ const Dashboard = () => {
                 {/* 5. Booking Bottleneck */}
                 <section className="space-y-4">
                   <div className="flex items-center gap-2 px-1">
-                    <Clock className="text-orange-500" size={18} />
-                    <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">Booking Bottleneck: Date Not Set ({stats.pendingBreakdown.bookingBottleneck.length})</h3>
+                    <Clock className="text-orange-500 shrink-0" size={18} />
+                    <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest break-words">Booking Bottleneck: Date Not Set ({stats.pendingBreakdown.bookingBottleneck.length})</h3>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {stats.pendingBreakdown.bookingBottleneck.map((p: any) => (
-                      <div key={p.id} className="flex items-center justify-between p-4 bg-white border border-slate-100 rounded-2xl shadow-sm hover:border-orange-500/30 transition-all group">
-                        <span className="font-bold text-slate-700">{p.name}</span>
-                        <ChevronRight size={16} className="text-slate-300 group-hover:text-orange-500 transition-colors" />
+                      <div key={p.id} className="flex items-center justify-between p-4 bg-white border border-slate-100 rounded-2xl shadow-sm hover:border-orange-500/30 transition-all group gap-4">
+                        <span className="font-bold text-slate-700 break-words min-w-0">{p.name}</span>
+                        <ChevronRight size={16} className="text-slate-300 group-hover:text-orange-500 transition-colors shrink-0" />
                       </div>
                     ))}
                   </div>
@@ -342,28 +336,28 @@ const Dashboard = () => {
       </AnimatePresence>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
-          <div className="p-6 sm:p-8 border-b border-slate-50 flex items-center justify-between">
-            <div>
-              <h3 className="text-lg font-black text-slate-900 tracking-tight">Recent Appointments</h3>
+        <div className="lg:col-span-2 bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden text-left">
+          <div className="p-6 sm:p-8 border-b border-slate-50 flex flex-wrap items-center justify-between gap-4">
+            <div className="min-w-0">
+              <h3 className="text-lg font-black text-slate-900 tracking-tight leading-tight">Recent Appointments</h3>
               <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">Upcoming surgery queue</p>
             </div>
-            <button onClick={() => window.location.href = '/calendar'} className="text-teal-600 font-bold text-sm hover:bg-teal-50 px-4 py-2 rounded-xl transition-all whitespace-nowrap">View Schedule</button>
+            <button onClick={() => window.location.href = '/calendar'} className="text-teal-600 font-bold text-sm hover:bg-teal-50 px-4 py-2 rounded-xl transition-all whitespace-nowrap shrink-0">View Schedule</button>
           </div>
           <div className="divide-y divide-slate-50">
             {recentAppointments.length > 0 ? (
               recentAppointments.map((app, i) => (
-                <div key={i} className="p-4 sm:p-6 flex items-center justify-between hover:bg-slate-50/50 transition-colors group">
+                <div key={i} className="p-4 sm:p-6 flex items-center justify-between hover:bg-slate-50/50 transition-colors group gap-4">
                   <div className="flex items-center gap-3 sm:gap-5 min-w-0">
-                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-slate-100 rounded-2xl flex items-center justify-center font-black text-slate-400 group-hover:bg-teal-100 group-hover:text-teal-600 transition-colors shrink-0">
+                    <div className={cn("w-10 h-10 sm:w-12 sm:h-12 bg-slate-100 rounded-2xl flex items-center justify-center font-black text-slate-400 group-hover:bg-teal-100 group-hover:text-teal-600 transition-colors shrink-0")}>
                       {app.name.split(' ').map((n: string) => n[0]).join('')}
                     </div>
                     <div className="min-w-0">
-                      <p className="font-bold text-slate-900 truncate">{app.name}</p>
-                      <p className="text-[10px] sm:text-xs font-medium text-slate-500 mt-0.5 truncate">{app.service} • {app.time}</p>
+                      <p className="font-bold text-slate-900 truncate break-words">{app.name}</p>
+                      <p className="text-[10px] sm:text-xs font-medium text-slate-500 mt-0.5 truncate break-words">{app.service} • {app.time}</p>
                     </div>
                   </div>
-                  <span className={cn("px-3 sm:px-4 py-1.5 rounded-xl text-[8px] sm:text-[10px] font-black uppercase tracking-widest border shrink-0 ml-2", app.status === 'Confirmed' ? "bg-green-50 text-green-700 border-green-100" : app.status === 'In Review' ? "bg-blue-50 text-blue-600 border-blue-100" : "bg-amber-50 text-amber-600 border-amber-100")}>
+                  <span className={cn("px-3 sm:px-4 py-1.5 rounded-xl text-[8px] sm:text-[10px] font-black uppercase tracking-widest border shrink-0 whitespace-nowrap", app.status === 'Confirmed' ? "bg-green-50 text-green-700 border-green-100" : app.status === 'In Review' ? "bg-blue-50 text-blue-600 border-blue-100" : "bg-amber-50 text-amber-600 border-amber-100")}>
                     {app.status}
                   </span>
                 </div>
@@ -376,12 +370,12 @@ const Dashboard = () => {
           </div>
         </div>
 
-        <div className="bg-white p-6 sm:p-8 rounded-[2.5rem] border border-slate-100 shadow-sm flex flex-col">
-          <div className="mb-6">
-            <h3 className="text-lg font-black text-slate-900 tracking-tight">Clinic Pulse</h3>
+        <div className="bg-white p-6 sm:p-8 rounded-[2.5rem] border border-slate-100 shadow-sm flex flex-col text-left">
+          <div className="mb-6 min-w-0">
+            <h3 className="text-lg font-black text-slate-900 tracking-tight leading-tight">Clinic Pulse</h3>
             <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">Live activity volume</p>
           </div>
-          <div className="flex-1 min-h-[150px] sm:min-h-[200px]">
+          <div className="flex-1 min-h-[150px] sm:min-h-[200px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={stats?.activityAnalytics}>
                 <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
@@ -390,14 +384,14 @@ const Dashboard = () => {
               </LineChart>
             </ResponsiveContainer>
           </div>
-          <div className="mt-6 grid grid-cols-2 gap-4">
-            <div className="p-3 bg-teal-50 rounded-2xl">
-              <p className="text-[8px] sm:text-[10px] font-black text-teal-600 uppercase tracking-wider mb-1">Reg Rate</p>
-              <p className="text-lg sm:text-xl font-black text-teal-900">High</p>
+          <div className="mt-6 grid grid-cols-2 gap-4 shrink-0">
+            <div className="p-3 bg-teal-50 rounded-2xl min-w-0">
+              <p className="text-[8px] sm:text-[10px] font-black text-teal-600 uppercase tracking-wider mb-1 truncate">Reg Rate</p>
+              <p className="text-lg sm:text-xl font-black text-teal-900 truncate">High</p>
             </div>
-            <div className="p-3 bg-indigo-50 rounded-2xl">
-              <p className="text-[8px] sm:text-[10px] font-black text-indigo-600 uppercase tracking-wider mb-1">Bookings</p>
-              <p className="text-lg sm:text-xl font-black text-indigo-900">Steady</p>
+            <div className="p-3 bg-indigo-50 rounded-2xl min-w-0">
+              <p className="text-[8px] sm:text-[10px] font-black text-indigo-600 uppercase tracking-wider mb-1 truncate">Bookings</p>
+              <p className="text-lg sm:text-xl font-black text-indigo-900 truncate">Steady</p>
             </div>
           </div>
         </div>
@@ -408,6 +402,7 @@ const Dashboard = () => {
 
 function AppContent() {
   const { selectedPatient } = usePatient();
+  const { user, role, loading: authLoading } = useAuth();
   const [isContractSigned, setIsContractSigned] = useState(false);
 
   useEffect(() => {
@@ -420,6 +415,26 @@ function AppContent() {
     }
   }, [selectedPatient]);
 
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center p-6 text-center">
+        <Loader2 className="animate-spin text-teal-500 mb-4" size={40} />
+        <p className="text-slate-400 font-black uppercase tracking-widest text-[10px]">Verifying Identity...</p>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <Router>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="*" element={<Navigate to="/login" replace />} />
+        </Routes>
+      </Router>
+    );
+  }
+
   return (
     <Router>
       <DashboardLayout isContractSigned={isContractSigned}>
@@ -431,10 +446,19 @@ function AppContent() {
           <Route path="/contract" element={<DigitalContract onSign={() => setIsContractSigned(true)} />} />
           <Route path="/calendar" element={isContractSigned ? <CalendarPage /> : <Navigate to="/contract" replace />} />
           <Route path="/financials" element={<Financials />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="/form-builder" element={<FormBuilder />} />
-          <Route path="/admin/services" element={<AdminTreatments />} />
-          <Route path="/admin/form-builder" element={<AdminFormBuilder />} />
+          
+          {/* Admin Restricted Routes */}
+          {role === 'Admin' && (
+            <>
+              <Route path="/settings" element={<Settings />} />
+              <Route path="/form-builder" element={<FormBuilder />} />
+              <Route path="/admin/services" element={<AdminTreatments />} />
+              <Route path="/admin/form-builder" element={<AdminFormBuilder />} />
+            </>
+          )}
+
+          {/* Catch-all fallback */}
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </DashboardLayout>
     </Router>
@@ -443,9 +467,11 @@ function AppContent() {
 
 function App() {
   return (
-    <PatientProvider>
-      <AppContent />
-    </PatientProvider>
+    <AuthProvider>
+      <PatientProvider>
+        <AppContent />
+      </PatientProvider>
+    </AuthProvider>
   );
 }
 
