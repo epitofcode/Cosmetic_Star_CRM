@@ -175,7 +175,12 @@ export default function CalendarPage() {
       setIsBookingConfirmed(true);
     } catch (error: any) {
       console.error("Final booking confirmation error:", error);
-      alert(error.response?.data?.error || 'Booking process failed. Please check slot availability.');
+      const errorMsg = error.response?.data?.error || 'Booking process failed.';
+      if (errorMsg.includes('no longer available')) {
+        alert('One or more selected slots are no longer available. Please refresh and try again.');
+      } else {
+        alert(errorMsg);
+      }
     } finally {
       setIsSaving(false);
     }
