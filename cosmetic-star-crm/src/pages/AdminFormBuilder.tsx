@@ -14,7 +14,8 @@ import {
   CheckSquare,
   PenTool,
   Loader2,
-  ListOrdered
+  ListOrdered,
+  X
 } from 'lucide-react';
 import { adminGetServices, adminCreateFormTemplate, adminUpdateFormTemplate, getFormsForService } from '../services/api';
 import { clsx, type ClassValue } from 'clsx';
