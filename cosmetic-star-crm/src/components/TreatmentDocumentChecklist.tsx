@@ -15,6 +15,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import DynamicFormRenderer from './DynamicFormRenderer';
+import { staffCreatePatientForm } from '../services/api';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -54,18 +55,28 @@ export default function TreatmentDocumentChecklist({ dynamicForms, patientId }: 
     setActiveForm(doc);
   };
 
-  const handleFormSubmit = (data: any) => {
-    console.log('Form Submitted for:', activeForm?.title, data);
+  const handleFormSubmit = async (data: any) => {
+    if (!activeForm) return;
     
-    // Update local state to show 'Completed' for demonstration
-    if (activeForm) {
+    try {
+      await staffCreatePatientForm({
+        patient_id: patientId,
+        template_id: activeForm.id,
+        answers: data,
+        filled_by_staff_id: null 
+      });
+      
+      // Update local state to show 'Completed'
       setDocuments(prev => prev.map(d => 
         d.id === activeForm.id ? { ...d, status: 'Completed' } : d
       ));
+      
+      alert(`${activeForm.title} saved to patient record.`);
+      setActiveForm(null);
+    } catch (err) {
+      console.error('Save error:', err);
+      alert('Failed to save clinical form.');
     }
-    
-    setActiveForm(null);
-    alert(`${activeForm?.title} processed successfully.`);
   };
 
   // Helper to get icon based on form type

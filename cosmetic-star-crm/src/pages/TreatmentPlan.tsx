@@ -22,7 +22,7 @@ import { twMerge } from 'tailwind-merge';
 import { usePatient } from '../context/PatientContext';
 import { getTreatmentPlan, saveTreatmentPlan, getBooking, getFormsForService, adminGetServices } from '../services/api';
 import TreatmentDocumentChecklist from '../components/TreatmentDocumentChecklist';
-import ClinicalPhotoManager from '../components/ClinicalPhotoManager';
+import ClinicalPhotos from '../components/ClinicalPhotos';
 import { format } from 'date-fns';
 
 function cn(...inputs: ClassValue[]) {
@@ -341,7 +341,7 @@ export default function TreatmentPlan() {
 
       {/* 3. FULL WIDTH Clinical Media Gallery */}
       <section className="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-200/40 p-6 sm:p-10 overflow-hidden text-left">
-        <ClinicalPhotoManager patientId={selectedPatient.id} />
+        <ClinicalPhotos patientId={selectedPatient.id} />
       </section>
 
     </div>
