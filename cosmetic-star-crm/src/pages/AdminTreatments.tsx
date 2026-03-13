@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Plus, 
   Edit, 
@@ -9,7 +10,8 @@ import {
   PoundSterling,
   Loader2,
   Tag,
-  Palette
+  Palette,
+  ClipboardList
 } from 'lucide-react';
 import { adminGetServices, adminCreateService, adminUpdateService, adminDeleteService } from '../services/api';
 import { clsx, type ClassValue } from 'clsx';
@@ -29,6 +31,7 @@ interface Service {
 }
 
 export default function AdminTreatments() {
+  const navigate = useNavigate();
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -168,6 +171,13 @@ export default function AdminTreatments() {
                   </td>
                   <td className="px-8 py-6 text-right">
                     <div className="flex justify-end gap-2">
+                      <button 
+                        onClick={() => navigate(`/admin/form-builder/${s.id}`)} 
+                        className="p-2 text-slate-300 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"
+                        title="Design Clinical Form"
+                      >
+                        <ClipboardList size={18} />
+                      </button>
                       <button onClick={() => handleOpenModal(s)} className="p-2 text-slate-300 hover:text-teal-600 hover:bg-teal-50 rounded-xl transition-all"><Edit size={18} /></button>
                       <button onClick={() => handleDelete(s.id)} className="p-2 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"><Trash2 size={18} /></button>
                     </div>

@@ -453,6 +453,7 @@ function AppContent() {
               <Route path="/settings" element={<Settings />} />
               <Route path="/form-builder" element={<FormBuilder />} />
               <Route path="/admin/services" element={<AdminTreatments />} />
+              <Route path="/admin/form-builder/:serviceId" element={<AdminFormBuilder />} />
               <Route path="/admin/form-builder" element={<AdminFormBuilder />} />
             </>
           )}

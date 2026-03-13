@@ -16,12 +16,13 @@ function cn(...inputs: ClassValue[]) {
 }
 
 // --- Types ---
-type FieldType = 'Short Text' | 'Long Text' | 'Checkbox' | 'Signature Pad';
+type FieldType = 'Short Text' | 'Long Text' | 'Checkbox' | 'Signature Pad' | 'Multiple Choice';
 
 interface FormField {
   type: FieldType;
   label: string;
   required: boolean;
+  options?: string[];
 }
 
 interface FormSchema {
@@ -184,6 +185,32 @@ export default function DynamicFormRenderer({
                 </div>
                 <span className="text-slate-600 font-bold text-sm select-none">I confirm and agree to the statement above.</span>
               </label>
+            )}
+
+            {field.type === 'Multiple Choice' && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {field.options?.map((option, optIdx) => (
+                  <button
+                    key={optIdx}
+                    type="button"
+                    onClick={() => handleInputChange(field.label, option)}
+                    className={cn(
+                      "flex items-center gap-3 p-4 rounded-2xl border-2 transition-all text-left",
+                      formValues[field.label] === option
+                        ? "bg-teal-50 border-teal-500 text-teal-900 shadow-sm"
+                        : "bg-slate-50 border-transparent text-slate-600 hover:bg-slate-100"
+                    )}
+                  >
+                    <div className={cn(
+                      "w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0",
+                      formValues[field.label] === option ? "border-teal-500 bg-teal-500" : "border-slate-300 bg-white"
+                    )}>
+                      {formValues[field.label] === option && <div className="w-2 h-2 bg-white rounded-full" />}
+                    </div>
+                    <span className="text-sm font-bold">{option}</span>
+                  </button>
+                ))}
+              </div>
             )}
 
             {field.type === 'Signature Pad' && (

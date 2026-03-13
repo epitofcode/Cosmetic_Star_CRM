@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import { 
   Plus, 
   Trash2, 
@@ -12,9 +13,10 @@ import {
   AlignLeft,
   CheckSquare,
   PenTool,
-  Loader2
+  Loader2,
+  ListOrdered
 } from 'lucide-react';
-import { adminGetServices, adminCreateFormTemplate } from '../services/api';
+import { adminGetServices, adminCreateFormTemplate, adminUpdateFormTemplate, getFormsForService } from '../services/api';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -28,25 +30,31 @@ interface Service {
 }
 
 interface FieldSchema {
-  type: 'Short Text' | 'Long Text' | 'Checkbox' | 'Signature Pad';
+  type: 'Short Text' | 'Long Text' | 'Checkbox' | 'Signature Pad' | 'Multiple Choice';
   label: string;
   required: boolean;
+  options?: string[]; // For choice fields
 }
 
 export default function AdminFormBuilder() {
+  const { serviceId } = useParams();
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   
   // Form State
-  const [selectedServiceId, setSelectedServiceId] = useState('');
+  const [selectedServiceId, setSelectedServiceId] = useState(serviceId || '');
+  const [existingTemplateId, setExistingTemplateId] = useState<string | null>(null);
   const [formType, setFormType] = useState<'consent' | 'intake' | 'contract'>('consent');
   const [title, setTitle] = useState('');
   const [fields, setFields] = useState<FieldSchema[]>([]);
 
   useEffect(() => {
     fetchServices();
-  }, []);
+    if (serviceId) {
+      fetchExistingTemplate(serviceId);
+    }
+  }, [serviceId]);
 
   const fetchServices = async () => {
     try {
@@ -55,8 +63,26 @@ export default function AdminFormBuilder() {
     } catch (err) { console.error(err); }
   };
 
+  const fetchExistingTemplate = async (sid: string) => {
+    try {
+      setLoading(true);
+      const data = await getFormsForService(sid);
+      if (data && data.length > 0) {
+        const t = data[0]; // Assuming primary form for now
+        setExistingTemplateId(t.id);
+        setFormType(t.form_type);
+        setTitle(t.title);
+        setFields(t.fields?.fields || []);
+      }
+    } catch (err) {
+      console.error('Template load error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const addField = (type: FieldSchema['type']) => {
-    setFields([...fields, { type, label: '', required: false }]);
+    setFields([...fields, { type, label: '', required: false, options: type === 'Multiple Choice' ? [''] : undefined }]);
   };
 
   const removeField = (idx: number) => {
@@ -77,16 +103,20 @@ export default function AdminFormBuilder() {
 
     try {
       setIsSaving(true);
-      await adminCreateFormTemplate({
+      const payload = {
         service_id: selectedServiceId,
         form_type: formType,
         title,
-        fields: { fields } // Wrapping in object for JSONB
-      });
+        fields: { fields }
+      };
+
+      if (existingTemplateId) {
+        await adminUpdateFormTemplate(existingTemplateId, payload);
+      } else {
+        await adminCreateFormTemplate(payload);
+      }
+      
       alert('Form template published successfully!');
-      // Reset
-      setTitle('');
-      setFields([]);
     } catch (err) {
       alert('Failed to publish template.');
     } finally {
@@ -157,6 +187,7 @@ export default function AdminFormBuilder() {
                 { type: 'Short Text', icon: Type },
                 { type: 'Long Text', icon: AlignLeft },
                 { type: 'Checkbox', icon: CheckSquare },
+                { type: 'Multiple Choice', icon: ListOrdered },
                 { type: 'Signature Pad', icon: PenTool }
               ].map((el) => (
                 <button 
@@ -210,6 +241,47 @@ export default function AdminFormBuilder() {
                       <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Required</span>
                     </label>
                   </div>
+
+                  {field.type === 'Multiple Choice' && (
+                    <div className="mt-4 pt-4 border-t border-slate-50 space-y-3 text-left">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Configure Options</p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {field.options?.map((opt, optIdx) => (
+                          <div key={optIdx} className="flex gap-2">
+                            <input 
+                              type="text" 
+                              value={opt} 
+                              onChange={(e) => {
+                                const newOpts = [...(field.options || [])];
+                                newOpts[optIdx] = e.target.value;
+                                updateField(idx, { options: newOpts });
+                              }}
+                              className="flex-1 bg-slate-50 border-none rounded-xl py-2 px-4 text-xs font-bold outline-none"
+                              placeholder={`Option ${optIdx + 1}`}
+                            />
+                            <button 
+                              onClick={() => {
+                                const newOpts = (field.options || []).filter((_, i) => i !== optIdx);
+                                updateField(idx, { options: newOpts });
+                              }}
+                              className="text-slate-300 hover:text-red-500"
+                            >
+                              <X size={14} />
+                            </button>
+                          </div>
+                        ))}
+                        <button 
+                          onClick={() => {
+                            const newOpts = [...(field.options || []), ''];
+                            updateField(idx, { options: newOpts });
+                          }}
+                          className="flex items-center justify-center gap-2 p-2 border-2 border-dashed border-slate-100 rounded-xl text-[10px] font-black text-slate-400 hover:border-teal-500/20 hover:text-teal-600 transition-all"
+                        >
+                          <Plus size={12} /> Add Option
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))
             )}
