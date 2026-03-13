@@ -32,19 +32,14 @@ function cn(...inputs: ClassValue[]) {
 interface Service {
   id: string;
   name: string;
-  defaultPrice: number;
-  includedItems: string[];
+  base_price: number;
+  description?: string;
+  color_code?: string;
 }
-
-const SERVICES: Service[] = [
-  { id: 'fue', name: 'FUE Hair Transplant', defaultPrice: 2500, includedItems: ['Medical Report', 'Surgery', 'Post-op Meds', '1 Year Follow-up', 'Hair Wash Set'] },
-  { id: 'prp', name: 'PRP Therapy', defaultPrice: 800, includedItems: ['Consultation', 'PRP Session', 'Post-treatment Care Kit'] },
-  { id: 'micro', name: 'Scalp Micropigmentation', defaultPrice: 1800, includedItems: ['Design Consultation', 'Full Session', 'Touch-up Session'] },
-  { id: 'botox', name: 'Anti-Wrinkle Treatment', defaultPrice: 300, includedItems: ['Consultation', 'Treatment', '2-week Review'] }
-];
 
 export default function TreatmentPlan() {
   const { selectedPatient } = usePatient();
+  const [services, setServices] = useState<Service[]>([]);
   const [selectedServiceId, setSelectedServiceId] = useState('');
   const [cost, setCost] = useState<number>(0);
   const [discount, setDiscount] = useState<number>(0);
@@ -60,10 +55,22 @@ export default function TreatmentPlan() {
   const [dynamicForms, setDynamicForms] = useState<any[]>([]);
 
   useEffect(() => { 
-    if (selectedPatient) {
-      fetchExistingPlan();
-      fetchNextAppointment();
-    }
+    const init = async () => {
+      if (selectedPatient) {
+        setLoading(true);
+        try {
+          const servicesData = await adminGetServices();
+          setServices(servicesData || []);
+          await fetchExistingPlan();
+          await fetchNextAppointment();
+        } catch (err) {
+          console.error('Init error:', err);
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+    init();
   }, [selectedPatient]);
 
   useEffect(() => {
@@ -116,15 +123,15 @@ export default function TreatmentPlan() {
     }
   };
 
-  const selectedService = SERVICES.find(s => s.id === selectedServiceId);
+  const selectedService = services.find(s => s.id === selectedServiceId);
   const totalToPay = Math.max(0, cost - discount);
 
   useEffect(() => {
     if (selectedService && !loading && !isPlanExisting) {
-      setCost(selectedService.defaultPrice);
+      setCost(Number(selectedService.base_price));
       setDiscount(0);
     }
-  }, [selectedServiceId]);
+  }, [selectedServiceId, selectedService, isPlanExisting]);
 
   const handleSavePlan = async (targetStatus = 'Active') => {
     if (!selectedPatient || !selectedService) return;
@@ -207,7 +214,7 @@ export default function TreatmentPlan() {
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Assigned Service</label>
                   <select value={selectedServiceId} onChange={(e) => setSelectedServiceId(e.target.value)} className="w-full bg-slate-50 border-none rounded-2xl py-4 px-5 text-sm font-bold outline-none focus:ring-2 ring-teal-500/20">
                     <option value="" disabled>Select Procedure...</option>
-                    {SERVICES.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                    {services.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                   </select>
                 </div>
                 <div className="grid grid-cols-2 gap-4">

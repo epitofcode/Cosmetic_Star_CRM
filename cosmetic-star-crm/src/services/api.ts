@@ -121,6 +121,71 @@ export const adminDeleteRow = async (tableName: string, id: number | string) => 
     return response.data;
 };
 
+// --- NEW ADMIN SERVICES CRUD ---
+export const adminGetServices = async () => {
+    const response = await api.get('/admin/services');
+    return response.data;
+};
+
+export const adminCreateService = async (serviceData: any) => {
+    const response = await api.post('/admin/services', serviceData);
+    return response.data;
+};
+
+export const adminUpdateService = async (id: string, serviceData: any) => {
+    const response = await api.put(`/admin/services/${id}`, serviceData);
+    return response.data;
+};
+
+export const adminDeleteService = async (id: string) => {
+    const response = await api.delete(`/admin/services/${id}`);
+    return response.data;
+};
+
+// --- NEW ADMIN FORM TEMPLATES CRUD ---
+export const adminGetFormTemplates = async () => {
+    const response = await api.get('/admin/form-templates');
+    return response.data;
+};
+
+export const adminCreateFormTemplate = async (templateData: any) => {
+    const response = await api.post('/admin/form-templates', templateData);
+    return response.data;
+};
+
+export const adminUpdateFormTemplate = async (id: string, templateData: any) => {
+    const response = await api.put(`/admin/form-templates/${id}`, templateData);
+    return response.data;
+};
+
+export const adminDeleteFormTemplate = async (id: string) => {
+    const response = await api.delete(`/admin/form-templates/${id}`);
+    return response.data;
+};
+
+// --- NEW STAFF PATIENT FORMS ---
+export const staffCreatePatientForm = async (formData: any) => {
+    const response = await api.post('/patient-forms', formData);
+    return response.data;
+};
+
+export const staffGetPatientForms = async (patientId: string | number) => {
+    const response = await api.get(`/patient-forms/${patientId}`);
+    return response.data;
+};
+
+export const staffUploadPhoto = async (patientId: string | number, photoData: FormData) => {
+    const response = await api.post(`/patients/${patientId}/photos`, photoData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+    });
+    return response.data;
+};
+
+export const staffGetPhotos = async (patientId: string | number) => {
+    const response = await api.get(`/patients/${patientId}/photos`);
+    return response.data;
+};
+
 // Dashboard
 export const getDashboardStats = async () => {
     const response = await api.get('/dashboard/stats');

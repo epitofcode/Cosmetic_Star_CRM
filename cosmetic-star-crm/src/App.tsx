@@ -10,6 +10,8 @@ import CalendarPage from './pages/Calendar';
 import Financials from './pages/Financials';
 import Settings from './pages/Settings';
 import FormBuilder from './components/FormBuilder';
+import AdminTreatments from './pages/AdminTreatments';
+import AdminFormBuilder from './pages/AdminFormBuilder';
 import { PatientProvider, usePatient } from './context/PatientContext';
 import { checkContractStatus, getDashboardStats, getRecentAppointments } from './services/api';
 
@@ -431,6 +433,8 @@ function AppContent() {
           <Route path="/financials" element={<Financials />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/form-builder" element={<FormBuilder />} />
+          <Route path="/admin/services" element={<AdminTreatments />} />
+          <Route path="/admin/form-builder" element={<AdminFormBuilder />} />
         </Routes>
       </DashboardLayout>
     </Router>

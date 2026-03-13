@@ -783,10 +783,122 @@ app.post('/api/generate-receipt-pdf', async (req, res) => {
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader('Content-Disposition', `attachment; filename=Receipt-${patientId}.pdf`);
         res.send(Buffer.from(pdfBuffer));
-    } catch (error) {
-        console.error('PDF Generation Error:', error);
-        res.status(500).json({ error: 'Failed to generate PDF on server' });
     }
+});
+
+// --- ADMIN ROUTES (Dynamic Config) ---
+
+// A1. Services CRUD
+app.get('/api/admin/services', async (req, res) => {
+    const { data, error } = await supabase.from('clinic_services').select('*').order('name');
+    if (error) return res.status(400).json({ error: error.message });
+    res.json(data);
+});
+
+app.post('/api/admin/services', async (req, res) => {
+    const { name, base_price, description, color_code } = req.body;
+    const { data, error } = await supabase.from('clinic_services').insert([{ name, base_price, description, color_code }]).select();
+    if (error) return res.status(400).json({ error: error.message });
+    res.status(201).json(data[0]);
+});
+
+app.put('/api/admin/services/:id', async (req, res) => {
+    const { id } = req.params;
+    const { data, error } = await supabase.from('clinic_services').update(req.body).eq('id', id).select();
+    if (error) return res.status(400).json({ error: error.message });
+    res.json(data[0]);
+});
+
+app.delete('/api/admin/services/:id', async (req, res) => {
+    const { id } = req.params;
+    const { error } = await supabase.from('clinic_services').delete().eq('id', id);
+    if (error) return res.status(400).json({ error: error.message });
+    res.json({ message: 'Service deleted' });
+});
+
+// A2. Form Templates CRUD
+app.get('/api/admin/form-templates', async (req, res) => {
+    const { data, error } = await supabase.from('form_templates').select('*, clinic_services(name)');
+    if (error) return res.status(400).json({ error: error.message });
+    res.json(data);
+});
+
+app.post('/api/admin/form-templates', async (req, res) => {
+    const { service_id, form_type, title, fields } = req.body;
+    const { data, error } = await supabase.from('form_templates').insert([{ service_id, form_type, title, fields }]).select();
+    if (error) return res.status(400).json({ error: error.message });
+    res.status(201).json(data[0]);
+});
+
+app.put('/api/admin/form-templates/:id', async (req, res) => {
+    const { id } = req.params;
+    const { data, error } = await supabase.from('form_templates').update(req.body).eq('id', id).select();
+    if (error) return res.status(400).json({ error: error.message });
+    res.json(data[0]);
+});
+
+app.delete('/api/admin/form-templates/:id', async (req, res) => {
+    const { id } = req.params;
+    const { error } = await supabase.from('form_templates').delete().eq('id', id);
+    if (error) return res.status(400).json({ error: error.message });
+    res.json({ message: 'Template deleted' });
+});
+
+// --- STAFF ROUTES (Execution) ---
+
+// S1. Patient Forms (Filled)
+app.post('/api/patient-forms', async (req, res) => {
+    const { patient_id, template_id, answers, filled_by_staff_id } = req.body;
+    const { data, error } = await supabase.from('patient_forms').insert([{ patient_id, template_id, answers, filled_by_staff_id }]).select();
+    if (error) return res.status(400).json({ error: error.message });
+    res.status(201).json(data[0]);
+});
+
+app.get('/api/patient-forms/:patientId', async (req, res) => {
+    const { patientId } = req.params;
+    const { data, error } = await supabase.from('patient_forms').select('*, form_templates(title, form_type)').eq('patient_id', patientId);
+    if (error) return res.status(400).json({ error: error.message });
+    res.json(data);
+});
+
+// S2. Clinical Photo Uploads
+app.post('/api/patients/:patientId/photos', upload.single('photo'), async (req, res) => {
+    const { patientId } = req.params;
+    const { stage, treatment_record_id } = req.body;
+    const file = req.file;
+
+    if (!file) return res.status(400).json({ error: 'No photo provided' });
+
+    try {
+        const fileName = `clinical/${patientId}/${Date.now()}_${file.originalname}`;
+        const { error: uploadError } = await supabase.storage
+            .from('clinical-images')
+            .upload(fileName, file.buffer, { contentType: file.mimetype });
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage.from('clinical-images').getPublicUrl(fileName);
+
+        const { data, error: dbError } = await supabase.from('clinical_images').insert([{
+            patient_id: parseInt(patientId),
+            treatment_record_id,
+            stage,
+            image_url: publicUrl
+        }]).select();
+
+        if (dbError) throw dbError;
+        res.status(201).json(data[0]);
+    } catch (err) {
+        res.status(400).json({ error: err.message });
+    }
+});
+
+// S3. Get Clinical Photos
+app.get('/api/patients/:patientId/photos', async (req, res) => {
+    const { patientId } = req.params;
+    const { data, error } = await supabase.from('clinical_images').select('*').eq('patient_id', patientId).order('uploaded_at', { ascending: false });
+    if (error) return res.status(400).json({ error: error.message });
+    res.json(data);
 });
 
 // 404 Handler

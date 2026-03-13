@@ -37,7 +37,8 @@ const navItems = [
   { name: 'Contract', icon: PenTool, href: '/contract', requiresPatient: true },
   { name: 'Calendar', icon: Calendar, href: '/calendar', requiresContract: true, requiresPatient: true },
   { name: 'Financials', icon: DollarSign, href: '/financials', requiresPatient: true },
-  { name: 'Form Designer', icon: ClipboardList, href: '/form-builder' },
+  { name: 'Service Manager', icon: Settings2, href: '/admin/services' },
+  { name: 'Form Designer', icon: ClipboardList, href: '/admin/form-builder' },
   { name: 'Settings', icon: Settings, href: '/settings' },
 ];
 
