@@ -783,6 +783,9 @@ app.post('/api/generate-receipt-pdf', async (req, res) => {
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader('Content-Disposition', `attachment; filename=Receipt-${patientId}.pdf`);
         res.send(Buffer.from(pdfBuffer));
+    } catch (error) {
+        console.error('PDF Generation Error:', error);
+        res.status(500).json({ error: 'Failed to generate PDF on server' });
     }
 });
 
