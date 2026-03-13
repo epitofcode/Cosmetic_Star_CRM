@@ -18,7 +18,9 @@ import {
   Lock,
   UserCheck,
   HelpCircle,
-  LogOut
+  LogOut,
+  Settings2,
+  StarIcon as StarIconLucide
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { clsx, type ClassValue } from 'clsx';

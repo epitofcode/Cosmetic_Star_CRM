@@ -20,7 +20,7 @@ import {
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { usePatient } from '../context/PatientContext';
-import { getTreatmentPlan, saveTreatmentPlan, getBooking, getFormsForService } from '../services/api';
+import { getTreatmentPlan, saveTreatmentPlan, getBooking, getFormsForService, adminGetServices } from '../services/api';
 import TreatmentDocumentChecklist from '../components/TreatmentDocumentChecklist';
 import ClinicalPhotoManager from '../components/ClinicalPhotoManager';
 import { format } from 'date-fns';
