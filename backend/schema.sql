@@ -22,6 +22,11 @@ CREATE TABLE IF NOT EXISTS patients (
     email TEXT UNIQUE NOT NULL,
     dob DATE,
     gender TEXT,
+    alternate_phone TEXT,
+    address TEXT,
+    city TEXT,
+    postcode TEXT,
+    lead_source TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 -- To start at 101: ALTER SEQUENCE patients_id_seq RESTART WITH 101;

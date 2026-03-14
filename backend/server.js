@@ -112,10 +112,10 @@ app.get('/api/patients', async (req, res) => {
 
 // 2. Create New Patient
 app.post('/api/patients', async (req, res) => {
-    const { first_name, last_name, phone, email, dob, gender } = req.body;
+    const { first_name, last_name, phone, email, dob, gender, alternate_phone, address, city, postcode, lead_source } = req.body;
     const { data, error } = await supabase
         .from('patients')
-        .insert([{ first_name, last_name, phone, email, dob, gender }])
+        .insert([{ first_name, last_name, phone, email, dob, gender, alternate_phone, address, city, postcode, lead_source }])
         .select();
 
     if (error) {
@@ -133,10 +133,10 @@ app.post('/api/patients', async (req, res) => {
 // 2b. Update Patient
 app.put('/api/patients/:id', async (req, res) => {
     const { id } = req.params;
-    const { first_name, last_name, phone, email, dob, gender } = req.body;
+    const { first_name, last_name, phone, email, dob, gender, alternate_phone, address, city, postcode, lead_source } = req.body;
     const { data, error } = await supabase
         .from('patients')
-        .update({ first_name, last_name, phone, email, dob, gender })
+        .update({ first_name, last_name, phone, email, dob, gender, alternate_phone, address, city, postcode, lead_source })
         .eq('id', id)
         .select();
 
