@@ -41,11 +41,28 @@ app.use((req, res, next) => {
 });
 
 // --- Health Check ---
-app.get('/api/health', (req, res) => {
+app.get('/api/health', async (req, res) => {
+    let dbDiagnostics = { connected: !!supabaseUrl && !!supabaseKey };
+    
+    if (dbDiagnostics.connected) {
+        try {
+            // Check if new columns exist by doing a dry-run select
+            const { error: colError } = await supabase
+                .from('patients')
+                .select('address, city, postcode')
+                .limit(1);
+            
+            dbDiagnostics.schemaMatch = !colError;
+            if (colError) dbDiagnostics.schemaError = colError.message;
+        } catch (e) {
+            dbDiagnostics.schemaMatch = false;
+        }
+    }
+
     res.json({ 
         status: 'ok', 
-        version: '1.1.0-ST-BUILD-OPT',
-        supabaseConnected: !!supabaseUrl && !!supabaseKey,
+        version: '1.2.6-DIAGNOSTIC',
+        db: dbDiagnostics,
         time: new Date().toISOString() 
     });
 });
@@ -119,13 +136,14 @@ app.post('/api/patients', async (req, res) => {
         .select();
 
     if (error) {
+        console.error('Supabase Patient Insert Error:', error);
         if (error.code === '23505') {
             return res.status(409).json({ 
                 error: 'A patient with this email address is already registered in the system.',
                 code: 'DUPLICATE_EMAIL'
             });
         }
-        return res.status(400).json({ error: error.message });
+        return res.status(400).json({ error: error.message, details: error });
     }
     res.status(201).json(data[0]);
 });
