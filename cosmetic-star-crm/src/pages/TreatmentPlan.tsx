@@ -200,71 +200,34 @@ export default function TreatmentPlan() {
         {/* Left: Observations & Setup */}
         <div className="xl:col-span-8 space-y-10 min-w-0">
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <section className="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-200/40 overflow-hidden">
-              <div className="px-8 py-5 border-b border-slate-50 bg-slate-50/50 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Stethoscope className="text-teal-600" size={20} />
-                  <h2 className="font-black text-slate-900 uppercase tracking-widest text-xs">Procedure Setup</h2>
-                </div>
-                <Settings2 size={16} className="text-slate-300" />
+          <section className="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-200/40 overflow-hidden">
+            <div className="px-8 py-5 border-b border-slate-50 bg-slate-50/50 flex items-center justify-between text-left">
+              <div className="flex items-center gap-3">
+                <Stethoscope className="text-teal-600" size={20} />
+                <h2 className="font-black text-slate-900 uppercase tracking-widest text-xs">Procedure Setup</h2>
               </div>
-              <div className="p-8 space-y-6">
-                <div className="space-y-2 text-left">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Assigned Service</label>
-                  <select value={selectedServiceId} onChange={(e) => setSelectedServiceId(e.target.value)} className="w-full bg-slate-50 border-none rounded-2xl py-4 px-5 text-sm font-bold outline-none focus:ring-2 ring-teal-500/20">
-                    <option value="" disabled>Select Procedure...</option>
-                    {services.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                  </select>
+              <Settings2 size={16} className="text-slate-300" />
+            </div>
+            <div className="p-8 space-y-6 text-left">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Assigned Service</label>
+                <select value={selectedServiceId} onChange={(e) => setSelectedServiceId(e.target.value)} className="w-full bg-slate-50 border-none rounded-2xl py-4 px-5 text-sm font-bold outline-none focus:ring-2 ring-teal-500/20">
+                  <option value="" disabled>Select Procedure...</option>
+                  {services.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                </select>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                  <div className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Grafts</div>
+                  <input type="text" value={graftCount} onChange={(e) => setGraftCount(e.target.value)} placeholder="0" className="w-full bg-transparent border-none p-0 text-lg font-black text-slate-900 outline-none placeholder:text-slate-300" />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                    <div className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Grafts</div>
-                    <input type="text" value={graftCount} onChange={(e) => setGraftCount(e.target.value)} placeholder="0" className="w-full bg-transparent border-none p-0 text-lg font-black text-slate-900 outline-none placeholder:text-slate-300" />
-                  </div>
-                  <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                    <div className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Area</div>
-                    <input type="text" value={treatmentArea} onChange={(e) => setTreatmentArea(e.target.value)} placeholder="None" className="w-full bg-transparent border-none p-0 text-lg font-black text-slate-900 outline-none placeholder:text-slate-300" />
-                  </div>
+                <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                  <div className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Area</div>
+                  <input type="text" value={treatmentArea} onChange={(e) => setTreatmentArea(e.target.value)} placeholder="None" className="w-full bg-transparent border-none p-0 text-lg font-black text-slate-900 outline-none placeholder:text-slate-300" />
                 </div>
               </div>
-            </section>
-
-            <section className="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-200/40 overflow-hidden">
-              <div className="px-8 py-5 border-b border-slate-50 bg-slate-50/50 flex items-center gap-3">
-                <CalendarIcon className="text-teal-600" size={20} />
-                <h2 className="font-black text-slate-900 uppercase tracking-widest text-xs">Next Session</h2>
-              </div>
-              <div className="p-8">
-                {nextAppointment ? (
-                  <div className="space-y-6">
-                    <div className="flex items-center gap-4">
-                      <div className="w-14 h-14 bg-teal-600 rounded-2xl flex flex-col items-center justify-center text-white shadow-lg shadow-teal-600/20 shrink-0">
-                        <span className="text-[10px] font-black uppercase">{format(new Date(nextAppointment.date), 'MMM')}</span>
-                        <span className="text-xl font-black">{format(new Date(nextAppointment.date), 'dd')}</span>
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-sm font-black text-slate-900 truncate">{nextAppointment.time_slot}</p>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Clinic • Room 04</p>
-                      </div>
-                    </div>
-                    <div className="pt-6 border-t border-slate-50 flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center text-slate-400 shrink-0"><UserCheck size={14} /></div>
-                        <span className="text-xs font-bold text-slate-600">Kavya S.</span>
-                      </div>
-                      <button onClick={() => window.location.href = '/calendar'} className="text-[10px] font-black text-teal-600 uppercase tracking-widest hover:text-teal-700">Reschedule</button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="py-8 text-center space-y-4">
-                    <p className="text-slate-400 text-xs font-bold uppercase tracking-widest italic">No sessions booked</p>
-                    <button onClick={() => window.location.href = '/calendar'} className="bg-slate-900 text-white px-6 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-teal-600 transition-all">Schedule Now</button>
-                  </div>
-                )}
-              </div>
-            </section>
-          </div>
+            </div>
+          </section>
 
           <section className="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-200/40 overflow-hidden min-h-[400px]">
             <div className="px-8 py-6 border-b border-slate-50 flex items-center justify-between flex-wrap gap-4">
