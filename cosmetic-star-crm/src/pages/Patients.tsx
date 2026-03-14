@@ -138,7 +138,11 @@ export default function Patients() {
         setPatients([newPatient, ...patients]);
       }
       setIsModalOpen(false);
-    } catch (error) { alert('Save failed'); }
+    } catch (error: any) { 
+      console.error('Detailed Save Error:', error);
+      const serverMessage = error.response?.data?.error || error.message || 'Unknown error';
+      alert(`Save failed: ${serverMessage}`); 
+    }
   };
 
   return (
