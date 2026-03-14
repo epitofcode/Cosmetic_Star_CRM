@@ -40,15 +40,31 @@ export default function TreatmentDocumentChecklist({ dynamicForms, patientId }: 
   const [activeForm, setActiveForm] = useState<DocumentItem | null>(null);
 
   useEffect(() => {
-    // Transform the raw dynamicForms from DB into the UI DocumentItem structure
-    const docs: DocumentItem[] = dynamicForms.map(f => ({
+    // 1. Start with any real forms from the DB
+    const realDocs: DocumentItem[] = dynamicForms.map(f => ({
       id: f.id,
       title: f.title,
       form_type: f.form_type,
-      form_schema: f.form_schema,
-      status: 'Pending' // Initial state, logic can be added to check completion
+      form_schema: f.fields, // Database column is named 'fields'
+      status: 'Pending'
     }));
-    setDocuments(docs);
+
+    // 2. Add a Global Default Form (Standard Clinical Consent)
+    const defaultConsent: DocumentItem = {
+      id: 'default-consent',
+      title: 'Standard Clinical Consent',
+      form_type: 'Consent Form',
+      form_schema: {
+        version: '1.0',
+        fields: [
+          { type: 'Checkbox', label: 'I confirm that I have been informed of the risks and benefits.', required: true },
+          { type: 'Signature Pad', label: 'Patient Signature', required: true }
+        ]
+      },
+      status: 'Pending'
+    };
+
+    setDocuments([defaultConsent, ...realDocs]);
   }, [dynamicForms]);
 
   const handleFillForm = (doc: DocumentItem) => {
