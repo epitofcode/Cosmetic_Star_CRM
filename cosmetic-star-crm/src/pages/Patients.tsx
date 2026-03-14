@@ -119,15 +119,15 @@ export default function Patients() {
       const payload = {
         first_name: formData.firstName,
         last_name: formData.lastName,
-        phone: formData.phone,
+        phone: formData.phone || null,
         email: formData.email,
-        dob: formData.dob,
-        gender: formData.gender,
-        alternate_phone: formData.alternatePhone,
-        address: formData.address,
-        city: formData.city,
-        postcode: formData.postcode,
-        lead_source: formData.leadSource
+        dob: formData.dob || null, // Critical: Convert empty string to null for PG DATE type
+        gender: formData.gender || 'Other',
+        alternate_phone: formData.alternatePhone || null,
+        address: formData.address || null,
+        city: formData.city || null,
+        postcode: formData.postcode || null,
+        lead_source: formData.leadSource || 'Google'
       };
 
       if (editingPatientId) {
@@ -149,7 +149,10 @@ export default function Patients() {
     <div className="space-y-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 text-left">
         <div>
-          <h1 className="text-3xl font-black text-slate-900 tracking-tight">Patient Registry</h1>
+          <h1 className="text-3xl font-black text-slate-900 tracking-tight flex items-center gap-3">
+            Patient Registry
+            <span className="text-[10px] bg-teal-50 text-teal-600 px-2 py-1 rounded-lg border border-teal-100 font-black uppercase tracking-widest">v1.2.5</span>
+          </h1>
           <p className="text-slate-500 font-medium">Manage the clinic's digital clinical directory.</p>
         </div>
         <div className="flex items-center gap-3">
