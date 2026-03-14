@@ -99,7 +99,9 @@ app.get('/api/diagnostic', async (req, res) => {
 // 1. Get Patients (Searchable)
 app.get('/api/patients', async (req, res) => {
     const { search } = req.query;
-    let query = supabase.from('patients').select('*, treatment_plans(status), contracts(id)');
+    
+    // Simplest possible query to ensure data visibility
+    let query = supabase.from('patients').select('*');
 
     if (search) {
         query = query.or(`first_name.ilike.%${search}%,last_name.ilike.%${search}%,email.ilike.%${search}%`);
@@ -107,24 +109,12 @@ app.get('/api/patients', async (req, res) => {
 
     const { data, error } = await query.order('created_at', { ascending: false });
     
-    if (error) return res.status(400).json({ error: error.message });
+    if (error) {
+        console.error('Fetch Patients Error:', error);
+        return res.status(400).json({ error: error.message });
+    }
 
-    // Map data to include a computed status
-    const formattedData = data.map(p => {
-        let status = 'New Patient';
-        if (p.contracts && p.contracts.length > 0) {
-            status = 'Contract Signed';
-        } else if (p.treatment_plans && p.treatment_plans.length > 0) {
-            status = 'Plan Created';
-        }
-        
-        return {
-            ...p,
-            status: p.treatment_plans?.[0]?.status || status
-        };
-    });
-
-    res.json(formattedData);
+    res.json(data || []);
 });
 
 // 2. Create New Patient
