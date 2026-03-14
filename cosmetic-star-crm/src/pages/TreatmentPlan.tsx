@@ -324,9 +324,17 @@ export default function TreatmentPlan() {
                   {isSaving ? 'Syncing...' : status === 'Completed' ? 'Plan Finalised' : 'Save & Finalise'}
                 </button>
                 {isPlanExisting && status === 'Active' && (
-                  <button onClick={() => handleSavePlan('Completed')} disabled={isSaving} className="w-full py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] border-2 border-green-500/50 text-green-400 hover:bg-green-500/10 transition-all flex items-center justify-center gap-2">
-                    <CheckCircle2 size={16} /> Finalise Exit
-                  </button>
+                  <>
+                    <button 
+                      onClick={() => window.location.href = '/calendar'}
+                      className="w-full py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] bg-indigo-600 text-white hover:bg-indigo-500 transition-all flex items-center justify-center gap-2"
+                    >
+                      <CalendarIcon size={16} /> Book Surgery Slots
+                    </button>
+                    <button onClick={() => handleSavePlan('Completed')} disabled={isSaving} className="w-full py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] border-2 border-green-500/50 text-green-400 hover:bg-green-500/10 transition-all flex items-center justify-center gap-2">
+                      <CheckCircle2 size={16} /> Finalise Exit
+                    </button>
+                  </>
                 )}
               </div>
             </div>
