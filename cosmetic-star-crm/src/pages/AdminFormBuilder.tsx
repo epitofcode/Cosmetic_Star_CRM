@@ -243,6 +243,40 @@ export default function AdminFormBuilder() {
                     </label>
                   </div>
 
+                  {/* Visual Blueprint for Admin */}
+                  <div className="mt-4 p-4 bg-slate-50/50 rounded-2xl border border-dashed border-slate-100 space-y-3 pointer-events-none opacity-60">
+                    <p className="text-[8px] font-black text-slate-300 uppercase tracking-widest">Visual Preview</p>
+                    
+                    {field.type === 'Short Text' && <div className="h-10 w-full bg-white rounded-lg border border-slate-100" />}
+                    
+                    {field.type === 'Long Text' && <div className="h-20 w-full bg-white rounded-lg border border-slate-100" />}
+                    
+                    {field.type === 'Checkbox' && (
+                      <div className="flex items-center gap-2">
+                        <div className="w-5 h-5 bg-white rounded border-2 border-slate-200" />
+                        <div className="h-2 w-32 bg-slate-200 rounded-full" />
+                      </div>
+                    )}
+
+                    {field.type === 'Signature Pad' && (
+                      <div className="h-24 w-full bg-white rounded-xl border border-slate-100 flex flex-col items-center justify-center gap-2">
+                        <PenTool size={16} className="text-slate-300" />
+                        <div className="h-1.5 w-24 bg-slate-100 rounded-full" />
+                      </div>
+                    )}
+
+                    {field.type === 'Multiple Choice' && (
+                      <div className="grid grid-cols-2 gap-2">
+                        {field.options?.map((_, i) => (
+                          <div key={i} className="h-10 bg-white rounded-lg border border-slate-100 flex items-center px-3">
+                            <div className="w-3 h-3 rounded-full border-2 border-slate-200 mr-2" />
+                            <div className="h-1.5 w-16 bg-slate-100 rounded-full" />
+                          </div>
+                        )) || <div className="h-10 bg-white rounded-lg border border-slate-100 animate-pulse" />}
+                      </div>
+                    )}
+                  </div>
+
                   {field.type === 'Multiple Choice' && (
                     <div className="mt-4 pt-4 border-t border-slate-50 space-y-3 text-left">
                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Configure Options</p>
