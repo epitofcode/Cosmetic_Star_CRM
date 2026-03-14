@@ -67,7 +67,8 @@ export default function Patients() {
     try {
       setLoading(true);
       const data = await getPatients();
-      setPatients(data);
+      console.log("[Registry] Received data from API:", data);
+      setPatients(data || []);
     } catch (error) { console.error('Error:', error); } finally { setLoading(false); }
   };
 

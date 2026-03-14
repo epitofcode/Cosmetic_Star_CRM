@@ -114,6 +114,7 @@ app.get('/api/patients', async (req, res) => {
         return res.status(400).json({ error: error.message });
     }
 
+    console.log(`[API] Returning ${data?.length || 0} patients to frontend.`);
     res.json(data || []);
 });
 
@@ -430,6 +431,8 @@ app.get('/api/dashboard/stats', async (req, res) => {
 
         // 1. Fetch counts and basic data
         const { count: patientCount } = await supabase.from('patients').select('*', { count: 'exact', head: true });
+        console.log(`[Dashboard] Count: ${patientCount}`);
+        
         const { count: bookingCount } = await supabase.from('bookings').select('*', { count: 'exact', head: true });
         const { data: monthlyTransactions } = await supabase.from('transactions').select('amount, date').gte('date', firstDayOfMonth);
         const monthlyRevenue = monthlyTransactions?.reduce((sum, t) => sum + Number(t.amount || 0), 0) || 0;
@@ -443,6 +446,8 @@ app.get('/api/dashboard/stats', async (req, res) => {
             supabase.from('bookings').select('patient_id, date, service_type'),
             supabase.from('transactions').select('patient_id, amount')
         ]);
+
+        console.log(`[Dashboard] Selected ${patients?.length || 0} patient records for processing.`);
 
         const pendingBreakdown = { missingIntake: [], complianceGap: [], unpaidBalances: [], postOpFollowups: [], bookingBottleneck: [] };
         const distribution = { 'New Patients': 0, 'Treatment Plans': 0, 'Contracts Signed': 0, 'Completed': 0 };
