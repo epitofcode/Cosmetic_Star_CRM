@@ -143,14 +143,23 @@ export default function Patients() {
 
   return (
     <div className="space-y-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-        <div className="text-left">
-          <h1 className="text-3xl font-black text-slate-900">Patient Registry</h1>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 text-left">
+        <div>
+          <h1 className="text-3xl font-black text-slate-900 tracking-tight">Patient Registry</h1>
           <p className="text-slate-500 font-medium">Manage the clinic's digital clinical directory.</p>
         </div>
-        <button onClick={openNewPatientModal} className="bg-teal-600 hover:bg-teal-700 text-white px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-xs transition-all shadow-xl shadow-teal-600/20 active:scale-95 flex items-center justify-center gap-2">
-          <Plus size={18} /> Onboard New Patient
-        </button>
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={fetchPatients}
+            className="p-4 bg-white border border-slate-200 text-slate-400 hover:text-teal-600 rounded-2xl transition-all hover:shadow-md active:scale-95"
+            title="Refresh Registry"
+          >
+            <Loader2 className={cn(loading && "animate-spin")} size={20} />
+          </button>
+          <button onClick={openNewPatientModal} className="bg-teal-600 hover:bg-teal-700 text-white px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-xs transition-all shadow-xl shadow-teal-600/30 active:scale-95 flex items-center justify-center gap-2 whitespace-nowrap">
+            <Plus size={18} /> Onboard New Patient
+          </button>
+        </div>
       </div>
 
       {/* Search Bar */}

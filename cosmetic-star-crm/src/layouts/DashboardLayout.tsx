@@ -26,6 +26,7 @@ import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { usePatient } from '../context/PatientContext';
 import { useAuth } from '../context/AuthContext';
+import api from '../services/api';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -47,9 +48,24 @@ const navItems = [
 export default function DashboardLayout({ children, isContractSigned }: { children: React.ReactNode, isContractSigned: boolean }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
+  const [isBackendOnline, setIsBackendOnline] = useState<boolean | null>(null);
   const location = useLocation();
   const { selectedPatient, clearPatient } = usePatient();
   const { user, role, signOut } = useAuth();
+
+  React.useEffect(() => {
+    const checkHealth = async () => {
+      try {
+        await api.get('/health');
+        setIsBackendOnline(true);
+      } catch {
+        setIsBackendOnline(false);
+      }
+    };
+    checkHealth();
+    const interval = setInterval(checkHealth, 60000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleLogout = async () => {
     await signOut();
@@ -162,7 +178,14 @@ export default function DashboardLayout({ children, isContractSigned }: { childr
               <HelpCircle size={18} />
               <span className="text-xs font-bold uppercase tracking-widest">Support</span>
             </div>
-            <span className="text-[10px] font-black text-slate-700 uppercase tracking-widest">v1.2.1</span>
+            <div className="flex items-center gap-2">
+              <div className={cn(
+                "w-2 h-2 rounded-full",
+                isBackendOnline === true ? "bg-green-500 animate-pulse" : 
+                isBackendOnline === false ? "bg-red-500" : "bg-slate-600"
+              )} />
+              <span className="text-[10px] font-black text-slate-700 uppercase tracking-widest">v1.2.1</span>
+            </div>
           </div>
         </div>
       </aside>

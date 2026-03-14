@@ -121,16 +121,23 @@ const Dashboard = () => {
   ];
 
   return (
-    <div className="space-y-10 pb-12">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 text-left">
+    <div className="space-y-10 pb-12 text-left">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div className="relative">
           <div className="flex items-center gap-3 mb-1">
             <h1 className="text-3xl font-black text-slate-900 tracking-tight">Executive Overview</h1>
             {isRefreshing && <Loader2 size={16} className="animate-spin text-teal-500" />}
           </div>
-          <p className="text-slate-500 font-medium text-balance">Clinical analytics synchronized in real-time.</p>
+          <p className="text-slate-500 font-medium">Clinical analytics synchronized in real-time.</p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
+          <button 
+            onClick={() => fetchDashboardData(false)}
+            className="p-4 bg-white border border-slate-200 text-slate-400 hover:text-teal-600 rounded-2xl transition-all hover:shadow-md active:scale-95"
+            title="Refresh Analytics"
+          >
+            <Loader2 className={cn(isRefreshing && "animate-spin")} size={20} />
+          </button>
           <div className="bg-white border border-slate-200 text-slate-400 px-4 py-2.5 rounded-2xl font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 shadow-sm shrink-0">
             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
             Live Cloud Data
