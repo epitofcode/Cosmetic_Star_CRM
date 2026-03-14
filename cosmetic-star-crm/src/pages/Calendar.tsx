@@ -136,7 +136,15 @@ export default function CalendarPage() {
   };
 
   const handleFinalConfirm = async () => {
-    if (!selectedPatient || (scheduledSessions.length + existingBookings.length) < (treatmentPlan?.total_sessions || 1)) return;
+    if (!selectedPatient) return;
+    
+    if (!treatmentPlan) {
+      alert('No treatment plan found for this patient. Please create a treatment plan first.');
+      return;
+    }
+
+    if ((scheduledSessions.length + existingBookings.length) < (treatmentPlan?.total_sessions || 1)) return;
+    
     try {
       setIsSaving(true);
       
@@ -175,11 +183,11 @@ export default function CalendarPage() {
       setIsBookingConfirmed(true);
     } catch (error: any) {
       console.error("Final booking confirmation error:", error);
-      const errorMsg = error.response?.data?.error || 'Booking process failed.';
+      const errorMsg = error.response?.data?.error || error.message || 'Booking process failed.';
       if (errorMsg.includes('no longer available')) {
         alert('One or more selected slots are no longer available. Please refresh and try again.');
       } else {
-        alert(errorMsg);
+        alert(`Booking Error: ${errorMsg}`);
       }
     } finally {
       setIsSaving(false);
