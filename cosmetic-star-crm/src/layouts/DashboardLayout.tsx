@@ -69,7 +69,6 @@ export default function DashboardLayout({ children, isContractSigned }: { childr
 
   const handleLogout = async () => {
     await signOut();
-    window.location.href = '/login';
   };
 
   return (

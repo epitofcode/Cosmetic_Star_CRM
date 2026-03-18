@@ -1,11 +1,7 @@
 import React, { useState } from 'react';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '../services/supabase';
 import { Lock, Mail, Loader2, Star, ShieldCheck } from 'lucide-react';
 import { motion } from 'framer-motion';
-
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-const supabase = createClient(supabaseUrl || '', supabaseKey || '');
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -17,6 +13,9 @@ export default function Login() {
     e.preventDefault();
     setLoading(true);
     setError(null);
+
+    // Force sign out of any existing session before trying to log in as a new user
+    await supabase.auth.signOut();
 
     const { error: authError } = await supabase.auth.signInWithPassword({
       email,
