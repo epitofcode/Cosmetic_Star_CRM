@@ -73,7 +73,12 @@ export default function AdminFormBuilder() {
         setExistingTemplateId(t.id);
         setFormType(t.form_type);
         setTitle(t.title);
-        setFields(t.fields?.fields || []);
+        
+        // Handle potential missing fields in the JSONB data
+        const fieldData = (t.fields as any)?.fields || [];
+        setFields(Array.isArray(fieldData) ? fieldData : []);
+      } else {
+        setFields([]);
       }
     } catch {
       // template load error

@@ -391,7 +391,16 @@ app.get('/api/dashboard/stats', requireAuth, requireAdmin, async (req, res) => {
             };
         });
 
-        res.json({ totalPatients: patientCount || 0, surgeryBookings: bookingCount || 0, totalRevenue: monthlyRevenue, pendingReports: Object.values(pendingBreakdown).flat().length, pendingBreakdown, revenueAnalytics, clinicalDistribution: Object.entries(distribution).map(([name, value]) => ({ name, value })) });
+        res.json({ 
+            totalPatients: patientCount || 0, 
+            surgeryBookings: bookingCount || 0, 
+            totalRevenue: monthlyRevenue, 
+            pendingReports: Object.values(pendingBreakdown).flat().length, 
+            pendingBreakdown, 
+            revenueAnalytics, 
+            activityAnalytics: [],
+            clinicalDistribution: Object.entries(distribution).map(([name, value]) => ({ name, value })) 
+        });
     } catch (error) { res.status(500).json({ error: "Analytics Error" }); }
 });
 

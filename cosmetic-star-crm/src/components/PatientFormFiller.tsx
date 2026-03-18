@@ -75,7 +75,7 @@ export default function PatientFormFiller({ serviceId, patientId, onComplete }: 
           ← Back to forms
         </button>
         <DynamicFormRenderer 
-          formSchema={forms[activeFormIdx].fields}
+          formSchema={forms[activeFormIdx].fields as any}
           title={forms[activeFormIdx].title}
           onSubmit={handleFormSubmit}
         />

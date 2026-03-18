@@ -217,7 +217,7 @@ export default function TreatmentDocumentChecklist({ dynamicForms, patientId }: 
               
               <div className="py-10 px-2 sm:px-6">
                 <DynamicFormRenderer 
-                  formSchema={activeForm.form_schema}
+                  formSchema={activeForm.form_schema as any}
                   title={activeForm.title}
                   description={`Regulatory requirement for: ${activeForm.form_type}`}
                   onSubmit={handleFormSubmit}

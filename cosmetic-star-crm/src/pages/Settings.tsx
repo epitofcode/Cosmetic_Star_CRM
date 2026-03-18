@@ -115,7 +115,7 @@ export default function Settings() {
       setShowPasswordModal(true);
       return;
     }
-    setEditingRowId(row.id);
+    setEditingRowId(String(row.id));
     setEditFormData({ ...row });
   };
 
@@ -240,10 +240,10 @@ export default function Settings() {
                   </td>
                 </tr>
               ) : filteredData.map((row) => (
-                <tr key={row.id} className="hover:bg-slate-50/80 transition-all group">
+                <tr key={String(row.id || Math.random())} className="hover:bg-slate-50/80 transition-all group">
                   {Object.entries(row).map(([key, value]) => (
                     <td key={key} className="px-6 py-4">
-                      {editingRowId === row.id && !['id', 'created_at', 'signed_at', 'patient_id'].includes(key) ? (
+                      {editingRowId === String(row.id) && !['id', 'created_at', 'signed_at', 'patient_id'].includes(key) ? (
                         key === 'data' ? (
                           <div className="flex items-center gap-2 text-amber-600 font-bold text-[10px]">
                             <FileJson size={14} /> JSON Object (Protected)

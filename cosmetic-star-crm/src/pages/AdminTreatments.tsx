@@ -25,8 +25,8 @@ interface Service {
   id: string;
   name: string;
   base_price: number;
-  description: string;
-  color_code: string;
+  description?: string;
+  color_code?: string;
   is_active: boolean;
 }
 
@@ -52,7 +52,7 @@ export default function AdminTreatments() {
     try {
       setLoading(true);
       const data = await adminGetServices();
-      setServices(data);
+      setServices(data as Service[]);
     } catch {
       /* fetch error */
     } finally {

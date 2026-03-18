@@ -148,6 +148,7 @@ export interface DashboardStats {
     pendingReports: number;
     pendingBreakdown: PendingBreakdown;
     revenueAnalytics: { date: string; amount: number }[];
+    activityAnalytics: { date: string; value: number }[];
     clinicalDistribution: { name: string; value: number }[];
 }
 

@@ -149,7 +149,7 @@ export default function DynamicFormRenderer({
                 required={field.required}
                 className={cn(
                   "w-full bg-slate-50 border-2 border-transparent focus:bg-white focus:border-teal-500/20 focus:ring-4 focus:ring-teal-500/5 rounded-2xl py-4 px-6 outline-none transition-all placeholder:text-slate-300 font-medium",
-                  errors[field.label] && "border-red-100 bg-red-50/30"
+                  errors[field.label] ? "border-red-100 bg-red-50/30" : ""
                 )}
                 placeholder="Type your response here..."
                 onChange={(e) => handleInputChange(field.label, e.target.value)}
@@ -162,7 +162,7 @@ export default function DynamicFormRenderer({
                 required={field.required}
                 className={cn(
                   "w-full bg-slate-50 border-2 border-transparent focus:bg-white focus:border-teal-500/20 focus:ring-4 focus:ring-teal-500/5 rounded-2xl py-4 px-6 outline-none transition-all placeholder:text-slate-300 font-medium resize-none",
-                  errors[field.label] && "border-red-100 bg-red-50/30"
+                  errors[field.label] ? "border-red-100 bg-red-50/30" : ""
                 )}
                 placeholder="Provide detailed information..."
                 onChange={(e) => handleInputChange(field.label, e.target.value)}
@@ -172,8 +172,8 @@ export default function DynamicFormRenderer({
             {field.type === 'Checkbox' && (
               <label className={cn(
                 "flex items-center gap-4 p-4 rounded-2xl border-2 border-transparent bg-slate-50 cursor-pointer transition-all hover:bg-slate-100/50",
-                formValues[field.label] && "bg-teal-50/50 border-teal-500/20",
-                errors[field.label] && "border-red-100 bg-red-50/30"
+                formValues[field.label] ? "bg-teal-50/50 border-teal-500/20" : "",
+                errors[field.label] ? "border-red-100 bg-red-50/30" : ""
               )}>
                 <div className="relative flex items-center">
                   <input

@@ -119,7 +119,7 @@ export default function CalendarPage() {
           date: allDates || 'No remaining sessions',
           time: 'Schedule Updated',
           practitioner: 'Kavya Sangameswara',
-          service: treatmentPlan.service_name
+          service: treatmentPlan?.service_name || 'Treatment'
         });
       } catch {
         // Email failure is non-critical

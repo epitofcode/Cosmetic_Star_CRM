@@ -8,6 +8,7 @@ import {
   useSensors,
   DragOverlay,
   defaultDropAnimationSideEffects,
+  type DragEndEvent,
 } from '@dnd-kit/core';
 import {
   arrayMove,
@@ -202,14 +203,15 @@ export default function FormBuilder() {
     })
   );
 
-  const handleDragEnd = (event: { active: { id: string; data: { current?: { isSidebarItem?: boolean; type?: string } } }; over: { id: string } | null }) => {
+  const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
 
     if (!over) return;
 
     // Handle dropping a sidebar item into the list
-    if (active.data.current?.isSidebarItem) {
-      const type = active.data.current.type as FieldType;
+    const activeData = active.data.current as { isSidebarItem?: boolean; type?: string } | undefined;
+    if (activeData?.isSidebarItem) {
+      const type = activeData.type as FieldType;
       const newField: FormField = {
         id: `field-${Date.now()}`,
         type,
