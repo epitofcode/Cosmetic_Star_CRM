@@ -122,8 +122,9 @@ export default function Settings() {
   const handleSaveEdit = async () => {
     try {
       setLoading(true);
-      const updatedRow = await adminUpdateRow(selectedTable, editingRowId!, editFormData);
-      setData(data.map(r => r.id === editingRowId ? updatedRow : r));
+      const rowId = editingRowId as string;
+      const updatedRow = await adminUpdateRow(selectedTable, rowId, editFormData);
+      setData(data.map(r => String(r.id) === rowId ? updatedRow : r));
       setEditingRowId(null);
       alert('Record updated successfully.');
     } catch (error) {

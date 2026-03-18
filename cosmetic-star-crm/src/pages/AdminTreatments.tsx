@@ -67,7 +67,7 @@ export default function AdminTreatments() {
         name: service.name,
         base_price: service.base_price.toString(),
         description: service.description || '',
-        color_code: service.color_code
+        color_code: service.color_code || '#0d9488'
       });
     } else {
       setEditingId(null);
