@@ -384,6 +384,7 @@ app.delete('/api/admin/tables/:tableName/:id', requireAuth, requireAdmin, async 
     } catch (err) { res.status(403).json({ error: err.message }); }
 });
 
+// --- CLINIC SERVICES (Treatments) ---
 app.get('/api/admin/services', requireAuth, requireAdmin, async (req, res) => {
     const { data } = await supabase.from('clinic_services').select('*').order('name');
     res.json(data || []);
@@ -393,6 +394,47 @@ app.post('/api/admin/services', requireAuth, requireAdmin, async (req, res) => {
     const { data, error } = await supabase.from('clinic_services').insert([req.body]).select();
     if (error) return res.status(400).json({ error: error.message });
     res.status(201).json(data[0]);
+});
+
+app.put('/api/admin/services/:id', requireAuth, requireAdmin, async (req, res) => {
+    const { data, error } = await supabase.from('clinic_services').update(req.body).eq('id', req.params.id).select();
+    if (error) return res.status(400).json({ error: error.message });
+    res.json(data[0]);
+});
+
+app.delete('/api/admin/services/:id', requireAuth, requireAdmin, async (req, res) => {
+    const { error } = await supabase.from('clinic_services').delete().eq('id', req.params.id);
+    if (error) return res.status(400).json({ error: error.message });
+    res.json({ message: 'Service deleted' });
+});
+
+// --- FORM TEMPLATES ---
+app.get('/api/admin/form-templates', requireAuth, requireAdmin, async (req, res) => {
+    const { data } = await supabase.from('form_templates').select('*, clinic_services(name)');
+    res.json(data || []);
+});
+
+app.get('/api/admin/form-templates/:serviceId', requireAuth, requireAdmin, async (req, res) => {
+    const { data } = await supabase.from('form_templates').select('*').eq('service_id', req.params.serviceId);
+    res.json(data || []);
+});
+
+app.post('/api/admin/form-templates', requireAuth, requireAdmin, async (req, res) => {
+    const { data, error } = await supabase.from('form_templates').insert([req.body]).select();
+    if (error) return res.status(400).json({ error: error.message });
+    res.status(201).json(data[0]);
+});
+
+app.put('/api/admin/form-templates/:id', requireAuth, requireAdmin, async (req, res) => {
+    const { data, error } = await supabase.from('form_templates').update(req.body).eq('id', req.params.id).select();
+    if (error) return res.status(400).json({ error: error.message });
+    res.json(data[0]);
+});
+
+app.delete('/api/admin/form-templates/:id', requireAuth, requireAdmin, async (req, res) => {
+    const { error } = await supabase.from('form_templates').delete().eq('id', req.params.id);
+    if (error) return res.status(400).json({ error: error.message });
+    res.json({ message: 'Template deleted' });
 });
 
 app.get('/api/admin/form-templates', requireAuth, requireAdmin, async (req, res) => {
