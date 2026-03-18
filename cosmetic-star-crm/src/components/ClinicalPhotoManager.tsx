@@ -148,7 +148,6 @@ export default function ClinicalPhotoManager({ patientId }: { patientId: number 
   };
 
   const saveToGallery = () => {
-    console.log(`Saving ${photos.length} photos for Patient ${patientId} to Supabase...`);
     alert(`Ready to upload ${photos.length} clinical images to the 'clinical-images' bucket.`);
   };
 

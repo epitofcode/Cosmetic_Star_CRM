@@ -7,6 +7,7 @@ import {
   FileText
 } from 'lucide-react';
 import { getFormsForService, staffCreatePatientForm } from '../services/api';
+import type { FormTemplate } from '../services/api';
 import DynamicFormRenderer from './DynamicFormRenderer';
 
 interface PatientFormFillerProps {
@@ -16,7 +17,7 @@ interface PatientFormFillerProps {
 }
 
 export default function PatientFormFiller({ serviceId, patientId, onComplete }: PatientFormFillerProps) {
-  const [forms, setForms] = useState<any[]>([]);
+  const [forms, setForms] = useState<FormTemplate[]>([]);
   const [loading, setLoading] = useState(false);
   const [activeFormIdx, setActiveFormIdx] = useState<number | null>(null);
 
@@ -31,14 +32,14 @@ export default function PatientFormFiller({ serviceId, patientId, onComplete }: 
       setLoading(true);
       const data = await getFormsForService(serviceId);
       setForms(data || []);
-    } catch (err) {
-      console.error('Failed to fetch forms:', err);
+    } catch {
+      /* fetch error */
     } finally {
       setLoading(false);
     }
   };
 
-  const handleFormSubmit = async (answers: any) => {
+  const handleFormSubmit = async (answers: Record<string, unknown>) => {
     if (activeFormIdx === null) return;
     
     const template = forms[activeFormIdx];

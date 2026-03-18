@@ -20,31 +20,13 @@ import { twMerge } from 'tailwind-merge';
 import ReceiptGenerator from '../components/ReceiptGenerator';
 import { usePatient } from '../context/PatientContext';
 import api from '../services/api';
+import type { Transaction, BillingRecord } from '../services/api';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-interface Transaction {
-  id: string;
-  amount: number;
-  type?: string;
-  date: string;
-  proof_name: string;
-  proof_url?: string;
-  receipt_number: string;
-}
-
-interface BillingRecord {
-  id: string;
-  patient_id: string;
-  patient_name: string;
-  service_name: string;
-  total_amount: number;
-  amount_paid: number;
-  status: 'Payment Pending' | 'Payment Done';
-  transactions: Transaction[];
-}
+// Types imported from '../services/api'
 
 export default function Financials() {
   const { selectedPatient } = usePatient();
@@ -59,7 +41,17 @@ export default function Financials() {
   const [isSaving, setIsSaving] = useState(false);
   
   // Receipt State
-  const [activeReceipt, setActiveReceipt] = useState<{ isOpen: boolean; data: any } | null>(null);
+  const [activeReceipt, setActiveReceipt] = useState<{ isOpen: boolean; data: {
+    patientId: number | string;
+    patientName: string;
+    patientEmail?: string;
+    serviceName: string;
+    totalAmount: number;
+    amountPaid: number;
+    paymentMethod: string;
+    date: string;
+    receiptNumber: string;
+  } } | null>(null);
 
   useEffect(() => {
     if (selectedPatient) {
@@ -73,8 +65,7 @@ export default function Financials() {
       setLoading(true);
       const response = await api.get(`/financials/${selectedPatient.id}`);
       setBillingRecord(response.data);
-    } catch (error) {
-      console.error('Error fetching billing data:', error);
+    } catch {
       setBillingRecord(null);
     } finally {
       setLoading(false);
@@ -143,11 +134,11 @@ export default function Financials() {
         service_name: billingRecord.service_name,
         receipt_number: newTransaction.receipt_number,
         date: new Date().toLocaleDateString('en-GB')
-      }).catch(err => console.error('Automated receipt email failed:', err));
+      }).catch(() => { /* email failure is non-critical */ });
 
-    } catch (error: any) {
-      console.error('Error recording payment:', error);
-      const message = error.response?.data?.error || error.message || 'Unknown error';
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { error?: string } }; message?: string };
+      const message = err.response?.data?.error || err.message || 'Unknown error';
       alert(`Failed to record payment: ${message}`);
     } finally {
       setIsSaving(false);

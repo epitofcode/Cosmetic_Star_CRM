@@ -21,7 +21,6 @@ export const sendBookingConfirmation = async (data: EmailData) => {
     });
     return response.data;
   } catch (error) {
-    console.error('Failed to send email via backend:', error);
     throw error;
   }
 };

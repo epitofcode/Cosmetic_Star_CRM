@@ -53,8 +53,8 @@ export default function AdminTreatments() {
       setLoading(true);
       const data = await adminGetServices();
       setServices(data);
-    } catch (error) {
-      console.error('Failed to fetch services:', error);
+    } catch {
+      /* fetch error */
     } finally {
       setLoading(false);
     }

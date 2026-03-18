@@ -27,7 +27,7 @@ import {
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { usePatient } from '../context/PatientContext';
-import { getBookedSlots, createBooking, getTreatmentPlan, getBooking, deleteBooking } from '../services/api';
+import { getBookedSlots, createBooking, getTreatmentPlan, getBooking, deleteBooking, type TreatmentPlan, type Booking } from '../services/api';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -47,8 +47,8 @@ export default function CalendarPage() {
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
   const [bookedSlots, setBookedSlots] = useState<string[]>([]);
   const [scheduledSessions, setScheduledSessions] = useState<Session[]>([]);
-  const [treatmentPlan, setTreatmentPlan] = useState<any>(null);
-  const [existingBookings, setExistingBookings] = useState<any[]>([]);
+  const [treatmentPlan, setTreatmentPlan] = useState<TreatmentPlan | null>(null);
+  const [existingBookings, setExistingBookings] = useState<Booking[]>([]);
   const [isBookingConfirmed, setIsBookingConfirmed] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -109,10 +109,9 @@ export default function CalendarPage() {
         setBookedSlots(slots);
       }
 
-      // 2. Trigger updated email with remaining sessions
-      console.log("Triggering updated email after cancellation...");
+      // Trigger updated email with remaining sessions
       try {
-        const allDates = (bookings || []).map((b: any) => format(new Date(b.date), 'do MMM')).join(', ');
+        const allDates = (bookings || []).map((b: Booking) => format(new Date(b.date), 'do MMM')).join(', ');
         
         await sendBookingConfirmation({
           to_name: `${selectedPatient!.first_name} ${selectedPatient!.last_name}`,
@@ -122,13 +121,12 @@ export default function CalendarPage() {
           practitioner: 'Kavya Sangameswara',
           service: treatmentPlan.service_name
         });
-      } catch (emailErr) {
-        console.error("Cancellation email failed:", emailErr);
+      } catch {
+        // Email failure is non-critical
       }
 
       alert('Session cancelled and schedule updated.');
-    } catch (error) {
-      console.error('Error cancelling booking:', error);
+    } catch {
       alert('Failed to cancel session.');
     } finally {
       setIsSaving(false);
@@ -148,8 +146,7 @@ export default function CalendarPage() {
     try {
       setIsSaving(true);
       
-      // 1. Create all new bookings in parallel
-      console.log("Creating new bookings for sessions:", scheduledSessions);
+      // Create all new bookings in parallel
       await Promise.all(scheduledSessions.map(s => 
         createBooking({
           patient_id: selectedPatient.id,
@@ -159,8 +156,7 @@ export default function CalendarPage() {
         })
       ));
 
-      // 2. Send combined confirmation email
-      console.log("Triggering confirmation email...");
+      // Send combined confirmation email
       try {
         const allDates = [
           ...existingBookings.map(b => format(new Date(b.date), 'do MMM')),
@@ -175,15 +171,14 @@ export default function CalendarPage() {
           practitioner: 'Kavya Sangameswara',
           service: treatmentPlan.service_name
         });
-        console.log("Email trigger successful.");
-      } catch (emailErr) {
-        console.error("Email service failed but bookings saved:", emailErr);
+      } catch {
+        // Email failure is non-critical — bookings already saved
       }
 
       setIsBookingConfirmed(true);
-    } catch (error: any) {
-      console.error("Final booking confirmation error:", error);
-      const errorMsg = error.response?.data?.error || error.message || 'Booking process failed.';
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { error?: string } }; message?: string };
+      const errorMsg = err.response?.data?.error || err.message || 'Booking process failed.';
       if (errorMsg.includes('no longer available')) {
         alert('One or more selected slots are no longer available. Please refresh and try again.');
       } else {

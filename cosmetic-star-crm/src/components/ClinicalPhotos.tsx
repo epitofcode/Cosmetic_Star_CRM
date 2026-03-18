@@ -39,8 +39,8 @@ export default function ClinicalPhotos({ patientId }: { patientId: number | stri
       setLoading(true);
       const data = await staffGetPhotos(patientId);
       setPhotos(data || []);
-    } catch (err) {
-      console.error(err);
+    } catch {
+      /* fetch error */
     } finally {
       setLoading(false);
     }

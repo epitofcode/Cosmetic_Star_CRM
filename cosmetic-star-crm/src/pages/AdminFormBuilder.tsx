@@ -61,7 +61,7 @@ export default function AdminFormBuilder() {
     try {
       const data = await adminGetServices();
       setServices(data);
-    } catch (err) { console.error(err); }
+    } catch { /* fetch error */ }
   };
 
   const fetchExistingTemplate = async (sid: string) => {
@@ -75,8 +75,8 @@ export default function AdminFormBuilder() {
         setTitle(t.title);
         setFields(t.fields?.fields || []);
       }
-    } catch (err) {
-      console.error('Template load error:', err);
+    } catch {
+      // template load error
     } finally {
       setLoading(false);
     }
@@ -167,7 +167,7 @@ export default function AdminFormBuilder() {
 
               <div className="space-y-1.5 text-left">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Form Type</label>
-                <select value={formType} onChange={(e) => setFormType(e.target.value as any)} className="w-full bg-slate-50 border-none rounded-xl py-3 px-4 text-sm font-bold outline-none focus:ring-2 ring-teal-500/20">
+                <select value={formType} onChange={(e) => setFormType(e.target.value as 'consent' | 'intake' | 'contract')} className="w-full bg-slate-50 border-none rounded-xl py-3 px-4 text-sm font-bold outline-none focus:ring-2 ring-teal-500/20">
                   <option value="consent">Consent Form</option>
                   <option value="intake">Medical Intake</option>
                   <option value="contract">Legal Contract</option>
@@ -193,7 +193,7 @@ export default function AdminFormBuilder() {
               ].map((el) => (
                 <button 
                   key={el.type}
-                  onClick={() => addField(el.type as any)}
+                  onClick={() => addField(el.type as FieldSchema['type'])}
                   className="flex items-center gap-3 p-4 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-all text-left"
                 >
                   <el.icon size={18} className="text-teal-400" />

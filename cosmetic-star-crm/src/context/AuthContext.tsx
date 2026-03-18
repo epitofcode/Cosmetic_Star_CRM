@@ -19,7 +19,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let timeout: any;
+    let timeout: ReturnType<typeof setTimeout>;
 
     const resetTimer = () => {
       clearTimeout(timeout);
@@ -81,8 +81,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .single();
 
       if (data) setRole(data.role as 'Admin' | 'Staff');
-    } catch (err) {
-      console.error('Error fetching role:', err);
+    } catch {
+      /* role fetch error */
     } finally {
       setLoading(false);
     }

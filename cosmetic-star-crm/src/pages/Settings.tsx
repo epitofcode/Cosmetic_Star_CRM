@@ -38,7 +38,7 @@ const TABLES = [
 export default function Settings() {
   const { role } = useAuth();
   const [selectedTable, setSelectedTable] = useState(TABLES[0].id);
-  const [data, setData] = useState<any[]>([]);
+  const [data, setData] = useState<Record<string, unknown>[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   
@@ -49,7 +49,7 @@ export default function Settings() {
   
   // Edit State
   const [editingRowId, setEditingRowId] = useState<string | null>(null);
-  const [editFormData, setEditFormData] = useState<any>({});
+  const [editFormData, setEditFormData] = useState<Record<string, unknown>>({});
 
   useEffect(() => {
     if (role === 'Admin') {
@@ -62,8 +62,8 @@ export default function Settings() {
       setLoading(true);
       const tableData = await adminGetTableData(selectedTable);
       setData(tableData);
-    } catch (error) {
-      console.error('Failed to fetch table data:', error);
+    } catch {
+      // fetch error
     } finally {
       setLoading(false);
     }
@@ -102,14 +102,15 @@ export default function Settings() {
         setShowPasswordModal(false);
         setPassword('');
       }
-    } catch (error: any) {
-      alert(error.response?.data?.error || 'Invalid administrative password.');
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { error?: string } } };
+      alert(err.response?.data?.error || 'Invalid administrative password.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleEditInit = (row: any) => {
+  const handleEditInit = (row: Record<string, unknown>) => {
     if (!isEditingUnlocked) {
       setShowPasswordModal(true);
       return;

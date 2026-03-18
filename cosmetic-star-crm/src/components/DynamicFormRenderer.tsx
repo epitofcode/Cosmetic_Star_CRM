@@ -33,7 +33,7 @@ interface FormSchema {
 
 interface DynamicFormRendererProps {
   formSchema: FormSchema;
-  onSubmit: (data: any) => void;
+  onSubmit: (data: Record<string, unknown>) => void;
   title?: string;
   description?: string;
 }
@@ -46,11 +46,11 @@ export default function DynamicFormRenderer({
 }: DynamicFormRendererProps) {
   // State to hold all form answers
   // We use the label as the key for the JSON output
-  const [formValues, setFormValues] = useState<Record<string, any>>({});
+  const [formValues, setFormValues] = useState<Record<string, unknown>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const sigCanvasRefs = useRef<Record<string, SignatureCanvas | null>>({});
 
-  const handleInputChange = (label: string, value: any) => {
+  const handleInputChange = (label: string, value: unknown) => {
     setFormValues(prev => ({ ...prev, [label]: value }));
     // Clear error when user types
     if (errors[label]) {
@@ -70,7 +70,7 @@ export default function DynamicFormRenderer({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const newErrors: Record<string, string> = {};
-    const finalData: Record<string, any> = { ...formValues };
+    const finalData: Record<string, unknown> = { ...formValues };
 
     // Validate and process data
     formSchema.fields.forEach(field => {

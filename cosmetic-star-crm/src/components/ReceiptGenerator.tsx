@@ -1,16 +1,15 @@
 import React, { useRef, useState } from 'react';
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
-import { 
-  X, 
-  Download, 
-  Mail, 
+import {
+  X,
+  Download,
+  Mail,
   Star,
   CheckCircle2,
   Loader2
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import api from '../services/api';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -44,38 +43,26 @@ export default function ReceiptGenerator({ isOpen, onClose, data }: ReceiptGener
   const handleDownloadPDF = async () => {
     try {
       setIsGenerating(true);
-      const API_URL = import.meta.env.VITE_API_URL || '/api';
-      
-      const response = await fetch(`${API_URL}/generate-receipt-pdf`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          patientId: data.patientId,
-          patientName: data.patientName,
-          amount: data.amountPaid,
-          service_name: data.serviceName,
-          receipt_number: data.receiptNumber,
-          date: data.date,
-          paymentMethod: data.paymentMethod
-        })
-      });
+      const response = await api.post('/generate-receipt-pdf', {
+        patientName: data.patientName,
+        amount: data.amountPaid,
+        service_name: data.serviceName,
+        receipt_number: data.receiptNumber,
+        date: data.date,
+        paymentMethod: data.paymentMethod
+      }, { responseType: 'blob' });
 
-      if (!response.ok) throw new Error('Backend failed');
-
-      const blob = await response.blob();
+      const blob = new Blob([response.data], { type: 'application/pdf' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      
-      // Custom Naming: patientID-name.pdf
       const fileName = `${data.patientId}-${data.patientName.replace(/\s+/g, '_')}.pdf`;
       a.download = fileName;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
-    } catch (error) {
-      console.error("PDF Download Error:", error);
+    } catch {
       alert("Failed to download PDF. Please check your internet connection.");
     } finally {
       setIsGenerating(false);
@@ -90,26 +77,16 @@ export default function ReceiptGenerator({ isOpen, onClose, data }: ReceiptGener
 
     try {
       setIsSending(true);
-      const API_URL = import.meta.env.VITE_API_URL || '/api';
-      
-      const response = await fetch(`${API_URL}/email/send-payment-receipt`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          to_email: data.patientEmail,
-          to_name: data.patientName,
-          amount: data.amountPaid,
-          service_name: data.serviceName,
-          receipt_number: data.receiptNumber,
-          date: data.date
-        })
+      await api.post('/email/send-payment-receipt', {
+        to_email: data.patientEmail,
+        to_name: data.patientName,
+        amount: data.amountPaid,
+        service_name: data.serviceName,
+        receipt_number: data.receiptNumber,
+        date: data.date
       });
-
-      if (!response.ok) throw new Error('Network response was not ok');
-      
       alert(`Receipt #${data.receiptNumber} has been re-sent to ${data.patientEmail}`);
-    } catch (error) {
-      console.error('Manual email send error:', error);
+    } catch {
       alert('Failed to send email via server. Please check your internet connection.');
     } finally {
       setIsSending(false);

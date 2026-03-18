@@ -14,7 +14,7 @@ import {
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { usePatient } from '../context/PatientContext';
-import { uploadSignature, checkContractStatus, getTreatmentPlan } from '../services/api';
+import { uploadSignature, checkContractStatus, getTreatmentPlan, type TreatmentPlan as TreatmentPlanType } from '../services/api';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -29,7 +29,7 @@ export default function DigitalContract({ onSign }: DigitalContractProps) {
   const sigCanvas = useRef<SignatureCanvas>(null);
   const [isSigned, setIsSigned] = useState(false);
   const [existingSignature, setExistingSignature] = useState<string | null>(null);
-  const [treatmentPlan, setTreatmentPlan] = useState<any>(null);
+  const [treatmentPlan, setTreatmentPlan] = useState<TreatmentPlanType | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showToast, setShowToast] = useState(false);
@@ -52,7 +52,7 @@ export default function DigitalContract({ onSign }: DigitalContractProps) {
         setIsSigned(false);
         setExistingSignature(null);
       }
-    } catch (error) { console.error('Load error:', error); } finally { setLoading(false); }
+    } catch { /* load error */ } finally { setLoading(false); }
   };
 
   const clear = () => {
@@ -77,7 +77,7 @@ export default function DigitalContract({ onSign }: DigitalContractProps) {
       setShowToast(true);
       onSign();
       setTimeout(() => setShowToast(false), 2000);
-    } catch (error: any) { alert('Save failed'); } finally { setIsUploading(false); }
+    } catch { alert('Save failed'); } finally { setIsUploading(false); }
   };
 
   if (!selectedPatient) return <div className="py-20 text-center text-slate-500">Please select a patient first.</div>;

@@ -21,17 +21,18 @@ function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-// --- Types ---
+import type { FormTemplate } from '../services/api';
+
 interface DocumentItem {
   id: string;
   title: string;
   form_type: string;
-  form_schema: any;
+  form_schema: Record<string, unknown>;
   status: 'Completed' | 'Pending';
 }
 
 interface TreatmentDocumentChecklistProps {
-  dynamicForms: any[];
+  dynamicForms: FormTemplate[];
   patientId: number | string;
 }
 
@@ -71,7 +72,7 @@ export default function TreatmentDocumentChecklist({ dynamicForms, patientId }: 
     setActiveForm(doc);
   };
 
-  const handleFormSubmit = async (data: any) => {
+  const handleFormSubmit = async (data: Record<string, unknown>) => {
     if (!activeForm) return;
     
     try {
@@ -90,7 +91,6 @@ export default function TreatmentDocumentChecklist({ dynamicForms, patientId }: 
       alert(`${activeForm.title} saved to patient record.`);
       setActiveForm(null);
     } catch (err) {
-      console.error('Save error:', err);
       alert('Failed to save clinical form.');
     }
   };

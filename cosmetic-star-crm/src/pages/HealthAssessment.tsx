@@ -90,7 +90,7 @@ export default function HealthAssessment() {
       setLoading(true);
       const data = await getAssessment(selectedPatient!.id);
       if (data && data.data) setFormData(data.data);
-    } catch (error) { console.error('Load error:', error); } finally { setLoading(false); }
+    } catch { /* load error */ } finally { setLoading(false); }
   };
 
   const handleQuestionChange = (id: keyof typeof formData.questions, value: boolean, details: string) => {
@@ -104,7 +104,7 @@ export default function HealthAssessment() {
       setLoading(true);
       await saveAssessment(selectedPatient.id, formData);
       alert('Clinical Assessment Saved Successfully');
-    } catch (error: any) { alert('Save failed'); } finally { setLoading(false); }
+    } catch { alert('Save failed'); } finally { setLoading(false); }
   };
 
   if (!selectedPatient) return <div className="py-20 text-center text-slate-500">Please select a patient first.</div>;

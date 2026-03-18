@@ -15,7 +15,7 @@ import AdminFormBuilder from './pages/AdminFormBuilder';
 import Login from './pages/Login';
 import { PatientProvider, usePatient } from './context/PatientContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import { checkContractStatus, getDashboardStats, getRecentAppointments } from './services/api';
+import { checkContractStatus, getDashboardStats, getRecentAppointments, type DashboardStats, type RecentAppointment, type PendingItem, type PendingItemWithService, type PendingItemWithBalance, type PendingItemWithDateService } from './services/api';
 
 import { 
   Plus, 
@@ -63,8 +63,8 @@ function cn(...inputs: ClassValue[]) {
 const COLORS = ['#0d9488', '#6366f1', '#10b981', '#f59e0b'];
 
 const Dashboard = () => {
-  const [stats, setStats] = useState<any>(null);
-  const [recentAppointments, setRecentAppointments] = useState<any[]>([]);
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [recentAppointments, setRecentAppointments] = useState<RecentAppointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isPendingModalOpen, setIsPendingModalOpen] = useState(false);
@@ -80,8 +80,8 @@ const Dashboard = () => {
       ]);
       setStats(statsData);
       setRecentAppointments(recentData);
-    } catch (error) {
-      console.error('Failed to fetch dashboard data:', error);
+    } catch {
+      // dashboard fetch error
     } finally {
       setLoading(false);
       setIsRefreshing(false);
@@ -219,7 +219,7 @@ const Dashboard = () => {
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie data={stats?.clinicalDistribution} cx="50%" cy="50%" innerRadius={window.innerWidth < 640 ? 40 : 60} outerRadius={window.innerWidth < 640 ? 70 : 90} paddingAngle={8} dataKey="value">
-                  {stats?.clinicalDistribution?.map((entry: any, index: number) => (
+                  {stats?.clinicalDistribution?.map((_entry: { name: string; value: number }, index: number) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
@@ -258,7 +258,7 @@ const Dashboard = () => {
                     <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest break-words">Missing Medical Assessments ({stats.pendingBreakdown.missingIntake.length})</h3>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {stats.pendingBreakdown.missingIntake.map((p: any) => (
+                    {stats.pendingBreakdown.missingIntake.map((p: PendingItem) => (
                       <div key={p.id} className="flex items-center justify-between p-4 bg-white border border-slate-100 rounded-2xl shadow-sm hover:border-teal-500/30 transition-all group gap-4">
                         <span className="font-bold text-slate-700 break-words min-w-0">{p.name}</span>
                         <ChevronRight size={16} className="text-slate-300 group-hover:text-teal-500 transition-colors shrink-0" />
@@ -274,7 +274,7 @@ const Dashboard = () => {
                     <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest break-words">Compliance Gap: Missing Contracts ({stats.pendingBreakdown.complianceGap.length})</h3>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {stats.pendingBreakdown.complianceGap.map((p: any) => (
+                    {stats.pendingBreakdown.complianceGap.map((p: PendingItemWithService) => (
                       <div key={p.id} className="flex items-center justify-between p-4 bg-white border border-slate-100 rounded-2xl shadow-sm hover:border-indigo-500/30 transition-all group gap-4">
                         <div className="min-w-0">
                           <p className="font-bold text-slate-700 break-words">{p.name}</p>
@@ -293,7 +293,7 @@ const Dashboard = () => {
                     <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest break-words">Unpaid Post-Op Balances ({stats.pendingBreakdown.unpaidBalances.length})</h3>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {stats.pendingBreakdown.unpaidBalances.map((p: any) => (
+                    {stats.pendingBreakdown.unpaidBalances.map((p: PendingItemWithBalance) => (
                       <div key={p.id} className="flex items-center justify-between p-4 bg-red-50/30 border border-red-100 rounded-2xl shadow-sm hover:bg-red-50 transition-all group gap-4">
                         <span className="font-bold text-slate-700 break-words min-w-0">{p.name}</span>
                         <span className="font-black text-red-600 text-sm whitespace-nowrap">£{p.balance.toLocaleString()}</span>
@@ -309,7 +309,7 @@ const Dashboard = () => {
                     <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest break-words">Recent Surgery Follow-ups ({stats.pendingBreakdown.postOpFollowups.length})</h3>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {stats.pendingBreakdown.postOpFollowups.map((p: any) => (
+                    {stats.pendingBreakdown.postOpFollowups.map((p: PendingItemWithDateService) => (
                       <div key={p.id} className="flex items-center justify-between p-4 bg-teal-50/30 border border-teal-100 rounded-2xl shadow-sm hover:bg-teal-50 transition-all group gap-4">
                         <div className="min-w-0">
                           <p className="font-bold text-slate-700 break-words">{p.name}</p>
@@ -328,7 +328,7 @@ const Dashboard = () => {
                     <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest break-words">Booking Bottleneck: Date Not Set ({stats.pendingBreakdown.bookingBottleneck.length})</h3>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {stats.pendingBreakdown.bookingBottleneck.map((p: any) => (
+                    {stats.pendingBreakdown.bookingBottleneck.map((p: PendingItem) => (
                       <div key={p.id} className="flex items-center justify-between p-4 bg-white border border-slate-100 rounded-2xl shadow-sm hover:border-orange-500/30 transition-all group gap-4">
                         <span className="font-bold text-slate-700 break-words min-w-0">{p.name}</span>
                         <ChevronRight size={16} className="text-slate-300 group-hover:text-orange-500 transition-colors shrink-0" />

@@ -83,7 +83,25 @@ const upload = multer({
     limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit for clinical photos
 });
 
-app.use(cors());
+// --- CORS: Restrict to known origins ---
+const allowedOrigins = [
+    process.env.FRONTEND_URL,
+    'https://starteck.co.uk',
+    'https://www.starteck.co.uk',
+    'http://localhost:5173',
+    'http://localhost:3000'
+].filter(Boolean);
+
+app.use(cors({
+    origin: (origin, callback) => {
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error('CORS: Origin not allowed'));
+        }
+    },
+    credentials: true
+}));
 app.use(express.json());
 
 // SECURITY LOG: Anomaly Detection
@@ -94,6 +112,17 @@ app.use((req, res, next) => {
     next();
 });
 
+// --- Input Validation Helpers ---
+const validateRequired = (body, fields) => {
+    const missing = fields.filter(f => body[f] === undefined || body[f] === null || body[f] === '');
+    if (missing.length > 0) return `Missing required fields: ${missing.join(', ')}`;
+    return null;
+};
+
+const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
+const isPositiveNumber = (val) => !isNaN(Number(val)) && Number(val) > 0;
+
 // --- Public Endpoints ---
 app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', time: new Date().toISOString() });
@@ -102,7 +131,10 @@ app.get('/api/health', (req, res) => {
 // --- Administrative Access Verification ---
 app.post('/api/admin/verify-access', requireAuth, requireAdmin, (req, res) => {
     const { password } = req.body;
-    const systemPassword = process.env.ADMIN_OVERRIDE_PASSWORD || 'access';
+    const systemPassword = process.env.ADMIN_OVERRIDE_PASSWORD;
+    if (!systemPassword) {
+        return res.status(500).json({ error: 'Admin override password not configured on server.' });
+    }
     if (password === systemPassword) {
         securityLog(req, 'ADMIN_ACCESS_UNLOCKED');
         res.json({ success: true });
@@ -125,6 +157,9 @@ app.get('/api/patients', requireAuth, async (req, res) => {
 });
 
 app.post('/api/patients', requireAuth, onboardingLimiter, async (req, res) => {
+    const valErr = validateRequired(req.body, ['first_name', 'last_name', 'email']);
+    if (valErr) return res.status(400).json({ error: valErr });
+    if (!isValidEmail(req.body.email)) return res.status(400).json({ error: 'Invalid email format.' });
     const { data, error } = await supabase.from('patients').insert([req.body]).select();
     if (error) {
         if (error.code === '23505') return res.status(409).json({ error: 'Duplicate Email Detected' });
@@ -150,6 +185,7 @@ app.delete('/api/patients/:id', requireAuth, requireAdmin, async (req, res) => {
 // --- Clinical Assessments & Forms ---
 app.post('/api/assessment', requireAuth, async (req, res) => {
     const { patient_id, data: assessmentData } = req.body;
+    if (!patient_id || !assessmentData) return res.status(400).json({ error: 'Missing required fields: patient_id, data' });
     const { data, error } = await supabase.from('medical_intakes').upsert([{ patient_id, data: assessmentData }], { onConflict: 'patient_id' }).select();
     if (error) return res.status(400).json({ error: error.message });
     res.status(201).json(data[0]);
@@ -167,6 +203,8 @@ app.get('/api/form-templates/:serviceId', requireAuth, async (req, res) => {
 });
 
 app.post('/api/patient-forms', requireAuth, async (req, res) => {
+    const valErr = validateRequired(req.body, ['patient_id', 'template_id', 'answers']);
+    if (valErr) return res.status(400).json({ error: valErr });
     const { data, error } = await supabase.from('patient_forms').insert([req.body]).select();
     if (error) return res.status(400).json({ error: error.message });
     res.status(201).json(data[0]);
@@ -201,6 +239,8 @@ app.get('/api/contract/:patientId', requireAuth, async (req, res) => {
 
 // --- Treatment Plans & Bookings ---
 app.post('/api/treatment-plan', requireAuth, async (req, res) => {
+    const valErr = validateRequired(req.body, ['patient_id', 'service_name', 'base_cost', 'total_to_pay']);
+    if (valErr) return res.status(400).json({ error: valErr });
     const { data, error } = await supabase.from('treatment_plans').upsert([req.body], { onConflict: 'patient_id' }).select();
     if (error) return res.status(400).json({ error: error.message });
     res.status(201).json(data[0]);
@@ -220,6 +260,8 @@ app.get('/api/slots', requireAuth, async (req, res) => {
 });
 
 app.post('/api/bookings', requireAuth, async (req, res) => {
+    const valErr = validateRequired(req.body, ['patient_id', 'service_type', 'date', 'time_slot']);
+    if (valErr) return res.status(400).json({ error: valErr });
     const { data, error } = await supabase.from('bookings').insert([req.body]).select();
     if (error) {
         if (error.code === '23505') return res.status(400).json({ error: 'Slot no longer available.' });
@@ -251,6 +293,8 @@ app.get('/api/financials/:patientId', requireAuth, requireAdmin, async (req, res
 
 app.post('/api/transactions', requireAuth, requireAdmin, uploadLimiter, upload.single('proof'), async (req, res) => {
     const { patient_id, amount, type = 'Installment' } = req.body;
+    if (!patient_id) return res.status(400).json({ error: 'Missing required field: patient_id' });
+    if (!isPositiveNumber(amount)) return res.status(400).json({ error: 'Amount must be a positive number.' });
     const file = req.file;
     let publicUrl = null;
     let fileNameOriginal = type === 'Cash' ? 'Cash Payment' : 'No File Provided';
@@ -391,6 +435,7 @@ app.get('/api/admin/services', requireAuth, requireAdmin, async (req, res) => {
 });
 
 app.post('/api/admin/services', requireAuth, requireAdmin, async (req, res) => {
+    if (!req.body.name) return res.status(400).json({ error: 'Missing required field: name' });
     const { data, error } = await supabase.from('clinic_services').insert([req.body]).select();
     if (error) return res.status(400).json({ error: error.message });
     res.status(201).json(data[0]);
@@ -420,6 +465,10 @@ app.get('/api/admin/form-templates/:serviceId', requireAuth, requireAdmin, async
 });
 
 app.post('/api/admin/form-templates', requireAuth, requireAdmin, async (req, res) => {
+    const valErr = validateRequired(req.body, ['service_id', 'form_type', 'title', 'fields']);
+    if (valErr) return res.status(400).json({ error: valErr });
+    const validTypes = ['consent', 'intake', 'contract'];
+    if (!validTypes.includes(req.body.form_type)) return res.status(400).json({ error: `form_type must be one of: ${validTypes.join(', ')}` });
     const { data, error } = await supabase.from('form_templates').insert([req.body]).select();
     if (error) return res.status(400).json({ error: error.message });
     res.status(201).json(data[0]);
@@ -437,9 +486,108 @@ app.delete('/api/admin/form-templates/:id', requireAuth, requireAdmin, async (re
     res.json({ message: 'Template deleted' });
 });
 
-app.get('/api/admin/form-templates', requireAuth, requireAdmin, async (req, res) => {
-    const { data } = await supabase.from('form_templates').select('*, clinic_services(name)');
-    res.json(data || []);
+// --- EMAIL ENDPOINTS ---
+app.post('/api/email/send-confirmation', requireAuth, async (req, res) => {
+    const { to_email, to_name, date, time, practitioner, service } = req.body;
+    if (!to_email || !to_name) return res.status(400).json({ error: 'Missing required fields: to_email, to_name' });
+    try {
+        await resend.emails.send({
+            from: 'Cosmetic Star <noreply@starteck.co.uk>',
+            to: to_email,
+            subject: `Booking Confirmation — ${service}`,
+            html: `
+                <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:20px">
+                    <h2 style="color:#0d9488">Cosmetic Star — Booking Confirmation</h2>
+                    <p>Dear <strong>${to_name}</strong>,</p>
+                    <p>Your appointment has been confirmed:</p>
+                    <table style="width:100%;border-collapse:collapse;margin:16px 0">
+                        <tr><td style="padding:8px;border-bottom:1px solid #e2e8f0;color:#64748b">Service</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;font-weight:bold">${service}</td></tr>
+                        <tr><td style="padding:8px;border-bottom:1px solid #e2e8f0;color:#64748b">Date(s)</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;font-weight:bold">${date}</td></tr>
+                        <tr><td style="padding:8px;border-bottom:1px solid #e2e8f0;color:#64748b">Time</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;font-weight:bold">${time}</td></tr>
+                        <tr><td style="padding:8px;color:#64748b">Practitioner</td><td style="padding:8px;font-weight:bold">${practitioner}</td></tr>
+                    </table>
+                    <p style="color:#64748b;font-size:12px">Cosmetic Star UK Ltd • London Road, Manchester</p>
+                </div>
+            `
+        });
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to send confirmation email.' });
+    }
+});
+
+app.post('/api/email/send-payment-receipt', requireAuth, async (req, res) => {
+    const { to_email, to_name, amount, service_name, receipt_number, date } = req.body;
+    if (!to_email || !amount || !receipt_number) return res.status(400).json({ error: 'Missing required fields: to_email, amount, receipt_number' });
+    try {
+        await resend.emails.send({
+            from: 'Cosmetic Star <noreply@starteck.co.uk>',
+            to: to_email,
+            subject: `Payment Receipt #${receipt_number}`,
+            html: `
+                <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:20px">
+                    <h2 style="color:#0d9488">Cosmetic Star — Payment Receipt</h2>
+                    <p>Dear <strong>${to_name || 'Patient'}</strong>,</p>
+                    <p>We have received your payment. Details below:</p>
+                    <table style="width:100%;border-collapse:collapse;margin:16px 0">
+                        <tr><td style="padding:8px;border-bottom:1px solid #e2e8f0;color:#64748b">Receipt #</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;font-weight:bold">${receipt_number}</td></tr>
+                        <tr><td style="padding:8px;border-bottom:1px solid #e2e8f0;color:#64748b">Service</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;font-weight:bold">${service_name || 'N/A'}</td></tr>
+                        <tr><td style="padding:8px;border-bottom:1px solid #e2e8f0;color:#64748b">Amount</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;font-weight:bold">£${Number(amount).toLocaleString()}</td></tr>
+                        <tr><td style="padding:8px;color:#64748b">Date</td><td style="padding:8px;font-weight:bold">${date || new Date().toLocaleDateString('en-GB')}</td></tr>
+                    </table>
+                    <p style="color:#64748b;font-size:12px">Retain this email for your records. Cosmetic Star UK Ltd • Registered in England.</p>
+                </div>
+            `
+        });
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to send receipt email.' });
+    }
+});
+
+app.post('/api/generate-receipt-pdf', requireAuth, async (req, res) => {
+    const { patientName, amount, service_name, receipt_number, date, paymentMethod } = req.body;
+    if (!receipt_number) return res.status(400).json({ error: 'Missing required field: receipt_number' });
+    try {
+        const doc = new jsPDF();
+        doc.setFontSize(22);
+        doc.setTextColor(13, 148, 136);
+        doc.text('COSMETIC STAR', 105, 30, { align: 'center' });
+        doc.setFontSize(10);
+        doc.setTextColor(100);
+        doc.text('Premium Aesthetic Clinic', 105, 38, { align: 'center' });
+        doc.text('London Road, Manchester', 105, 44, { align: 'center' });
+
+        doc.setDrawColor(226, 232, 240);
+        doc.line(20, 55, 190, 55);
+
+        doc.setFontSize(12);
+        doc.setTextColor(30);
+        doc.text(`Receipt: #${receipt_number}`, 20, 68);
+        doc.text(`Date: ${date || new Date().toLocaleDateString('en-GB')}`, 190, 68, { align: 'right' });
+
+        doc.setFontSize(11);
+        doc.text(`Patient: ${patientName || 'N/A'}`, 20, 85);
+        doc.text(`Service: ${service_name || 'N/A'}`, 20, 95);
+        doc.text(`Method: ${paymentMethod || 'N/A'}`, 20, 105);
+
+        doc.setDrawColor(226, 232, 240);
+        doc.line(20, 115, 190, 115);
+
+        doc.setFontSize(16);
+        doc.setTextColor(13, 148, 136);
+        doc.text(`Amount Paid: £${Number(amount || 0).toLocaleString()}`, 105, 132, { align: 'center' });
+
+        doc.setFontSize(9);
+        doc.setTextColor(150);
+        doc.text('Transaction Verified — Cosmetic Star UK Ltd', 105, 270, { align: 'center' });
+
+        const pdfBuffer = Buffer.from(doc.output('arraybuffer'));
+        res.set({ 'Content-Type': 'application/pdf', 'Content-Disposition': `attachment; filename="receipt-${receipt_number}.pdf"` });
+        res.send(pdfBuffer);
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to generate PDF.' });
+    }
 });
 
 // Global Error Handler

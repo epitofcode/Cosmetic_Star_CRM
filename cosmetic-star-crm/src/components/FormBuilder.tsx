@@ -202,7 +202,7 @@ export default function FormBuilder() {
     })
   );
 
-  const handleDragEnd = (event: any) => {
+  const handleDragEnd = (event: { active: { id: string; data: { current?: { isSidebarItem?: boolean; type?: string } } }; over: { id: string } | null }) => {
     const { active, over } = event;
 
     if (!over) return;
@@ -255,8 +255,7 @@ export default function FormBuilder() {
       fields: fields.map(({ id, ...rest }) => rest), // Remove internal IDs for storage
       createdAt: new Date().toISOString(),
     };
-    console.log('Generated Form Schema:', JSON.stringify(schema, null, 2));
-    alert('Form Schema generated in console! Ready to save to Supabase.');
+    alert('Form Schema generated! Ready to save to Supabase.');
   };
 
   return (

@@ -37,6 +37,11 @@ interface Patient {
   status?: string;
   dob?: string;
   gender?: string;
+  alternate_phone?: string;
+  address?: string;
+  city?: string;
+  postcode?: string;
+  lead_source?: string;
 }
 
 export default function Patients() {
@@ -67,9 +72,8 @@ export default function Patients() {
     try {
       setLoading(true);
       const data = await getPatients();
-      console.log("[Registry] Received data from API:", data);
       setPatients(data || []);
-    } catch (error) { console.error('Error:', error); } finally { setLoading(false); }
+    } catch (error) { /* silently fail, list stays empty */ } finally { setLoading(false); }
   };
 
   const filteredPatients = useMemo(() => {
@@ -94,12 +98,12 @@ export default function Patients() {
       dob: patient.dob || '',
       gender: patient.gender || 'Other',
       phone: patient.phone,
-      alternatePhone: (patient as any).alternate_phone || '',
+      alternatePhone: patient.alternate_phone || '',
       email: patient.email,
-      address: (patient as any).address || '',
-      city: (patient as any).city || '',
-      postcode: (patient as any).postcode || '',
-      leadSource: (patient as any).lead_source || 'Google'
+      address: patient.address || '',
+      city: patient.city || '',
+      postcode: patient.postcode || '',
+      leadSource: patient.lead_source || 'Google'
     });
     setIsModalOpen(true);
   };
@@ -139,10 +143,10 @@ export default function Patients() {
         setPatients([newPatient, ...patients]);
       }
       setIsModalOpen(false);
-    } catch (error: any) { 
-      console.error('Detailed Save Error:', error);
-      const serverMessage = error.response?.data?.error || error.message || 'Unknown error';
-      alert(`Save failed: ${serverMessage}`); 
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { error?: string } }; message?: string };
+      const serverMessage = err.response?.data?.error || err.message || 'Unknown error';
+      alert(`Save failed: ${serverMessage}`);
     }
   };
 

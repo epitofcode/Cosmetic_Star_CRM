@@ -20,7 +20,7 @@ import {
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { usePatient } from '../context/PatientContext';
-import { getTreatmentPlan, saveTreatmentPlan, getBooking, getFormsForService, adminGetServices } from '../services/api';
+import { getTreatmentPlan, saveTreatmentPlan, getBooking, getFormsForService, adminGetServices, type TreatmentPlan as TreatmentPlanType, type Booking, type FormTemplate } from '../services/api';
 import TreatmentDocumentChecklist from '../components/TreatmentDocumentChecklist';
 import ClinicalPhotos from '../components/ClinicalPhotos';
 import { format } from 'date-fns';
@@ -51,8 +51,8 @@ export default function TreatmentPlan() {
   const [isSaving, setIsSaving] = useState(false);
   const [loading, setLoading] = useState(false);
   const [isPlanExisting, setIsPlanExisting] = useState(false);
-  const [nextAppointment, setNextAppointment] = useState<any>(null);
-  const [dynamicForms, setDynamicForms] = useState<any[]>([]);
+  const [nextAppointment, setNextAppointment] = useState<Booking | null>(null);
+  const [dynamicForms, setDynamicForms] = useState<FormTemplate[]>([]);
 
   useEffect(() => { 
     const init = async () => {
@@ -63,8 +63,8 @@ export default function TreatmentPlan() {
           setServices(servicesData || []);
           await fetchExistingPlan();
           await fetchNextAppointment();
-        } catch (err) {
-          console.error('Init error:', err);
+        } catch {
+          // init error
         } finally {
           setLoading(false);
         }
@@ -85,8 +85,8 @@ export default function TreatmentPlan() {
     try {
       const forms = await getFormsForService(serviceId);
       setDynamicForms(forms || []);
-    } catch (err) {
-      console.error('Error fetching forms:', err);
+    } catch {
+      // form fetch error
     }
   };
 
@@ -99,13 +99,13 @@ export default function TreatmentPlan() {
         setCost(Number(plan.base_cost));
         setDiscount(Number(plan.discount));
         setTotalSessions(plan.total_sessions || 1);
-        setGraftCount((plan as any).graft_count || '');
-        setTreatmentArea((plan as any).treatment_area || '');
-        setNotes((plan as any).notes || '');
+        setGraftCount(plan.graft_count || '');
+        setTreatmentArea(plan.treatment_area || '');
+        setNotes(plan.notes || '');
         setStatus(plan.status || 'Active');
         setIsPlanExisting(true);
       } else { setIsPlanExisting(false); }
-    } catch (error) { console.error('Load error:', error); } finally { setLoading(false); }
+    } catch { /* load error */ } finally { setLoading(false); }
   };
 
   const fetchNextAppointment = async () => {
@@ -114,12 +114,12 @@ export default function TreatmentPlan() {
       if (bookings && bookings.length > 0) {
         const now = new Date();
         const future = bookings
-          .filter((b: any) => new Date(b.date) >= now)
-          .sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime());
+          .filter((b: Booking) => new Date(b.date) >= now)
+          .sort((a: Booking, b: Booking) => new Date(a.date).getTime() - new Date(b.date).getTime());
         setNextAppointment(future[0] || bookings[0]);
       }
-    } catch (err) {
-      console.error('Error fetching appointments:', err);
+    } catch {
+      // appointment fetch error
     }
   };
 
@@ -153,9 +153,9 @@ export default function TreatmentPlan() {
       setStatus(targetStatus);
       setIsPlanExisting(true);
       alert('Treatment plan saved successfully!');
-    } catch (error: any) { 
-      console.error('Save failed:', error);
-      alert(`Save failed: ${error.response?.data?.error || error.message}`); 
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { error?: string } }; message?: string };
+      alert(`Save failed: ${err.response?.data?.error || err.message}`);
     } finally {
       setIsSaving(false);
     }
