@@ -5,23 +5,27 @@ A premium, interactive clinical management interface designed for high-end aesth
 
 ## ✨ Key Features
 - **Global Patient Context:** Persistent "Active Patient" session across all clinical modules.
+- **Inactivity Protection:** Automatic 15-minute sliding window inactivity logout for HIPAA/GDPR alignment.
+- **Restricted Database Explorer:** Administrative access with secure backend verification.
 - **Dynamic Analytics:** Real-time financial trends and lifecycle distribution using `Recharts`.
 - **Digital Contracts:** High-fidelity signature capture via `react-signature-canvas`.
 - **Mobile Responsive:** Fully optimized for clinic tablet handover and management.
-- **Workflow Guardrails:** Context-aware navigation that locks/unlocks features based on patient progress.
 
 ## 🏗 Frontend Tech Stack
-- **Library:** React 19 (Strict Mode)
+- **Library:** React 19 (Strict Mode) + Vite
+- **Security:** `sessionStorage` persistence + JWT injection (Axios Interceptors).
 - **Styling:** Tailwind CSS v4 (Modern Utility Engine)
-- **State:** React Context API (Patient State)
-- **Icons:** Lucide React
-- **Animations:** Framer Motion
+- **State:** React Context API (Auth + Patient State)
 
 ## 🚀 Build & Deploy
 - **Platform:** Vercel
-- **Framework Preset:** Vite
 - **Build Command:** `npm run build`
 - **Output Directory:** `dist`
 
 ### Configuration
-Expects `VITE_API_URL` to point to the Railway backend instance.
+Expects the following to be set in your Vercel/Local environment:
+```env
+VITE_API_URL=https://your-backend.railway.app
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-key
+```

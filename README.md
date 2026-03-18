@@ -6,11 +6,21 @@ A professional, high-performance CRM built for **Cosmetic Star UK**. This system
 ## 🏗 System Architecture
 The system utilizes a modern, distributed **Service-Oriented Architecture (SOA)** to ensure maximum reliability and speed:
 
-*   **Frontend:** React 19 (TypeScript) + Vite + Tailwind CSS v4. Hosted on **Vercel** for global Edge delivery.
-*   **API Layer:** Node.js 22 + Express.js. Hosted on **Railway** for high-availability business logic.
-*   **Database:** PostgreSQL (via **Supabase**) for structured clinical records and relational data integrity.
-*   **Storage:** Object Storage (via **Supabase Storage**) for encrypted digital signatures and payment proofs.
+*   **Frontend:** React 19 (TypeScript) + Vite + Tailwind CSS v4. Hosted on **Vercel**.
+*   **API Layer:** Node.js 22 + Express.js + **Helmet Security Shield**. Hosted on **Railway**.
+*   **Database:** PostgreSQL (via **Supabase**) with **JWT-validated access**.
+*   **Storage:** Object Storage (via **Supabase Storage**) for encrypted clinical media.
 *   **Communications:** **Resend** for automated transactional emails and PDF delivery.
+
+## 🛡 Security & Compliance (Senior Grade)
+The CRM is engineered with a "Security-First" philosophy, specifically for sensitive UK medical data:
+
+- **JWT Authentication:** Every API request is validated against a Supabase-issued Access Token.
+- **Role-Based Access Control (RBAC):** Distinct permissions for `Staff` and `Admin` users.
+- **Inactivity Protection:** 15-minute sliding window inactivity timeout + `sessionStorage` persistence.
+- **Abuse Mitigation:** Intelligent rate-limiting on onboarding, file uploads, and auth attempts.
+- **Infrastructure Hardening:** Enforced HSTS, Content Security Policy (CSP), and XSS protection.
+- **Audit Logging:** Comprehensive security logs for all clinical and financial data modifications.
 
 ## 🔄 Core Patient Workflow
 1.  **Registry:** Staff register a new patient or select an existing one from the "Active Patient" global context.
