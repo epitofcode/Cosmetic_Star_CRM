@@ -19,11 +19,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let timeout: NodeJS.Timeout;
+    let timeout: any;
 
     const resetTimer = () => {
       clearTimeout(timeout);
-      timeout = setTimeout(signOut, INACTIVITY_TIMEOUT);
+      timeout = window.setTimeout(signOut, INACTIVITY_TIMEOUT);
     };
 
     const setupListeners = () => {
