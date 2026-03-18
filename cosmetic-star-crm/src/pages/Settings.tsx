@@ -266,7 +266,7 @@ export default function Settings() {
                   ))}
                   <td className="px-6 py-4 text-right">
                     <div className="flex justify-end gap-2">
-                      {editingRowId === row.id ? (
+                      {editingRowId === String(row.id) ? (
                         <>
                           <button onClick={handleSaveEdit} className="p-2 text-teal-600 hover:bg-teal-50 rounded-xl transition-all"><Save size={18} /></button>
                           <button onClick={() => setEditingRowId(null)} className="p-2 text-slate-400 hover:bg-slate-50 rounded-xl transition-all"><X size={18} /></button>
@@ -274,7 +274,7 @@ export default function Settings() {
                       ) : (
                         <>
                           <button onClick={() => handleEditInit(row)} className="p-2 text-slate-300 hover:text-teal-600 hover:bg-teal-50 rounded-xl transition-all"><Edit size={18} /></button>
-                          <button onClick={() => handleDelete(row.id)} className="p-2 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"><Trash2 size={18} /></button>
+                          <button onClick={() => handleDelete(String(row.id))} className="p-2 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"><Trash2 size={18} /></button>
                         </>
                       )}
                     </div>
