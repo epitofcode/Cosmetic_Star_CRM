@@ -8,7 +8,7 @@
     "node": ">=20.0.0"
   },
   "scripts": {
-    "build": "echo 'Frontend built on Vercel'",
+    "build": "cd cosmetic-star-crm && npm install && npm run build && cd .. && mkdir -p cosmetic-star-crm/dist",
     "install-all": "npm install",
     "start": "cd backend && node server.js"
   }
