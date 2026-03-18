@@ -6,6 +6,8 @@ import multer from 'multer';
 import { createClient } from '@supabase/supabase-js';
 import { Resend } from 'resend';
 import { jsPDF } from 'jspdf';
+import rateLimit from 'express-rate-limit';
+import { requireAuth, requireAdmin } from './authMiddleware.js';
 
 dotenv.config();
 dotenv.config({ path: '../.env' }); // Fallback for different execution contexts
@@ -13,14 +15,24 @@ dotenv.config({ path: '../.env' }); // Fallback for different execution contexts
 const app = express();
 const port = process.env.PORT || 3001;
 
+// --- SECURITY: Rate Limiting ---
+const apiLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // Limit each IP to 100 requests per window
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: 'Security: Too many requests, please try again after 15 minutes.' }
+});
+
+// Apply rate limiting to all clinical/admin endpoints
+app.use('/api/', apiLimiter);
+
 // Supabase Configuration
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_KEY;
 
 if (!supabaseUrl || !supabaseKey) {
     console.error("CRITICAL ERROR: Supabase credentials missing!");
-    console.error("SUPABASE_URL:", supabaseUrl ? "Found" : "MISSING");
-    console.error("SUPABASE_KEY:", supabaseKey ? "Found" : "MISSING");
 }
 
 const supabase = createClient(supabaseUrl || 'https://placeholder.supabase.co', supabaseKey || 'placeholder');
@@ -40,35 +52,13 @@ app.use((req, res, next) => {
     next();
 });
 
-// --- Health Check ---
-app.get('/api/health', async (req, res) => {
-    let dbDiagnostics = { connected: !!supabaseUrl && !!supabaseKey };
-    
-    if (dbDiagnostics.connected) {
-        try {
-            // Check if new columns exist by doing a dry-run select
-            const { error: colError } = await supabase
-                .from('patients')
-                .select('address, city, postcode')
-                .limit(1);
-            
-            dbDiagnostics.schemaMatch = !colError;
-            if (colError) dbDiagnostics.schemaError = colError.message;
-        } catch (e) {
-            dbDiagnostics.schemaMatch = false;
-        }
-    }
-
-    res.json({ 
-        status: 'ok', 
-        version: '1.2.6-DIAGNOSTIC',
-        db: dbDiagnostics,
-        time: new Date().toISOString() 
-    });
+// --- Health Check (Public) ---
+app.get('/api/health', (req, res) => {
+    res.json({ status: 'ok', time: new Date().toISOString() });
 });
 
-// --- System Diagnostic ---
-app.get('/api/diagnostic', async (req, res) => {
+// --- System Diagnostic (Admin Only) ---
+app.get('/api/diagnostic', requireAuth, requireAdmin, async (req, res) => {
     const results = {
         database: {},
         storage: {},
@@ -92,6 +82,229 @@ app.get('/api/diagnostic', async (req, res) => {
     }
 
     res.json(results);
+});
+
+// --- Protected Clinical Endpoints ---
+
+// 1. Get Patients (Staff/Admin)
+app.get('/api/patients', requireAuth, async (req, res) => {
+    const { search } = req.query;
+    let query = supabase.from('patients').select('*');
+    if (search) {
+        query = query.or(`first_name.ilike.%${search}%,last_name.ilike.%${search}%,email.ilike.%${search}%`);
+    }
+    const { data, error } = await query.order('created_at', { ascending: false });
+    if (error) return res.status(400).json({ error: error.message });
+    res.json(data || []);
+});
+
+// 2. Create New Patient (Staff/Admin)
+app.post('/api/patients', requireAuth, async (req, res) => {
+    const { first_name, last_name, phone, email, dob, gender, alternate_phone, address, city, postcode, lead_source } = req.body;
+    const { data, error } = await supabase
+        .from('patients')
+        .insert([{ first_name, last_name, phone, email, dob, gender, alternate_phone, address, city, postcode, lead_source }])
+        .select();
+
+    if (error) {
+        if (error.code === '23505') return res.status(409).json({ error: 'Duplicate Email Detected', code: 'DUPLICATE_EMAIL' });
+        return res.status(400).json({ error: error.message });
+    }
+    res.status(201).json(data[0]);
+});
+
+// 2b. Update Patient (Staff/Admin)
+app.put('/api/patients/:id', requireAuth, async (req, res) => {
+    const { id } = req.params;
+    const { data, error } = await supabase
+        .from('patients')
+        .update(req.body)
+        .eq('id', id)
+        .select();
+
+    if (error) return res.status(400).json({ error: error.message });
+    res.json(data[0]);
+});
+
+// 2c. Delete Patient (Admin ONLY)
+app.delete('/api/patients/:id', requireAuth, requireAdmin, async (req, res) => {
+    const { id } = req.params;
+    const { error } = await supabase.from('patients').delete().eq('id', id);
+    if (error) return res.status(400).json({ error: error.message });
+    res.json({ message: 'Patient deleted successfully' });
+});
+
+// 3. Save Medical Assessment (Staff/Admin)
+app.post('/api/assessment', requireAuth, async (req, res) => {
+    const { patient_id, data: assessmentData } = req.body;
+    const { data, error } = await supabase
+        .from('medical_intakes')
+        .upsert([{ patient_id, data: assessmentData }], { onConflict: 'patient_id' })
+        .select();
+    if (error) return res.status(400).json({ error: error.message });
+    res.status(201).json(data[0]);
+});
+
+// 4. Upload Signature (Digital Contract)
+app.post('/api/contract', requireAuth, upload.single('signature'), async (req, res) => {
+    const { patient_id } = req.body;
+    const file = req.file;
+    if (!file) return res.status(400).json({ error: 'Signature required' });
+
+    const fileName = `signatures/${patient_id}_${Date.now()}.png`;
+    const { error: uploadError } = await supabase.storage.from('signatures').upload(fileName, file.buffer, { contentType: 'image/png' });
+    if (uploadError) return res.status(400).json({ error: uploadError.message });
+
+    const { data: { publicUrl } } = supabase.storage.from('signatures').getPublicUrl(fileName);
+    const { data: contractData, error: contractError } = await supabase
+        .from('contracts')
+        .upsert([{ patient_id, signature_url: publicUrl }], { onConflict: 'patient_id' })
+        .select();
+
+    if (contractError) return res.status(400).json({ error: contractError.message });
+    res.status(201).json(contractData[0]);
+});
+
+// 5. Financial Records (Admin Only)
+app.get('/api/financials/:patientId', requireAuth, requireAdmin, async (req, res) => {
+    const { patientId } = req.params;
+    const { data: plan } = await supabase.from('treatment_plans').select('*').eq('patient_id', patientId).maybeSingle();
+    if (!plan) return res.status(404).json({ error: 'No treatment plan found' });
+
+    const { data: transactions } = await supabase.from('transactions').select('*').eq('patient_id', patientId).order('created_at', { ascending: false });
+    const amountPaid = transactions?.reduce((sum, t) => sum + Number(t.amount), 0) || 0;
+
+    res.json({ id: plan.id, patient_id: plan.patient_id, service_name: plan.service_name, total_amount: Number(plan.total_to_pay), amount_paid: amountPaid, status: amountPaid >= Number(plan.total_to_pay) ? 'Payment Done' : 'Payment Pending', transactions: transactions || [] });
+});
+
+// 6. Record Transaction (Admin Only)
+app.post('/api/transactions', requireAuth, requireAdmin, upload.single('proof'), async (req, res) => {
+    const { patient_id, amount, type = 'Installment' } = req.body;
+    const file = req.file;
+
+    let publicUrl = null;
+    let fileNameOriginal = type === 'Cash' ? 'Cash Payment' : 'No File Provided';
+
+    if (file) {
+        const fileName = `proofs/${patient_id}_${Date.now()}_${file.originalname}`;
+        const { error: uploadError } = await supabase.storage.from('proofs').upload(fileName, file.buffer, { contentType: file.mimetype });
+        if (uploadError) return res.status(400).json({ error: uploadError.message });
+        const { data: { publicUrl: url } } = supabase.storage.from('proofs').getPublicUrl(fileName);
+        publicUrl = url;
+        fileNameOriginal = file.originalname;
+    }
+
+    const { data, error } = await supabase
+        .from('transactions')
+        .insert([{ patient_id, amount: Number(amount), type, proof_url: publicUrl, proof_name: fileNameOriginal, receipt_number: `CS-RC-${Math.floor(100000 + Math.random() * 900000)}` }])
+        .select();
+
+    if (error) return res.status(400).json({ error: error.message });
+    res.status(201).json(data[0]);
+});
+
+// 7. Dashboard Stats (Admin Only)
+app.get('/api/dashboard/stats', requireAuth, requireAdmin, async (req, res) => {
+    // Original sequential logic maintained, but now secured behind RBAC
+    try {
+        const now = new Date();
+        const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+
+        const { count: patientCount } = await supabase.from('patients').select('*', { count: 'exact', head: true });
+        const { count: bookingCount } = await supabase.from('bookings').select('*', { count: 'exact', head: true });
+        const { data: monthlyTransactions } = await supabase.from('transactions').select('amount, date').gte('date', firstDayOfMonth);
+        const monthlyRevenue = monthlyTransactions?.reduce((sum, t) => sum + Number(t.amount || 0), 0) || 0;
+
+        const [{ data: patients }, { data: intakes }, { data: plans }, { data: contracts }, { data: bookings }, { data: allTransactions }] = await Promise.all([
+            supabase.from('patients').select('id, first_name, last_name'),
+            supabase.from('medical_intakes').select('patient_id'),
+            supabase.from('treatment_plans').select('patient_id, status, total_to_pay, service_name'),
+            supabase.from('contracts').select('patient_id'),
+            supabase.from('bookings').select('patient_id, date, service_type'),
+            supabase.from('transactions').select('patient_id, amount')
+        ]);
+
+        const pendingBreakdown = { missingIntake: [], complianceGap: [], unpaidBalances: [], postOpFollowups: [], bookingBottleneck: [] };
+        const distribution = { 'New Patients': 0, 'Treatment Plans': 0, 'Contracts Signed': 0, 'Completed': 0 };
+        
+        const today = new Date();
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(today.getDate() - 7);
+
+        patients?.forEach(p => {
+            const fullName = `${p.first_name} ${p.last_name}`;
+            const hasIntake = intakes?.some(i => i.patient_id === p.id);
+            const patientPlan = plans?.find(pl => pl.patient_id === p.id);
+            const hasContract = contracts?.some(c => c.patient_id === p.id);
+            const patientBookings = bookings?.filter(b => b.patient_id === p.id) || [];
+            const patientTxns = allTransactions?.filter(t => t.patient_id === p.id) || [];
+
+            if (patientPlan?.status === 'Completed') distribution['Completed']++;
+            else if (hasContract) distribution['Contracts Signed']++;
+            else if (patientPlan) distribution['Treatment Plans']++;
+            else distribution['New Patients']++;
+
+            if (!hasIntake) pendingBreakdown.missingIntake.push({ id: p.id, name: fullName });
+            if (patientPlan && !hasContract) pendingBreakdown.complianceGap.push({ id: p.id, name: fullName, service: patientPlan.service_name });
+            if (patientPlan?.status === 'Completed') {
+                const totalPaid = patientTxns.reduce((sum, t) => sum + Number(t.amount || 0), 0);
+                const balance = Number(patientPlan.total_to_pay || 0) - totalPaid;
+                if (balance > 0) pendingBreakdown.unpaidBalances.push({ id: p.id, name: fullName, balance });
+            }
+            patientBookings.forEach(b => {
+                const bDate = new Date(b.date);
+                if (bDate >= sevenDaysAgo && bDate < today) pendingBreakdown.postOpFollowups.push({ id: p.id, name: fullName, date: b.date, service: b.service_type });
+            });
+            if (hasContract && patientBookings.length === 0) pendingBreakdown.bookingBottleneck.push({ id: p.id, name: fullName });
+        });
+
+        const revenueAnalytics = [...Array(7)].map((_, i) => {
+            const d = new Date();
+            d.setDate(d.getDate() - (6 - i));
+            const dateStr = d.toISOString().split('T')[0];
+            return {
+                date: d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }),
+                amount: monthlyTransactions?.filter(t => t.date === dateStr).reduce((sum, t) => sum + Number(t.amount || 0), 0) || 0
+            };
+        });
+
+        res.json({
+            totalPatients: patientCount || 0,
+            surgeryBookings: bookingCount || 0,
+            totalRevenue: monthlyRevenue,
+            pendingReports: Object.values(pendingBreakdown).flat().length,
+            pendingBreakdown,
+            revenueAnalytics,
+            clinicalDistribution: Object.entries(distribution).map(([name, value]) => ({ name, value }))
+        });
+    } catch (error) {
+        console.error("DASHBOARD STATS CRASH:", error);
+        res.status(500).json({ error: "Internal Server Error during analytics calculation" });
+    }
+});
+
+// All other internal CRUD routes now strictly protected
+app.get('/api/admin/tables/:tableName', requireAuth, requireAdmin, async (req, res) => {
+    const { tableName } = req.params;
+    const { data, error } = await supabase.from(tableName).select('*').order('created_at', { ascending: false });
+    if (error) return res.status(400).json({ error: error.message });
+    res.json(data);
+});
+
+// Admin System Config CRUD (requireAdmin)
+app.post('/api/admin/services', requireAuth, requireAdmin, async (req, res) => {
+    const { data, error } = await supabase.from('clinic_services').insert([req.body]).select();
+    if (error) return res.status(400).json({ error: error.message });
+    res.status(201).json(data[0]);
+});
+
+// 404 Handler
+app.use((req, res) => {
+    res.status(404).json({ error: `Security: Path ${req.url} not found.` });
+});
+
+app.listen(port, '0.0.0.0', () => {
+    console.log(`SECURED Clinical Server is active on port ${port}`);
 });
 
 // --- API Endpoints ---
