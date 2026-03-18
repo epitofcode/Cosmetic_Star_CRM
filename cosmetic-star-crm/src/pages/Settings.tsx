@@ -19,6 +19,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { adminGetTableData, adminUpdateRow, adminDeleteRow } from '../services/api';
+import api from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -34,6 +36,7 @@ const TABLES = [
 ];
 
 export default function Settings() {
+  const { role } = useAuth();
   const [selectedTable, setSelectedTable] = useState(TABLES[0].id);
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -49,8 +52,10 @@ export default function Settings() {
   const [editFormData, setEditFormData] = useState<any>({});
 
   useEffect(() => {
-    fetchTableData();
-  }, [selectedTable]);
+    if (role === 'Admin') {
+      fetchTableData();
+    }
+  }, [selectedTable, role]);
 
   const fetchTableData = async () => {
     try {
@@ -64,6 +69,20 @@ export default function Settings() {
     }
   };
 
+  if (role !== 'Admin') {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
+        <div className="bg-red-50 p-6 rounded-full text-red-400">
+          <Lock size={48} />
+        </div>
+        <div>
+          <h2 className="text-xl font-bold text-slate-900">Administrative Access Required</h2>
+          <p className="text-slate-500 max-w-xs mx-auto">You do not have the required permissions to access the Database Explorer.</p>
+        </div>
+      </div>
+    );
+  }
+
   const filteredData = useMemo(() => {
     if (!searchTerm) return data;
     return data.filter(row => 
@@ -73,14 +92,20 @@ export default function Settings() {
     );
   }, [data, searchTerm]);
 
-  const handleUnlock = (e: React.FormEvent) => {
+  const handleUnlock = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (password === 'access') {
-      setIsEditingUnlocked(true);
-      setShowPasswordModal(false);
-      setPassword('');
-    } else {
-      alert('Invalid administrative password.');
+    try {
+      setLoading(true);
+      const response = await api.post('/admin/verify-access', { password });
+      if (response.data.success) {
+        setIsEditingUnlocked(true);
+        setShowPasswordModal(false);
+        setPassword('');
+      }
+    } catch (error: any) {
+      alert(error.response?.data?.error || 'Invalid administrative password.');
+    } finally {
+      setLoading(false);
     }
   };
 
