@@ -86,6 +86,7 @@ const upload = multer({
 // --- CORS: Restrict to known origins ---
 const allowedOrigins = [
     process.env.FRONTEND_URL,
+    'https://cosmeticstarcrm.vercel.app',
     'https://starteck.co.uk',
     'https://www.starteck.co.uk',
     'http://localhost:5173',
